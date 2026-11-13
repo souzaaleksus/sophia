@@ -192,8 +192,9 @@ Abra http://localhost:8080. O Compose sobe três serviços, nesta ordem:
 2. `criar-banco` — roda `database/create-database.sql` e termina;
 3. `web` — a aplicação, que só sobe depois que o banco foi criado.
 
-A senha do usuário `sa` pode ser trocada pela variável `SOPHIA_SENHA_DO_BANCO`. O SQL Server
-fica exposto na porta `14333` para quem quiser consultar o banco.
+A senha padrão do usuário `sa` serve só para avaliação local: em qualquer outro uso, defina a
+variável `SOPHIA_SENHA_DO_BANCO`. O SQL Server fica acessível apenas nesta máquina, na porta
+`14333`, para quem quiser consultar o banco.
 
 ### Opção 2 — Visual Studio ou linha de comando, com SQL Server Express local
 

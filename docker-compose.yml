@@ -8,7 +8,7 @@ services:
       MSSQL_PID: Express
       MSSQL_SA_PASSWORD: ${SOPHIA_SENHA_DO_BANCO:-Sophia#Vendas2026}
     ports:
-      - "14333:1433"
+      - "127.0.0.1:14333:1433"
     volumes:
       - dados-do-banco:/var/opt/mssql
     healthcheck:
