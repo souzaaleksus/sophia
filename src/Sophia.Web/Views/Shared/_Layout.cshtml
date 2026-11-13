@@ -4,49 +4,117 @@
     string? Atual(string area) => area == areaAtual ? "page" : null;
 }
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] · Sophia</title>
+    <title>@ViewData["Title"] – Sophia</title>
+    <script>
+        (() => {
+            let preferencia = 'automatico';
+            try {
+                preferencia = localStorage.getItem('sophia-tema') ?? preferencia;
+            } catch {
+            }
+            const sistemaEscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const escuro = preferencia === 'escuro' || (preferencia !== 'claro' && sistemaEscuro);
+            document.documentElement.setAttribute('data-bs-theme', escuro ? 'dark' : 'light');
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
+    <partial name="_Icones" />
+    <a class="pular-para-o-conteudo visually-hidden-focusable" href="#conteudo">Ir para o conteúdo</a>
+
     <header class="barra-superior">
         <nav class="navbar navbar-expand-md container" aria-label="Navegação principal">
-            <a class="marca" asp-controller="Vendas" asp-action="Index">
+            <a class="marca" href="~/">
                 <span class="marca-simbolo" aria-hidden="true">S</span>
                 <span>Sophia</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
-                    aria-controls="menu" aria-expanded="false" aria-label="Abrir o menu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+
+            <div class="ferramentas-do-topo">
+                <a class="btn btn-primary botao-nova-venda" asp-controller="Vendas" asp-action="Nova">
+                    <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
+                    <span class="texto-nova-venda">Nova venda</span>
+                </a>
+
+                <div class="dropdown">
+                    <button type="button" class="btn botao-do-tema" data-bs-toggle="dropdown" aria-expanded="false"
+                            aria-label="Escolher o tema (atual: automático)" data-tema="botao">
+                        <svg class="icone" aria-hidden="true"><use href="#icone-automatico" data-tema="icone" /></svg>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end menu-do-tema">
+                        <li>
+                            <button type="button" class="dropdown-item" data-tema-opcao="claro" aria-pressed="false">
+                                <svg class="icone" aria-hidden="true"><use href="#icone-sol" /></svg>
+                                Claro
+                            </button>
+                        </li>
+                        <li>
+                            <button type="button" class="dropdown-item" data-tema-opcao="escuro" aria-pressed="false">
+                                <svg class="icone" aria-hidden="true"><use href="#icone-lua" /></svg>
+                                Escuro
+                            </button>
+                        </li>
+                        <li>
+                            <button type="button" class="dropdown-item" data-tema-opcao="automatico" aria-pressed="true">
+                                <svg class="icone" aria-hidden="true"><use href="#icone-automatico" /></svg>
+                                Automático
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
+                        aria-controls="menu" aria-expanded="false" aria-label="Abrir o menu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
             <div class="collapse navbar-collapse" id="menu">
-                <ul class="navbar-nav me-auto">
+                <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="@Ativo("Vendas")" aria-current="@Atual("Vendas")" asp-controller="Vendas" asp-action="Index">Vendas</a>
+                        <a class="@Ativo("Painel")" aria-current="@Atual("Painel")" href="~/">
+                            <svg class="icone" aria-hidden="true"><use href="#icone-painel" /></svg>
+                            Painel
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="@Ativo("Clientes")" aria-current="@Atual("Clientes")" asp-controller="Clientes" asp-action="Index">Clientes</a>
+                        <a class="@Ativo("Vendas")" aria-current="@Atual("Vendas")" asp-controller="Vendas" asp-action="Index">
+                            <svg class="icone" aria-hidden="true"><use href="#icone-vendas" /></svg>
+                            Vendas
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="@Ativo("Produtos")" aria-current="@Atual("Produtos")" asp-controller="Produtos" asp-action="Index">Produtos</a>
+                        <a class="@Ativo("Clientes")" aria-current="@Atual("Clientes")" asp-controller="Clientes" asp-action="Index">
+                            <svg class="icone" aria-hidden="true"><use href="#icone-clientes" /></svg>
+                            Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="@Ativo("Produtos")" aria-current="@Atual("Produtos")" asp-controller="Produtos" asp-action="Index">
+                            <svg class="icone" aria-hidden="true"><use href="#icone-produtos" /></svg>
+                            Produtos
+                        </a>
                     </li>
                 </ul>
-                <a class="btn btn-primary" asp-controller="Vendas" asp-action="Nova">Nova venda</a>
             </div>
         </nav>
     </header>
 
-    <main class="container conteudo">
+    <main class="container conteudo" id="conteudo" tabindex="-1">
         <partial name="_Avisos" />
         @RenderBody()
     </main>
 
-    <footer class="rodape container">Sophia · controle de vendas</footer>
+    <footer class="rodape container">Sophia, o controle de vendas da sua loja.</footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

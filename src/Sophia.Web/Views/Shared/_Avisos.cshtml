@@ -1,8 +1,20 @@
 @if (TempData[Avisos.ChaveDeSucesso] is string sucesso)
 {
-    <div class="aviso aviso-sucesso" role="status">@sucesso</div>
+    <div class="aviso aviso-sucesso" role="status" data-aviso="temporario">
+        <svg class="icone aviso-icone" aria-hidden="true"><use href="#icone-sucesso" /></svg>
+        <p class="aviso-texto">@sucesso</p>
+        <button type="button" class="aviso-fechar" aria-label="Fechar aviso" data-acao="fechar-aviso">
+            <svg class="icone" aria-hidden="true"><use href="#icone-fechar" /></svg>
+        </button>
+    </div>
 }
 @if (TempData[Avisos.ChaveDeFalha] is string falha)
 {
-    <div class="aviso aviso-falha" role="alert">@falha</div>
+    <div class="aviso aviso-falha" role="alert" data-aviso="permanente">
+        <svg class="icone aviso-icone" aria-hidden="true"><use href="#icone-alerta" /></svg>
+        <p class="aviso-texto">@falha</p>
+        <button type="button" class="aviso-fechar" aria-label="Fechar aviso" data-acao="fechar-aviso">
+            <svg class="icone" aria-hidden="true"><use href="#icone-fechar" /></svg>
+        </button>
+    </div>
 }

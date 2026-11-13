@@ -7,24 +7,40 @@
 <div class="cabecalho-da-pagina">
     <div>
         <h1>Produtos</h1>
-        <p class="subtitulo">O que a empresa comercializa.</p>
+        <p class="subtitulo">O que a loja vende e por quanto.</p>
     </div>
-    <a class="btn btn-primary" asp-action="Novo">Novo produto</a>
+    <a class="btn btn-primary" asp-action="Novo">
+        <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
+        Novo produto
+    </a>
 </div>
 
 <form class="busca" method="get" asp-action="Index" role="search">
-    <input type="search" name="busca" value="@busca" class="form-control"
-           placeholder="Buscar pelo nome" aria-label="Buscar produtos pelo nome" />
+    <div class="campo-de-busca">
+        <svg class="icone" aria-hidden="true"><use href="#icone-busca" /></svg>
+        <input type="search" name="busca" value="@busca" class="form-control"
+               placeholder="Buscar pelo nome" aria-label="Buscar produtos pelo nome" />
+    </div>
     <button type="submit" class="btn btn-outline-secondary">Buscar</button>
 </form>
 
 @if (Model.Count == 0)
 {
     <div class="vazio">
-        <p>Nenhum produto encontrado.</p>
+        <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-produtos" /></svg></span>
+        <p class="vazio-titulo">Nenhum produto encontrado.</p>
         @if (string.IsNullOrWhiteSpace(busca))
         {
-            <a class="btn btn-primary" asp-action="Novo">Cadastrar o primeiro produto</a>
+            <p>Cadastre o que a loja vende para lançar nas vendas.</p>
+            <a class="btn btn-primary" asp-action="Novo">
+                <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
+                Cadastrar o primeiro produto
+            </a>
+        }
+        else
+        {
+            <p>Confira o nome digitado, ou volte para a lista completa.</p>
+            <a class="btn btn-outline-secondary" asp-action="Index">Limpar a busca</a>
         }
     </div>
 }
@@ -46,8 +62,14 @@ else
                         <td class="destaque">@produto.Nome</td>
                         <td class="valor">@Formato.Moeda(produto.ValorUnitario)</td>
                         <td class="acoes">
-                            <a asp-action="Editar" asp-route-id="@produto.Id" aria-label="Editar @produto.Nome">Editar</a>
-                            <a asp-action="Excluir" asp-route-id="@produto.Id" class="perigo" aria-label="Excluir @produto.Nome">Excluir</a>
+                            <a class="acao" asp-action="Editar" asp-route-id="@produto.Id" aria-label="Editar @produto.Nome">
+                                <svg class="icone" aria-hidden="true"><use href="#icone-editar" /></svg>
+                                <span class="acao-texto">Editar</span>
+                            </a>
+                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@produto.Id" aria-label="Excluir @produto.Nome">
+                                <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
+                                <span class="acao-texto">Excluir</span>
+                            </a>
                         </td>
                     </tr>
                 }
