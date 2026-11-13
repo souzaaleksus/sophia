@@ -40,6 +40,6 @@ app.UseRouting();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Vendas}/{action=Index}/{id?}");
+    pattern: "{controller=Painel}/{action=Index}/{id?}");
 
 app.Run();

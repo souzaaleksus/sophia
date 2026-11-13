@@ -1,0 +1,85 @@
+@model Sophia.Application.Painel.PainelDto
+@{
+    ViewData["Title"] = "Painel";
+    var nomeDoMes = Formato.NomeDoMes(Model.Hoje);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/caixa.css" asp-append-version="true" />
+}
+
+<div class="cabecalho-da-pagina">
+    <div>
+        <h1>Painel</h1>
+        <p class="subtitulo">@Formato.DataPorExtenso(Model.Hoje)</p>
+    </div>
+    <a class="btn btn-primary btn-lg" asp-controller="Vendas" asp-action="Nova">Nova venda</a>
+</div>
+
+<section class="indicadores" aria-label="Resumo das vendas">
+    <div class="visor" data-testid="vendido-hoje">
+        <span class="visor-rotulo">Vendido hoje</span>
+        <span class="visor-valor">@Formato.Moeda(Model.Dia.Total)</span>
+        <span class="visor-detalhe">@Formato.Quantidade(Model.Dia.QuantidadeDeVendas, "venda", "vendas")</span>
+    </div>
+
+    <div class="cartao indicador" data-testid="vendido-no-mes">
+        <span class="indicador-rotulo">Vendido em @nomeDoMes</span>
+        <span class="indicador-valor">@Formato.Moeda(Model.Mes.Total)</span>
+        <span class="indicador-detalhe">@Formato.Quantidade(Model.Mes.QuantidadeDeVendas, "venda", "vendas")</span>
+    </div>
+
+    <div class="cartao indicador" data-testid="ticket-medio">
+        <span class="indicador-rotulo">Ticket médio em @nomeDoMes</span>
+        <span class="indicador-valor">@Formato.Moeda(Model.Mes.TicketMedio)</span>
+        <span class="indicador-detalhe">por venda</span>
+    </div>
+</section>
+
+<section class="cartao ultimas-vendas" aria-labelledby="titulo-ultimas-vendas">
+    <div class="cabecalho-do-cartao">
+        <h2 id="titulo-ultimas-vendas">Últimas vendas</h2>
+        <a asp-controller="Vendas" asp-action="Index">Ver todas</a>
+    </div>
+
+    @if (Model.UltimasVendas.Count == 0)
+    {
+        <div class="vazio vazio-embutido">
+            <p>Nenhuma venda registrada ainda.</p>
+            <a class="btn btn-primary" asp-controller="Vendas" asp-action="Nova">Registrar a primeira venda</a>
+        </div>
+    }
+    else
+    {
+        <div class="tabela-rolavel">
+            <table class="tabela">
+                <thead>
+                    <tr>
+                        <th scope="col">Nº</th>
+                        <th scope="col">Data</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col" class="valor">Total</th>
+                        <th scope="col"><span class="visually-hidden">Ações</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var venda in Model.UltimasVendas)
+                    {
+                        <tr>
+                            <td class="numero">@venda.Id</td>
+                            <td>@Formato.Data(venda.Data)</td>
+                            <td>
+                                <div class="destaque">@venda.ClienteNome</div>
+                                <div class="secundario numero">@venda.ClienteCpf</div>
+                            </td>
+                            <td class="valor destaque">@Formato.Moeda(venda.Total)</td>
+                            <td class="acoes">
+                                <a asp-controller="Vendas" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="Ver a venda @venda.Id">Ver</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
