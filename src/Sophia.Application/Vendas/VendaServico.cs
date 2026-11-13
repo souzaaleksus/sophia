@@ -16,7 +16,7 @@ public sealed class VendaServico(
     public DateOnly DataSugerida() => relogio.Hoje;
 
     public Task<IReadOnlyList<VendaResumoDto>> ListarAsync(CancellationToken cancelamento = default) =>
-        vendas.ListarAsync(cancelamento);
+        vendas.ListarAsync(cancelamento: cancelamento);
 
     public Task<VendaDetalheDto?> ObterAsync(int id, CancellationToken cancelamento = default) =>
         vendas.ObterDetalheAsync(id, cancelamento);

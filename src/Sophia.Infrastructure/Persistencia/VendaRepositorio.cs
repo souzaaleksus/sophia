@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Sophia.Application.Painel;
 using Sophia.Application.Vendas;
 using Sophia.Domain.Vendas;
 
@@ -6,9 +7,9 @@ namespace Sophia.Infrastructure.Persistencia;
 
 public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositorio
 {
-    public async Task<IReadOnlyList<VendaResumoDto>> ListarAsync(CancellationToken cancelamento = default)
+    public async Task<IReadOnlyList<VendaResumoDto>> ListarAsync(int? limite = null, CancellationToken cancelamento = default)
     {
-        var vendas = await (
+        var consulta = (
                 from venda in contexto.Vendas
                 join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
                 orderby venda.Data descending, venda.Id descending
@@ -20,8 +21,14 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
                     cliente.Nome,
                     QuantidadeDeItens = venda.Itens.Count(),
                     Total = venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario),
-                })
-            .ToListAsync(cancelamento);
+                });
+
+        if (limite is { } quantidade)
+        {
+            consulta = consulta.Take(quantidade);
+        }
+
+        var vendas = await consulta.ToListAsync(cancelamento);
 
         return vendas
             .Select(v => new VendaResumoDto(v.Id, v.Data, v.Cpf.Formatado, v.Nome, v.QuantidadeDeItens, v.Total))
@@ -61,6 +68,20 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
             cabecalho.Nome,
             itens,
             itens.Sum(i => i.Subtotal));
+    }
+
+    public async Task<ResumoDoPeriodo> ResumirAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        CancellationToken cancelamento = default)
+    {
+        var doPeriodo = contexto.Vendas.Where(v => v.Data >= inicio && v.Data <= fim);
+        var quantidade = await doPeriodo.CountAsync(cancelamento);
+        var total = await doPeriodo
+            .SelectMany(v => v.Itens)
+            .SumAsync(i => (decimal?)(i.Quantidade * i.ValorUnitario), cancelamento);
+
+        return new ResumoDoPeriodo(quantidade, total ?? 0m);
     }
 
     public void Adicionar(Venda venda) => contexto.Vendas.Add(venda);
