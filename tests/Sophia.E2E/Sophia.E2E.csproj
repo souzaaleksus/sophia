@@ -6,10 +6,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sophia.Integration.Tests\Sophia.Integration.Tests.csproj" />
+    <ProjectReference Include="..\..\src\Sophia.Web\Sophia.Web.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Playwright" Version="1.48.0" />
+    <PackageReference Include="Microsoft.Playwright" Version="1.64.1" />
   </ItemGroup>
 
 </Project>
