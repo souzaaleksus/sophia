@@ -1,0 +1,167 @@
+@model NovaVendaFormulario
+@{
+    ViewData["Title"] = "Nova venda";
+    var hoje = (DateOnly)ViewData["Hoje"]!;
+    var clienteEscolhido = Model.ClienteId is not null;
+    var erroDosItens = ViewData.ModelState.PrimeiroErro("Itens");
+    string? ErroDe(string campo) => ViewData.ModelState.PrimeiroErro(campo);
+}
+
+<div class="cabecalho-da-pagina">
+    <div>
+        <h1>Nova venda</h1>
+        <p class="subtitulo">Escolha o cliente, lance os produtos e finalize.</p>
+    </div>
+</div>
+
+<form method="post" asp-action="Nova" id="nova-venda" class="nova-venda" novalidate>
+    <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
+
+    <div class="nova-venda-principal">
+        <section class="cartao" aria-labelledby="titulo-cliente">
+            <div class="cabecalho-do-cartao">
+                <h2 id="titulo-cliente">Cliente</h2>
+                <div class="campo campo-data">
+                    <label asp-for="Data" class="form-label"></label>
+                    <input id="Data" name="Data" type="date" class="form-control"
+                           value="@Formato.DataParaCampo(Model.Data)" max="@Formato.DataParaCampo(hoje)" />
+                    <span asp-validation-for="Data" class="erro"></span>
+                </div>
+            </div>
+
+            <input type="hidden" asp-for="ClienteId" data-cliente="id" />
+            <input type="hidden" asp-for="ClienteNome" data-cliente="nome" />
+            <input type="hidden" asp-for="ClienteCpf" data-cliente="cpf" />
+
+            <div class="busca-de-cliente" data-cliente="busca" hidden="@clienteEscolhido">
+                <label for="busca-cliente" class="form-label">Cliente</label>
+                <div class="autocompletar">
+                    <input id="busca-cliente" type="text" class="form-control form-control-lg"
+                           role="combobox" aria-autocomplete="list" aria-expanded="false"
+                           aria-controls="busca-cliente-opcoes" autocomplete="off"
+                           placeholder="Digite o CPF ou o nome" />
+                    <ul id="busca-cliente-opcoes" class="opcoes" role="listbox" aria-label="Clientes encontrados" hidden></ul>
+                </div>
+            </div>
+
+            <div class="cliente-escolhido" data-cliente="escolhido" data-testid="cliente-escolhido" hidden="@(!clienteEscolhido)">
+                <div>
+                    <strong data-cliente="nome-exibido">@Model.ClienteNome</strong>
+                    <span class="numero" data-cliente="cpf-exibido">@Model.ClienteCpf</span>
+                </div>
+                <button type="button" class="btn btn-link" data-cliente="trocar">Trocar cliente</button>
+            </div>
+            <span asp-validation-for="ClienteId" class="erro"></span>
+        </section>
+
+        <section class="cartao" aria-labelledby="titulo-itens">
+            <div class="cabecalho-do-cartao">
+                <h2 id="titulo-itens">Produtos</h2>
+                <p class="dica">Enter na quantidade abre a próxima linha.</p>
+            </div>
+
+            @if (erroDosItens is not null)
+            {
+                <div class="aviso aviso-falha" role="alert">@erroDosItens</div>
+            }
+
+            <div class="cabecalho-dos-itens" aria-hidden="true">
+                <span>Produto</span>
+                <span class="valor">Valor unitário</span>
+                <span class="valor">Quantidade</span>
+                <span class="valor">Subtotal</span>
+                <span></span>
+            </div>
+
+            <div class="itens" data-itens>
+                @for (var i = 0; i < Model.Itens.Count; i++)
+                {
+                    var item = Model.Itens[i];
+                    <div class="item-venda" data-testid="item-da-venda" data-item>
+                        <div class="campo">
+                            <label class="form-label rotulo-do-item" for="item-@i-produto">Produto</label>
+                            <div class="autocompletar">
+                                <input id="item-@i-produto" name="Itens[@i].ProdutoNome" value="@item.ProdutoNome"
+                                       type="text" class="form-control" role="combobox" aria-autocomplete="list"
+                                       aria-expanded="false" aria-controls="item-@i-produto-opcoes" autocomplete="off"
+                                       placeholder="Busque pelo nome" data-campo="ProdutoNome" />
+                                <ul id="item-@i-produto-opcoes" class="opcoes" role="listbox" aria-label="Produtos encontrados" hidden></ul>
+                            </div>
+                            <input type="hidden" name="Itens[@i].ProdutoId" value="@item.ProdutoId" data-campo="ProdutoId" />
+                            <span class="erro" data-erro="ProdutoId" data-valmsg-for="Itens[@i].ProdutoId">@ErroDe($"Itens[{i}].ProdutoId")</span>
+                        </div>
+                        <div class="campo">
+                            <label class="form-label rotulo-do-item" for="item-@i-valor">Valor unitário</label>
+                            <input id="item-@i-valor" name="Itens[@i].ValorUnitario" value="@Formato.Numero(item.ValorUnitario)"
+                                   type="text" class="form-control valor" inputmode="decimal" autocomplete="off"
+                                   placeholder="0,00" data-campo="ValorUnitario" />
+                            <span class="erro" data-erro="ValorUnitario" data-valmsg-for="Itens[@i].ValorUnitario">@ErroDe($"Itens[{i}].ValorUnitario")</span>
+                        </div>
+                        <div class="campo">
+                            <label class="form-label rotulo-do-item" for="item-@i-quantidade">Quantidade</label>
+                            <input id="item-@i-quantidade" name="Itens[@i].Quantidade" value="@item.Quantidade"
+                                   type="number" min="1" step="1" class="form-control valor" inputmode="numeric"
+                                   data-campo="Quantidade" />
+                            <span class="erro" data-erro="Quantidade" data-valmsg-for="Itens[@i].Quantidade">@ErroDe($"Itens[{i}].Quantidade")</span>
+                        </div>
+                        <div class="campo subtotal">
+                            <span class="rotulo-do-item">Subtotal</span>
+                            <output data-testid="subtotal" data-campo="Subtotal" aria-live="polite">@Formato.Moeda((item.Quantidade ?? 0) * (item.ValorUnitario ?? 0))</output>
+                        </div>
+                        <button type="button" class="remover" data-acao="remover-item" aria-label="Remover este produto">&times;</button>
+                    </div>
+                }
+            </div>
+
+            <button type="button" class="btn btn-outline-primary adicionar" data-acao="adicionar-item">Adicionar produto</button>
+        </section>
+    </div>
+
+    <aside class="cartao resumo-da-venda" aria-labelledby="titulo-resumo">
+        <h2 id="titulo-resumo">Resumo</h2>
+        <dl>
+            <dt>Itens</dt>
+            <dd data-resumo="itens">0</dd>
+            <dt class="total-rotulo">Total da venda</dt>
+            <dd class="total" data-testid="total-da-venda" aria-live="polite">R$ 0,00</dd>
+        </dl>
+        <button type="submit" class="btn btn-primary btn-lg w-100">Finalizar venda</button>
+        <p class="dica">Atalho: Ctrl + Enter.</p>
+        <a class="btn btn-link w-100" asp-action="Index">Cancelar</a>
+    </aside>
+</form>
+
+<template id="modelo-de-item">
+    <div class="item-venda" data-testid="item-da-venda" data-item>
+        <div class="campo">
+            <label class="form-label rotulo-do-item">Produto</label>
+            <div class="autocompletar">
+                <input type="text" class="form-control" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                       autocomplete="off" placeholder="Busque pelo nome" data-campo="ProdutoNome" />
+                <ul class="opcoes" role="listbox" aria-label="Produtos encontrados" hidden></ul>
+            </div>
+            <input type="hidden" data-campo="ProdutoId" />
+            <span class="erro" data-erro="ProdutoId"></span>
+        </div>
+        <div class="campo">
+            <label class="form-label rotulo-do-item">Valor unitário</label>
+            <input type="text" class="form-control valor" inputmode="decimal" autocomplete="off" placeholder="0,00"
+                   data-campo="ValorUnitario" />
+            <span class="erro" data-erro="ValorUnitario"></span>
+        </div>
+        <div class="campo">
+            <label class="form-label rotulo-do-item">Quantidade</label>
+            <input type="number" min="1" step="1" class="form-control valor" inputmode="numeric" data-campo="Quantidade" />
+            <span class="erro" data-erro="Quantidade"></span>
+        </div>
+        <div class="campo subtotal">
+            <span class="rotulo-do-item">Subtotal</span>
+            <output data-testid="subtotal" data-campo="Subtotal" aria-live="polite">R$ 0,00</output>
+        </div>
+        <button type="button" class="remover" data-acao="remover-item" aria-label="Remover este produto">&times;</button>
+    </div>
+</template>
+
+@section Scripts {
+    <script type="module" src="~/js/nova-venda.js" asp-append-version="true"></script>
+}

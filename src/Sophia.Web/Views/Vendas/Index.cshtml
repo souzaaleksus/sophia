@@ -1,0 +1,55 @@
+@model IReadOnlyList<VendaResumoDto>
+@{
+    ViewData["Title"] = "Vendas";
+}
+
+<div class="cabecalho-da-pagina">
+    <div>
+        <h1>Vendas</h1>
+        <p class="subtitulo">As mais recentes primeiro.</p>
+    </div>
+    <a class="btn btn-primary btn-lg" asp-action="Nova">Nova venda</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="vazio">
+        <p>Nenhuma venda registrada ainda.</p>
+        <a class="btn btn-primary" asp-action="Nova">Registrar a primeira venda</a>
+    </div>
+}
+else
+{
+    <div class="cartao tabela-rolavel">
+        <table class="tabela">
+            <thead>
+                <tr>
+                    <th scope="col">Nº</th>
+                    <th scope="col">Data</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col" class="valor">Itens</th>
+                    <th scope="col" class="valor">Total</th>
+                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var venda in Model)
+                {
+                    <tr>
+                        <td class="numero">@venda.Id</td>
+                        <td>@Formato.Data(venda.Data)</td>
+                        <td>
+                            <div class="destaque">@venda.ClienteNome</div>
+                            <div class="secundario numero">@venda.ClienteCpf</div>
+                        </td>
+                        <td class="valor">@venda.QuantidadeDeItens</td>
+                        <td class="valor destaque">@Formato.Moeda(venda.Total)</td>
+                        <td class="acoes">
+                            <a asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="Ver a venda @venda.Id">Ver</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

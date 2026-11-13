@@ -1,0 +1,18 @@
+@model int
+@{
+    var naoEncontrado = Model == StatusCodes.Status404NotFound;
+    ViewData["Title"] = naoEncontrado ? "Página não encontrada" : "Algo deu errado";
+}
+
+<div class="vazio">
+    <h1>@ViewData["Title"]</h1>
+    @if (naoEncontrado)
+    {
+        <p>O endereço não existe ou o registro foi excluído.</p>
+    }
+    else
+    {
+        <p>Não foi possível concluir a operação. Tente de novo em instantes.</p>
+    }
+    <a class="btn btn-primary" asp-controller="Vendas" asp-action="Index">Ir para as vendas</a>
+</div>

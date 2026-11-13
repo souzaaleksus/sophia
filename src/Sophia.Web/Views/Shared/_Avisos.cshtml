@@ -1,0 +1,8 @@
+@if (TempData[Avisos.ChaveDeSucesso] is string sucesso)
+{
+    <div class="aviso aviso-sucesso" role="status">@sucesso</div>
+}
+@if (TempData[Avisos.ChaveDeFalha] is string falha)
+{
+    <div class="aviso aviso-falha" role="alert">@falha</div>
+}

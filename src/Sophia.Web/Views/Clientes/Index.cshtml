@@ -1,0 +1,64 @@
+@model IReadOnlyList<ClienteDto>
+@{
+    ViewData["Title"] = "Clientes";
+    var busca = ViewData["Busca"] as string;
+}
+
+<div class="cabecalho-da-pagina">
+    <div>
+        <h1>Clientes</h1>
+        <p class="subtitulo">Quem compra da empresa.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Novo">Novo cliente</a>
+</div>
+
+<form class="busca" method="get" asp-action="Index" role="search">
+    <input type="search" name="busca" value="@busca" class="form-control"
+           placeholder="Buscar por CPF ou nome" aria-label="Buscar clientes por CPF ou nome" />
+    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+</form>
+
+@if (Model.Count == 0)
+{
+    <div class="vazio">
+        <p>Nenhum cliente encontrado.</p>
+        @if (string.IsNullOrWhiteSpace(busca))
+        {
+            <a class="btn btn-primary" asp-action="Novo">Cadastrar o primeiro cliente</a>
+        }
+    </div>
+}
+else
+{
+    <div class="cartao tabela-rolavel">
+        <table class="tabela">
+            <thead>
+                <tr>
+                    <th scope="col">Nome</th>
+                    <th scope="col">CPF</th>
+                    <th scope="col">Nascimento</th>
+                    <th scope="col">Contato</th>
+                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cliente in Model)
+                {
+                    <tr>
+                        <td class="destaque">@cliente.Nome</td>
+                        <td class="numero">@cliente.Cpf</td>
+                        <td>@Formato.Data(cliente.DataNascimento)</td>
+                        <td>
+                            <div>@cliente.Email</div>
+                            <div class="secundario">@cliente.Telefone</div>
+                        </td>
+                        <td class="acoes">
+                            <a asp-action="Editar" asp-route-id="@cliente.Id" aria-label="Editar @cliente.Nome">Editar</a>
+                            <a asp-action="Excluir" asp-route-id="@cliente.Id" class="perigo" aria-label="Excluir @cliente.Nome">Excluir</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -8,7 +8,7 @@ namespace Sophia.Integration.Tests.Apoio;
 public sealed partial class BancoDeTestes : IAsyncLifetime
 {
     private const string ServidorPadrao =
-        @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true";
+        @"Server=.\SQLEXPRESS;Integrated Security=true;TrustServerCertificate=true";
 
     private readonly string _nome = $"Sophia_Testes_{Guid.NewGuid():N}";
 
