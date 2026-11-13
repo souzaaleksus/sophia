@@ -103,7 +103,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Finalizar venda" }).ClickAsync();
 
         await Expect(_pagina.Locator("[data-valmsg-for=ClienteId]")).ToHaveTextAsync("Selecione o cliente.");
-        await Expect(Linha(0).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true })).ToHaveValueAsync("Caneta azul");
+        await Expect(ProdutoDaLinha(0)).ToHaveValueAsync("Caneta azul");
         await Expect(_pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 7,50");
     }
 
@@ -123,11 +123,107 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await Expect(linha).ToContainTextAsync("R$ 5,00");
     }
 
-    private ILocator Linha(int indice) => _pagina.GetByTestId("item-da-venda").Nth(indice);
+    [Fact]
+    public async Task F2_leva_a_busca_de_cliente()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _pagina.GetByLabel("Data da venda").FocusAsync();
+
+        await _pagina.Keyboard.PressAsync("F2");
+
+        await Expect(ComboboxDeCliente()).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    public async Task F2_com_cliente_escolhido_volta_a_buscar_outro_sem_perder_os_itens()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await EscolherClienteAsync("Maria", "Maria Santos");
+        await LancarAsync(0, "Caneta", "Caneta azul", "3");
+
+        await _pagina.Keyboard.PressAsync("F2");
+
+        await Expect(ComboboxDeCliente()).ToBeFocusedAsync();
+        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToBeHiddenAsync();
+        await EscolherClienteAsync("lima", "João Lima");
+        await Expect(ProdutoDaLinha(0)).ToHaveValueAsync("Caneta azul");
+    }
+
+    [Fact]
+    public async Task F4_abre_uma_nova_linha_de_produto_com_o_foco_nela()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await EscolherClienteAsync("Maria", "Maria Santos");
+        await LancarAsync(0, "Caneta", "Caneta azul", "3");
+
+        await _pagina.Keyboard.PressAsync("F4");
+
+        await Expect(_pagina.GetByTestId("item-da-venda")).ToHaveCountAsync(2);
+        await Expect(ProdutoDaLinha(1)).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    public async Task F4_aproveita_a_linha_vazia_em_vez_de_abrir_outra()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _pagina.GetByLabel("Data da venda").FocusAsync();
+
+        await _pagina.Keyboard.PressAsync("F4");
+
+        await Expect(_pagina.GetByTestId("item-da-venda")).ToHaveCountAsync(1);
+        await Expect(ProdutoDaLinha(0)).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    public async Task Ctrl_Enter_finaliza_a_venda()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await EscolherClienteAsync("Maria", "Maria Santos");
+        await LancarAsync(0, "Caneta", "Caneta azul", "2");
+
+        await _pagina.Keyboard.PressAsync("Control+Enter");
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Venda registrada.");
+    }
+
+    [Fact]
+    public async Task Esc_fecha_a_lista_de_sugestoes()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await ComboboxDeCliente().FillAsync("Maria");
+        await Expect(_pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Maria Santos" })).ToBeVisibleAsync();
+
+        await ComboboxDeCliente().PressAsync("Escape");
+
+        await Expect(_pagina.GetByRole(AriaRole.Option)).ToHaveCountAsync(0);
+        await Expect(ComboboxDeCliente()).ToHaveAttributeAsync("aria-expanded", "false");
+    }
+
+    [Fact]
+    public async Task O_visor_mostra_o_total_os_itens_e_as_unidades_lancadas()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await EscolherClienteAsync("Maria", "Maria Santos");
+        await LancarAsync(0, "Caneta", "Caneta azul", "10");
+        await Expect(_pagina.GetByTestId("itens-da-venda")).ToHaveTextAsync("1 item");
+        await Expect(_pagina.GetByTestId("unidades-da-venda")).ToHaveTextAsync("10 unidades");
+
+        await LancarAsync(1, "Cader", "Caderno 96 folhas", "2");
+
+        await Expect(_pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 62,80");
+        await Expect(_pagina.GetByTestId("itens-da-venda")).ToHaveTextAsync("2 itens");
+        await Expect(_pagina.GetByTestId("unidades-da-venda")).ToHaveTextAsync("12 unidades");
+    }
+
+    private ILocator Linha(int indice) =>_pagina.GetByTestId("item-da-venda").Nth(indice);
+
+    private ILocator ComboboxDeCliente() => _pagina.GetByRole(AriaRole.Combobox, new() { Name = "Cliente", Exact = true });
+
+    private ILocator ProdutoDaLinha(int indice) => Linha(indice).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true });
 
     private async Task EscolherClienteAsync(string termo, string nome)
     {
-        await _pagina.GetByRole(AriaRole.Combobox, new() { Name = "Cliente", Exact = true }).FillAsync(termo);
+        await ComboboxDeCliente().FillAsync(termo);
         await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = nome }).ClickAsync();
         await Expect(_pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync(nome);
     }
@@ -139,7 +235,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
             await _pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
         }
 
-        await Linha(linha).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true }).FillAsync(termo);
+        await ProdutoDaLinha(linha).FillAsync(termo);
         await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto }).ClickAsync();
         await Linha(linha).GetByLabel("Quantidade").FillAsync(quantidade);
     }
