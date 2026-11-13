@@ -1,5 +1,6 @@
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
+using Sophia.Application.Painel;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
 using Sophia.Domain.Clientes;
@@ -88,6 +89,23 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
             new ItemVendaDto("Caneta azul", 10, 2.50m, 25.00m),
             new ItemVendaDto("Caderno 96 folhas", 2, 18.90m, 37.80m));
         detalhe.Total.Should().Be(62.80m);
+    }
+
+    [Fact]
+    public async Task Resume_as_vendas_do_periodo_e_limita_as_ultimas()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var caderno = await CadastrarProdutoAsync("Caderno 96 folhas", 18.90m);
+        await RegistrarVendaAsync(maria, [new(caneta, 10, 2.50m), new(caderno, 1, 18.90m)]);
+        await RegistrarVendaAsync(maria, [new(caneta, 2, 2.50m)]);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+
+        (await repositorio.ResumirAsync(Hoje, Hoje)).Should().Be(new ResumoDoPeriodo(2, 48.90m));
+        (await repositorio.ResumirAsync(Hoje.AddDays(1), Hoje.AddDays(30))).Should().Be(ResumoDoPeriodo.Vazio);
+        (await repositorio.ListarAsync(limite: 1)).Should().ContainSingle().Which.Total.Should().Be(5.00m);
     }
 
     [Fact]

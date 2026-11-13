@@ -1,5 +1,6 @@
 using System.Globalization;
 using Sophia.Application.Clientes;
+using Sophia.Application.Painel;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
 using Sophia.Domain;
@@ -17,6 +18,7 @@ public sealed class Cenario
         Clientes = new ClienteServico(Banco.Clientes, Banco, Relogio);
         Produtos = new ProdutoServico(Banco.Produtos, Banco);
         Vendas = new VendaServico(Banco.Vendas, Banco.Clientes, Banco.Produtos, Banco, Relogio);
+        Painel = new PainelServico(Banco.Vendas, Relogio);
     }
 
     public BancoEmMemoria Banco { get; } = new();
@@ -28,6 +30,8 @@ public sealed class Cenario
     public ProdutoServico Produtos { get; }
 
     public VendaServico Vendas { get; }
+
+    public PainelServico Painel { get; }
 
     public Resultado? UltimoResultado { get; set; }
 

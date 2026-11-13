@@ -1,3 +1,4 @@
+using Sophia.Application.Painel;
 using Sophia.Application.Vendas;
 using Sophia.Domain.Vendas;
 
@@ -5,7 +6,7 @@ namespace Sophia.Tests.Fakes;
 
 internal sealed class VendaRepositorioEmMemoria(BancoEmMemoria banco) : IVendaRepositorio
 {
-    public Task<IReadOnlyList<VendaResumoDto>> ListarAsync(CancellationToken cancelamento = default)
+    public Task<IReadOnlyList<VendaResumoDto>> ListarAsync(int? limite = null, CancellationToken cancelamento = default)
     {
         var clientes = banco.TabelaDeClientes.Gravados.ToDictionary(c => c.Id);
         IReadOnlyList<VendaResumoDto> vendas = banco.TabelaDeVendas.Gravados
@@ -18,6 +19,7 @@ internal sealed class VendaRepositorioEmMemoria(BancoEmMemoria banco) : IVendaRe
                 clientes[v.ClienteId].Nome,
                 v.Itens.Count,
                 v.Total))
+            .Take(limite ?? int.MaxValue)
             .ToList();
 
         return Task.FromResult(vendas);
@@ -39,6 +41,12 @@ internal sealed class VendaRepositorioEmMemoria(BancoEmMemoria banco) : IVendaRe
 
         return Task.FromResult<VendaDetalheDto?>(
             new VendaDetalheDto(venda.Id, venda.Data, cliente.Cpf.Formatado, cliente.Nome, itens, venda.Total));
+    }
+
+    public Task<ResumoDoPeriodo> ResumirAsync(DateOnly inicio, DateOnly fim, CancellationToken cancelamento = default)
+    {
+        var doPeriodo = banco.TabelaDeVendas.Gravados.Where(v => v.Data >= inicio && v.Data <= fim).ToList();
+        return Task.FromResult(new ResumoDoPeriodo(doPeriodo.Count, doPeriodo.Sum(v => v.Total)));
     }
 
     public void Adicionar(Venda venda) => banco.TabelaDeVendas.Adicionar(venda);
