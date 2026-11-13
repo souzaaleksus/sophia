@@ -4,6 +4,10 @@ Aplicação web para o controle de vendas a clientes, em **ASP.NET Core MVC (.NE
 **SQL Server**, com cadastro de clientes, produtos e vendas.
 
 - [Especificação](#especificação)
+- [Como executar](#como-executar)
+- [Testes](#testes)
+- [Arquitetura](#arquitetura)
+- [Decisões](#decisões)
 - Script do banco: [`database/create-database.sql`](database/create-database.sql)
 - Cenários executáveis (BDD): [`tests/Sophia.Specs/Funcionalidades`](tests/Sophia.Specs/Funcionalidades)
 
@@ -111,14 +115,30 @@ Operações: listar as vendas, registrar uma nova e consultar o detalhe de uma v
 | Código | Requisito |
 |---|---|
 | RNF01 | ASP.NET Core MVC (.NET 8) com C#. |
-| RNF02 | SQL Server, acesso via Entity Framework Core. |
+| RNF02 | SQL Server (Express), acesso via Entity Framework Core. |
 | RNF03 | Banco com chaves primárias e estrangeiras, índices, campos obrigatórios e normalização; o script de criação é entregue em `database/create-database.sql`. |
 | RNF04 | Interface simples e moderna, em português do Brasil (datas `dd/mm/aaaa`, valores `R$ 1.234,56`), utilizável também em telas estreitas. |
 | RNF05 | Validação em dois níveis: no navegador, para resposta imediata, e no servidor, que é a fonte da verdade. |
 | RNF06 | Erros inesperados mostram uma página amigável, sem detalhes técnicos. |
 | RNF07 | Executável com Docker (`docker compose up`), sem instalar .NET ou SQL Server na máquina. |
 
-### 7. Modelo de dados
+### 7. Stack
+
+| Camada | Tecnologia | Por quê |
+|---|---|---|
+| Linguagem e plataforma | C# 12 · .NET 8 (LTS) | versão com suporte de longo prazo |
+| Web | ASP.NET Core MVC · Razor | pedido no enunciado; páginas renderizadas no servidor |
+| Interface | Bootstrap 5 · CSS próprio · JavaScript puro (módulos ES) | leve, sem etapa de build no front-end |
+| Acesso a dados | Entity Framework Core 8 | mapeamento explícito via Fluent API, sem migrations |
+| Banco de dados | SQL Server 2019 Express (local) · SQL Server 2022 Express (Docker) | edição gratuita do SQL Server |
+| Testes de unidade | xUnit · FluentAssertions | domínio e serviços isolados |
+| Especificação executável (BDD) | Reqnroll · Gherkin em português | os cenários deste documento rodam como testes |
+| Testes de integração | xUnit · SQL Server real | o banco é criado pelo próprio script entregue |
+| Testes de tela (E2E) | Playwright para .NET | navegador de verdade operando a aplicação |
+| Contêineres | Docker · Docker Compose | sobe banco e aplicação com um comando |
+| Integração contínua | GitHub Actions | compila e roda os testes a cada push |
+
+### 8. Modelo de dados
 
 ```
 Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
@@ -148,10 +168,166 @@ Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
 Subtotal e total não são gravados: são derivados dos itens. Guardar o valor calculado
 criaria duas fontes para o mesmo dado.
 
-### 8. Rastreabilidade
+### 9. Rastreabilidade
 
 | Requisito | Especificação executável | Testes unitários | Integração / tela |
 |---|---|---|---|
 | RF01 | `CadastroDeClientes.feature` | `Sophia.Domain.Tests` (Cpf, Cliente), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF02 | `CadastroDeProdutos.feature` | `Sophia.Domain.Tests` (Produto), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF03 | `RegistroDeVendas.feature` | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
+
+---
+
+## Como executar
+
+### Opção 1 — Docker (não precisa instalar .NET nem SQL Server)
+
+```bash
+docker compose up --build
+```
+
+Abra http://localhost:8080. O Compose sobe três serviços, nesta ordem:
+
+1. `banco` — SQL Server 2022 Express;
+2. `criar-banco` — roda `database/create-database.sql` e termina;
+3. `web` — a aplicação, que só sobe depois que o banco foi criado.
+
+A senha do usuário `sa` pode ser trocada pela variável `SOPHIA_SENHA_DO_BANCO`. O SQL Server
+fica exposto na porta `14333` para quem quiser consultar o banco.
+
+### Opção 2 — Visual Studio ou linha de comando, com SQL Server Express local
+
+Pré-requisitos: .NET 8 SDK e SQL Server Express (instância `.\SQLEXPRESS`).
+
+1. Crie o banco com o script entregue:
+
+   ```bash
+   sqlcmd -S .\SQLEXPRESS -E -C -i database/create-database.sql
+   ```
+
+   No SSMS, basta abrir o arquivo e executar (F5).
+
+2. Rode a aplicação:
+
+   ```bash
+   dotnet run --project src/Sophia.Web
+   ```
+
+   Ou abra `Sophia.sln` no Visual Studio e execute o projeto `Sophia.Web`.
+   A aplicação abre em http://localhost:5080.
+
+A conexão fica em `src/Sophia.Web/appsettings.json` (`ConnectionStrings:Sophia`). Para outra
+instância, troque ali ou use a variável de ambiente `ConnectionStrings__Sophia`.
+
+---
+
+## Testes
+
+```bash
+dotnet test
+```
+
+| Projeto | Tipo | O que cobre | Precisa de |
+|---|---|---|---|
+| `Sophia.Domain.Tests` | unidade | CPF, cliente, produto, venda, totais | nada |
+| `Sophia.Application.Tests` | unidade | serviços: duplicidade, exclusão bloqueada, conflito de concorrência | nada |
+| `Sophia.Specs` | BDD (Gherkin) | os cenários da especificação, em português | nada |
+| `Sophia.Integration.Tests` | integração | script do banco, mapeamento do EF, índices únicos e chaves estrangeiras | SQL Server |
+| `Sophia.E2E` | tela | cadastros e a venda completa no navegador | SQL Server e Chromium |
+
+Os testes de integração e de tela criam um banco temporário a partir de
+`database/create-database.sql` e o apagam ao final. O servidor usado é `.\SQLEXPRESS`; para
+outro, defina `SOPHIA_TESTES_SQLSERVER` com o texto de conexão (sem o nome do banco).
+
+Os testes de tela precisam do navegador do Playwright, instalado uma vez:
+
+```bash
+pwsh tests/Sophia.E2E/bin/Debug/net8.0/playwright.ps1 install chromium
+```
+
+Para usar o Google Chrome já instalado, defina `SOPHIA_E2E_CANAL=chrome`. Para **ver** o
+navegador trabalhando, defina `SOPHIA_E2E_VISIVEL=1`: a janela abre e cada passo é
+desacelerado.
+
+Cada funcionalidade seguiu o ciclo do TDD: o cenário ou o teste foi escrito antes do código,
+falhou, e o código veio em seguida até ficar verde. O histórico de commits mostra essa ordem.
+
+---
+
+## Arquitetura
+
+Clean Architecture em quatro projetos. As dependências apontam só para dentro:
+
+```
+Sophia.Web ─────────────► Sophia.Application ──► Sophia.Domain
+     │                           ▲
+     └──► Sophia.Infrastructure ─┘
+```
+
+| Projeto | Responsabilidade | Depende de |
+|---|---|---|
+| `Sophia.Domain` | entidades (`Cliente`, `Produto`, `Venda`, `ItemVenda`), o valor `Cpf` e todas as regras de negócio | nada |
+| `Sophia.Application` | casos de uso (`ClienteServico`, `ProdutoServico`, `VendaServico`), contratos de repositório, DTOs | Domain |
+| `Sophia.Infrastructure` | EF Core, repositórios, unidade de trabalho, relógio no fuso de Brasília | Application |
+| `Sophia.Web` | controllers, modelos de formulário, telas Razor, JavaScript | Application; Infrastructure só para registrar as dependências |
+
+Caminho de uma venda:
+
+1. a tela monta o formulário (`NovaVendaFormulario`) e o envia ao `VendasController`;
+2. o controller converte em `DadosVenda` e chama `IVendaServico.RegistrarAsync`;
+3. o serviço pede ao domínio `Venda.Registrar`, que valida e calcula; depois confere se o
+   cliente e os produtos existem e grava pela unidade de trabalho;
+4. o resultado volta como `Resultado`: sucesso com o número da venda, ou erros por campo, que o
+   controller põe no `ModelState` para aparecerem ao lado do campo certo.
+
+---
+
+## Decisões
+
+- **O domínio não lança exceção para regra de negócio.** `Cliente.Criar`, `Produto.Criar` e
+  `Venda.Registrar` devolvem um `Resultado` com todos os erros de uma vez, cada um com o nome do
+  campo. A tela mostra tudo o que está errado numa única tentativa, e exceção fica reservada
+  para o que é de fato inesperado.
+- **A unicidade é garantida duas vezes.** O serviço consulta antes de gravar, para dar a
+  mensagem certa; o índice único do banco garante a regra mesmo quando dois operadores gravam
+  ao mesmo tempo. A violação do índice é traduzida para a mesma mensagem amigável.
+- **O valor unitário é copiado para o item da venda.** O enunciado pede informar o valor em
+  cada lançamento; além disso, mudar o preço do produto depois não pode alterar vendas antigas.
+- **Totais não são gravados.** Subtotal e total são calculados a partir dos itens, no domínio e
+  na consulta. Gravar o resultado seria guardar o mesmo dado duas vezes.
+- **O script SQL é a única fonte do esquema.** Não há migrations: o enunciado pede o script, e
+  duas definições do banco abririam espaço para divergência. O mapeamento do EF espelha o
+  script, e os testes de integração criam o banco pelo script e usam o EF em cima dele; se os
+  dois divergirem, o teste quebra.
+- **Leitura por projeção.** Listagens e comprovante de venda são consultas que já devolvem os
+  DTOs, sem carregar as entidades inteiras.
+- **CPF e telefone guardados só com os dígitos**, exibidos com máscara. A busca de cliente
+  entende o termo: com letras, procura no nome; só com números, pelo começo do CPF.
+- **A data de hoje vem de um relógio injetável no fuso de Brasília**, e não do relógio do
+  servidor. No contêiner o relógio é UTC, e uma venda às 22h sugeriria a data do dia seguinte.
+- **Front-end sem framework.** A tela de venda usa JavaScript puro em módulos, com
+  autocompletar acessível por teclado e leitor de tela. Os totais na tela são conveniência: o
+  servidor recalcula tudo.
+- **O mesmo produto em duas linhas é recusado.** Na tela, escolher um produto já lançado soma 1
+  à quantidade da linha existente.
+- **Fora do escopo, de propósito:** autenticação, paginação das listas e cancelamento de venda.
+  A estrutura em camadas permite acrescentá-los sem mexer no que existe.
+
+---
+
+## Estrutura do repositório
+
+```
+database/create-database.sql      script completo do banco
+src/Sophia.Domain                 regras de negócio
+src/Sophia.Application            casos de uso
+src/Sophia.Infrastructure         EF Core e SQL Server
+src/Sophia.Web                    ASP.NET Core MVC
+tests/Sophia.Domain.Tests         unidade
+tests/Sophia.Application.Tests    unidade
+tests/Sophia.Specs                BDD (Gherkin)
+tests/Sophia.Integration.Tests    integração com SQL Server
+tests/Sophia.E2E                  tela com Playwright
+tests/Sophia.Tests.Fakes          banco em memória dos testes de unidade e BDD
+Dockerfile, docker-compose.yml    execução em contêineres
+```
