@@ -4,16 +4,15 @@
     var nomeDoMes = Formato.NomeDoMes(Model.Hoje);
 }
 
-@section Styles {
-    <link rel="stylesheet" href="~/css/caixa.css" asp-append-version="true" />
-}
-
 <div class="cabecalho-da-pagina">
     <div>
         <h1>Painel</h1>
         <p class="subtitulo">@Formato.DataPorExtenso(Model.Hoje)</p>
     </div>
-    <a class="btn btn-primary btn-lg" asp-controller="Vendas" asp-action="Nova">Nova venda</a>
+    <a class="btn btn-primary btn-lg" asp-controller="Vendas" asp-action="Nova">
+        <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
+        Nova venda
+    </a>
 </div>
 
 <section class="indicadores" aria-label="Resumo das vendas">
@@ -45,8 +44,12 @@
     @if (Model.UltimasVendas.Count == 0)
     {
         <div class="vazio vazio-embutido">
-            <p>Nenhuma venda registrada ainda.</p>
-            <a class="btn btn-primary" asp-controller="Vendas" asp-action="Nova">Registrar a primeira venda</a>
+            <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-carrinho" /></svg></span>
+            <p class="vazio-titulo">Nenhuma venda registrada ainda.</p>
+            <a class="btn btn-primary" asp-controller="Vendas" asp-action="Nova">
+                <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
+                Registrar a primeira venda
+            </a>
         </div>
     }
     else

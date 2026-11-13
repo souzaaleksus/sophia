@@ -674,27 +674,6 @@ a:hover {
     margin: 0;
 }
 
-.nova-venda {
-    align-items: start;
-    display: grid;
-    gap: 1.25rem;
-    grid-template-columns: minmax(0, 1fr) 18rem;
-}
-
-.nova-venda > .aviso {
-    grid-column: 1 / -1;
-}
-
-.nova-venda-principal {
-    display: grid;
-    gap: 1.25rem;
-}
-
-.nova-venda-principal > .cartao,
-.resumo-da-venda {
-    padding: 1.25rem 1.5rem;
-}
-
 .cabecalho-do-cartao {
     align-items: flex-end;
     display: flex;
@@ -702,14 +681,6 @@ a:hover {
     gap: 1rem;
     justify-content: space-between;
     margin-bottom: 1rem;
-}
-
-.campo-data {
-    width: 11rem;
-}
-
-.campo-data .erro {
-    min-height: 0;
 }
 
 .dica {
@@ -759,126 +730,11 @@ a:hover {
     cursor: default;
 }
 
-.cliente-escolhido {
-    align-items: center;
-    background: var(--cor-primaria-suave);
-    border: 1px solid color-mix(in srgb, var(--cor-primaria) 30%, transparent);
-    border-radius: 10px;
-    display: flex;
-    justify-content: space-between;
-    padding: 0.75rem 1rem;
-}
-
-.cliente-escolhido strong {
-    display: block;
-    font-size: 1.05rem;
-}
-
-.cliente-escolhido .numero {
-    color: var(--cor-texto-suave);
-}
-
-.cabecalho-dos-itens,
-.item-venda {
-    align-items: start;
-    display: grid;
-    gap: 0.75rem;
-    grid-template-columns: minmax(0, 1fr) 8.5rem 7rem 8.5rem 2.25rem;
-}
-
-.cabecalho-dos-itens {
-    border-bottom: 1px solid var(--cor-borda);
-    color: var(--cor-texto-suave);
-    font-size: 0.85rem;
-    font-weight: 600;
-    padding-bottom: 0.5rem;
-}
-
-.item-venda {
-    border-bottom: 1px solid var(--cor-borda);
-    padding-block: 0.75rem 0.25rem;
-}
-
-.rotulo-do-item {
-    border: 0;
-    clip: rect(0 0 0 0);
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
-}
-
-.item-venda .subtotal {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    padding-top: 0.4rem;
-    text-align: right;
-}
-
-.remover {
-    background: transparent;
-    border: 0;
-    border-radius: 8px;
-    color: var(--cor-texto-suave);
-    font-size: 1.4rem;
-    height: 2.35rem;
-    line-height: 1;
-}
-
-.remover:hover {
-    background: var(--cor-perigo-fundo);
-    color: var(--cor-perigo);
-}
-
-.adicionar {
-    margin-top: 1rem;
-}
-
-.resumo-da-venda {
-    position: sticky;
-    top: 1.25rem;
-}
-
-.resumo-da-venda h2 {
-    margin-bottom: 1rem;
-}
-
-.linha-do-resumo {
-    align-items: baseline;
-    display: flex;
-    font-variant-numeric: tabular-nums;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-}
-
-.linha-do-resumo > span:first-child {
-    color: var(--cor-texto-suave);
-    font-weight: 500;
-}
-
-.linha-do-total {
-    border-top: 1px solid var(--cor-borda);
-    margin: 0.75rem 0 1.25rem;
-    padding-top: 0.75rem;
-}
-
-.linha-do-total > span:first-child {
-    color: var(--cor-texto);
-}
-
-.resumo-da-venda .total,
 .tabela .total {
     color: var(--cor-primaria);
     font-size: 1.5rem;
     font-variant-numeric: tabular-nums;
     font-weight: 800;
-}
-
-.resumo-da-venda .dica {
-    margin-top: 0.5rem;
-    text-align: center;
 }
 
 .comprovante {
@@ -912,89 +768,66 @@ a:hover {
 @media (min-width: 768px) {
     .marca {
         margin-right: 1rem;
+
     }
 
     .ferramentas-do-topo {
         margin-left: 0;
         order: 1;
-    }
-}
 
-@media (max-width: 991.98px) {
-    .nova-venda {
-        grid-template-columns: 1fr;
-    }
-
-    .resumo-da-venda {
-        position: static;
     }
 }
 
 @media (max-width: 767.98px) {
     .barra-superior .navbar-nav {
         padding-block: 0.5rem 0.25rem;
-    }
 
-    .cabecalho-dos-itens {
-        display: none;
-    }
-
-    .item-venda {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .item-venda > .campo:first-child {
-        grid-column: 1 / -1;
-    }
-
-    .rotulo-do-item {
-        clip: auto;
-        height: auto;
-        margin: 0 0 0.35rem;
-        position: static;
-        width: auto;
-    }
-
-    .item-venda .subtotal {
-        text-align: left;
     }
 }
 
 @media (max-width: 575.98px) {
     h1 {
         font-size: 1.45rem;
+
     }
 
     .conteudo {
         padding-block: 1.25rem;
+
     }
 
     .cabecalho-da-pagina {
         align-items: stretch;
         flex-direction: column;
+
     }
 
     .cabecalho-da-pagina > .btn,
     .cabecalho-da-pagina > div:last-child:not(:first-child) > * {
         flex: 1;
+
     }
 
     .coluna-opcional {
         display: none;
+
     }
 
     .apenas-no-celular {
         display: block;
+
     }
 
     .tabela th,
     .tabela td {
         padding-inline: 0.6rem;
+
     }
 
     .acao {
         margin-left: 0;
         padding: 0.45rem;
+
     }
 
     .acao-texto {
@@ -1006,20 +839,24 @@ a:hover {
         position: absolute;
         white-space: nowrap;
         width: 1px;
+
     }
 
     .formulario {
         padding: 1.25rem;
+
     }
 
     .vazio {
         padding: 2.25rem 1.25rem;
+
     }
 }
 
 @media (max-width: 399.98px) {
     .botao-nova-venda {
         padding-inline: 0.6rem;
+
     }
 
     .texto-nova-venda {
@@ -1031,6 +868,7 @@ a:hover {
         position: absolute;
         white-space: nowrap;
         width: 1px;
+
     }
 }
 
@@ -1041,6 +879,7 @@ a:hover {
         animation-duration: 0.01ms !important;
         scroll-behavior: auto !important;
         transition-duration: 0.01ms !important;
+
     }
 }
 
@@ -1051,14 +890,134 @@ a:hover {
     .aviso,
     .pular-para-o-conteudo {
         display: none !important;
+
     }
 
     body {
         background: #ffffff;
+
     }
 
     .cartao {
         border: 0;
         box-shadow: none;
+
+    }
+}
+
+:root {
+    --cor-visor-fundo: #0a2e25;
+    --cor-visor-texto: #d7f5e6;
+}
+
+[data-bs-theme=dark] {
+    --cor-visor-fundo: #05190f;
+    --cor-visor-texto: #c6f1da;
+}
+
+.visor {
+    background: var(--cor-visor-fundo);
+    border-radius: var(--raio);
+    box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, var(--cor-visor-texto) 14%, transparent),
+        inset 0 2px 12px rgb(0 0 0 / 35%);
+    color: var(--cor-visor-texto);
+    container-type: inline-size;
+    padding: 0.9rem 1.25rem 1rem;
+}
+
+.visor-rotulo {
+    color: color-mix(in srgb, var(--cor-visor-texto) 75%, transparent);
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.visor-valor {
+    display: block;
+    font-size: clamp(1.75rem, 15cqi, 3rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    margin-top: 0.35rem;
+    text-align: right;
+    text-shadow: 0 0 10px color-mix(in srgb, var(--cor-visor-texto) 18%, transparent);
+    white-space: nowrap;
+}
+
+.visor-moeda {
+    color: color-mix(in srgb, var(--cor-visor-texto) 75%, transparent);
+    font-size: 0.45em;
+    font-weight: 500;
+    margin-right: 0.1em;
+}
+
+.visor-detalhe {
+    color: color-mix(in srgb, var(--cor-visor-texto) 75%, transparent);
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+    gap: 0.25rem 0.75rem;
+    justify-content: flex-end;
+    margin: 0.5rem 0 0;
+}
+
+.visor-detalhe > * + * {
+    border-left: 1px solid color-mix(in srgb, var(--cor-visor-texto) 30%, transparent);
+    padding-left: 0.75rem;
+}
+
+.indicadores {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
+    margin-bottom: 1.5rem;
+}
+
+.indicador {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+}
+
+.indicador-rotulo {
+    color: var(--cor-texto-suave);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.indicador-valor {
+    font-size: 1.6rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.indicador-detalhe {
+    color: var(--cor-texto-suave);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.ultimas-vendas .cabecalho-do-cartao {
+    padding: 1rem 1.25rem 0;
+}
+
+.vazio-embutido {
+    border: 0;
+    box-shadow: none;
+}
+
+@media (max-width: 767.98px) {
+    .indicadores {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .indicadores .visor {
+        grid-column: 1 / -1;
     }
 }
