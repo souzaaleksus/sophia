@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.vscode/
+.idea/
+.playwright-mcp/
+tests/
+**/TestResults/
+*.pdf
+*.md
