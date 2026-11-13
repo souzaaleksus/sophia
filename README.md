@@ -127,7 +127,7 @@ ticket médio do mês corrente e as cinco vendas mais recentes, com atalho para 
 | RNF01 | ASP.NET Core MVC (.NET 8) com C#. |
 | RNF02 | SQL Server (Express), acesso via Entity Framework Core. |
 | RNF03 | Banco com chaves primárias e estrangeiras, índices, campos obrigatórios e normalização; o script de criação é entregue em `database/create-database.sql`. |
-| RNF04 | Interface simples e moderna, em português do Brasil (datas `dd/mm/aaaa`, valores `R$ 1.234,56`), utilizável também em telas estreitas. |
+| RNF04 | Interface simples e moderna, em português do Brasil (datas `dd/mm/aaaa`, valores `R$ 1.234,56`), utilizável também em telas estreitas, com tema claro, escuro ou automático. |
 | RNF05 | Validação em dois níveis: no navegador, para resposta imediata, e no servidor, que é a fonte da verdade. |
 | RNF06 | Erros inesperados mostram uma página amigável, sem detalhes técnicos. |
 | RNF07 | Executável com Docker (`docker compose up`), sem instalar .NET ou SQL Server na máquina. |
@@ -138,7 +138,8 @@ ticket médio do mês corrente e as cinco vendas mais recentes, com atalho para 
 |---|---|---|
 | Linguagem e plataforma | C# 12 · .NET 8 (LTS) | versão com suporte de longo prazo |
 | Web | ASP.NET Core MVC · Razor | pedido no enunciado; páginas renderizadas no servidor |
-| Interface | Bootstrap 5 · CSS próprio · JavaScript puro (módulos ES) | leve, sem etapa de build no front-end |
+| Interface | Bootstrap 5.3 · CSS próprio · JavaScript puro (módulos ES) | leve, sem etapa de build no front-end; tema escuro nativo |
+| Tipografia e ícones | Manrope (Google Fonts) · ícones Lucide (licença ISC) em sprite SVG | legibilidade no balcão, algarismos tabulares nos valores |
 | Acesso a dados | Entity Framework Core 8 | mapeamento explícito via Fluent API, sem migrations |
 | Banco de dados | SQL Server 2019 Express (local) · SQL Server 2022 Express (Docker) | edição gratuita do SQL Server |
 | Testes de unidade | xUnit · FluentAssertions | domínio e serviços isolados |
