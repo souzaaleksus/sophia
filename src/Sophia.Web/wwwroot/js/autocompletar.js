@@ -30,7 +30,7 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
         } else if (evento.key === 'ArrowUp') {
             evento.preventDefault();
             destacar(Math.max(ativo - 1, 0));
-        } else if (evento.key === 'Enter' && ativo >= 0) {
+        } else if (evento.key === 'Enter' && !evento.ctrlKey && !evento.metaKey && ativo >= 0) {
             evento.preventDefault();
             evento.stopPropagation();
             escolher(ativo);

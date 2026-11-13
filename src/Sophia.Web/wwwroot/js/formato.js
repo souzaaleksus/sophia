@@ -1,5 +1,6 @@
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const decimal = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const inteiro = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
 
 export function formatarMoeda(valor) {
     return moeda.format(valor);
@@ -7,6 +8,10 @@ export function formatarMoeda(valor) {
 
 export function formatarDecimal(valor) {
     return decimal.format(valor);
+}
+
+export function formatarContagem(quantidade, singular, plural) {
+    return `${inteiro.format(quantidade)} ${quantidade === 1 ? singular : plural}`;
 }
 
 export function lerDecimal(texto) {

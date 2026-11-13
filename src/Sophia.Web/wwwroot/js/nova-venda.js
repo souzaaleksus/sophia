@@ -1,13 +1,17 @@
 import { buscarJson, criarAutocompletar } from './autocompletar.js';
-import { emCentavos, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from './formato.js';
+import { emCentavos, formatarContagem, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from './formato.js';
 
 const formulario = document.getElementById('nova-venda');
 const areaDosItens = formulario.querySelector('[data-itens]');
 const modeloDeItem = document.getElementById('modelo-de-item');
 const totalDaVenda = formulario.querySelector('[data-testid=total-da-venda]');
-const quantidadeDeItens = formulario.querySelector('[data-resumo=itens]');
+const valorNoVisor = totalDaVenda.querySelector('[data-visor=valor]');
+const itensDaVenda = formulario.querySelector('[data-testid=itens-da-venda]');
+const unidadesDaVenda = formulario.querySelector('[data-testid=unidades-da-venda]');
+const movimentoReduzido = window.matchMedia('(prefers-reduced-motion: reduce)');
+const camposDoItem = ['ProdutoId', 'ProdutoNome', 'ValorUnitario', 'Quantidade'];
 
-prepararCliente();
+const cliente = prepararCliente();
 areaDosItens.querySelectorAll('[data-item]').forEach(prepararItem);
 renumerarItens();
 recalcularTotais();
@@ -15,13 +19,16 @@ recalcularTotais();
 formulario.querySelector('[data-acao=adicionar-item]').addEventListener('click', () => adicionarItem().focus());
 
 formulario.addEventListener('keydown', evento => {
-    if (evento.key !== 'Enter' || evento.target.tagName !== 'INPUT') {
-        return;
+    if (evento.key === 'Enter' && !evento.ctrlKey && evento.target.tagName === 'INPUT') {
+        evento.preventDefault();
     }
+});
 
-    evento.preventDefault();
-    if (evento.ctrlKey) {
-        formulario.requestSubmit();
+document.addEventListener('keydown', evento => {
+    const atalho = atalhoDe(evento);
+    if (atalho) {
+        evento.preventDefault();
+        atalho();
     }
 });
 
@@ -29,6 +36,22 @@ formulario.addEventListener('submit', () => {
     descartarLinhasEmBranco();
     renumerarItens();
 });
+
+function atalhoDe(evento) {
+    if (evento.key === 'F2' && !evento.ctrlKey && !evento.altKey) {
+        return () => cliente.buscarOutro();
+    }
+
+    if (evento.key === 'F4' && !evento.ctrlKey && !evento.altKey) {
+        return focarProdutoLivre;
+    }
+
+    if (evento.key === 'Enter' && (evento.ctrlKey || evento.metaKey)) {
+        return () => formulario.requestSubmit();
+    }
+
+    return null;
+}
 
 function prepararCliente() {
     const campo = nome => formulario.querySelector(`[data-cliente=${nome}]`);
@@ -38,28 +61,42 @@ function prepararCliente() {
 
     criarAutocompletar(entrada, {
         buscar: termo => buscarJson('/Clientes/Buscar', termo),
-        descrever: cliente => ({ principal: cliente.nome, secundario: cliente.cpf }),
-        aoEscolher: cliente => {
-            campo('id').value = cliente.id;
-            campo('nome').value = cliente.nome;
-            campo('cpf').value = cliente.cpf;
-            campo('nome-exibido').textContent = cliente.nome;
-            campo('cpf-exibido').textContent = cliente.cpf;
+        descrever: encontrado => ({ principal: encontrado.nome, secundario: encontrado.cpf }),
+        aoEscolher: encontrado => {
+            campo('id').value = encontrado.id;
+            campo('nome').value = encontrado.nome;
+            campo('cpf').value = encontrado.cpf;
+            campo('nome-exibido').textContent = encontrado.nome;
+            campo('cpf-exibido').textContent = encontrado.cpf;
             busca.hidden = true;
             escolhido.hidden = false;
-            areaDosItens.querySelector('[data-campo=ProdutoNome]')?.focus();
+            focarProdutoLivre();
         },
     });
 
-    campo('trocar').addEventListener('click', () => {
-        campo('id').value = '';
-        campo('nome').value = '';
-        campo('cpf').value = '';
-        escolhido.hidden = true;
-        busca.hidden = false;
-        entrada.value = '';
+    function buscarOutro() {
+        if (!escolhido.hidden) {
+            campo('id').value = '';
+            campo('nome').value = '';
+            campo('cpf').value = '';
+            escolhido.hidden = true;
+            busca.hidden = false;
+            entrada.value = '';
+        }
+
         entrada.focus();
-    });
+        entrada.select();
+    }
+
+    campo('trocar').addEventListener('click', buscarOutro);
+
+    return { buscarOutro };
+}
+
+function focarProdutoLivre() {
+    const livre = [...areaDosItens.querySelectorAll('[data-item]')].find(estaEmBranco);
+    const produto = livre ? livre.querySelector('[data-campo=ProdutoNome]') : adicionarItem();
+    produto.focus();
 }
 
 function adicionarItem() {
@@ -79,6 +116,7 @@ function prepararItem(item) {
         descrever: produto => ({ principal: produto.nome, secundario: formatarMoeda(produto.valorUnitario) }),
         aoDigitar: () => {
             campo('ProdutoId').value = '';
+            recalcularTotais();
         },
         aoEscolher: produto => escolherProduto(item, produto),
     });
@@ -92,7 +130,7 @@ function prepararItem(item) {
     });
     campo('Quantidade').addEventListener('input', recalcularTotais);
     campo('Quantidade').addEventListener('keydown', evento => {
-        if (evento.key === 'Enter' && !evento.ctrlKey) {
+        if (evento.key === 'Enter' && !evento.ctrlKey && !evento.metaKey) {
             evento.preventDefault();
             evento.stopPropagation();
             adicionarItem().focus();
@@ -130,21 +168,22 @@ function escolherProduto(item, produto) {
 }
 
 function removerItem(item) {
+    const proximo = item.nextElementSibling ?? item.previousElementSibling;
     item.remove();
-    if (!areaDosItens.querySelector('[data-item]')) {
-        adicionarItem();
-    }
+    const foco = proximo ? proximo.querySelector('[data-campo=ProdutoNome]') : adicionarItem();
 
     renumerarItens();
     recalcularTotais();
+    foco.focus();
+}
+
+function estaEmBranco(item) {
+    return camposDoItem.every(nome => item.querySelector(`[data-campo=${nome}]`).value.trim() === '');
 }
 
 function descartarLinhasEmBranco() {
     areaDosItens.querySelectorAll('[data-item]').forEach(item => {
-        const preenchidos = ['ProdutoId', 'ProdutoNome', 'ValorUnitario', 'Quantidade']
-            .map(nome => item.querySelector(`[data-campo=${nome}]`).value.trim())
-            .filter(valor => valor !== '');
-        if (preenchidos.length === 0) {
+        if (estaEmBranco(item)) {
             item.remove();
         }
     });
@@ -177,7 +216,8 @@ function renumerarItens() {
 
 function recalcularTotais() {
     let totalEmCentavos = 0;
-    let lancados = 0;
+    let itens = 0;
+    let unidades = 0;
 
     areaDosItens.querySelectorAll('[data-item]').forEach(item => {
         const valor = lerDecimal(item.querySelector('[data-campo=ValorUnitario]').value) ?? 0;
@@ -187,10 +227,23 @@ function recalcularTotais() {
         item.querySelector('[data-campo=Subtotal]').textContent = formatarMoeda(subtotalEmCentavos / 100);
         totalEmCentavos += subtotalEmCentavos;
         if (item.querySelector('[data-campo=ProdutoId]').value) {
-            lancados += 1;
+            itens += 1;
+            unidades += quantidade;
         }
     });
 
-    totalDaVenda.textContent = formatarMoeda(totalEmCentavos / 100);
-    quantidadeDeItens.textContent = lancados;
+    mostrarNoVisor(formatarDecimal(totalEmCentavos / 100));
+    itensDaVenda.textContent = formatarContagem(itens, 'item', 'itens');
+    unidadesDaVenda.textContent = formatarContagem(unidades, 'unidade', 'unidades');
+}
+
+function mostrarNoVisor(valor) {
+    if (valorNoVisor.textContent === valor) {
+        return;
+    }
+
+    valorNoVisor.textContent = valor;
+    if (!movimentoReduzido.matches) {
+        totalDaVenda.animate([{ opacity: 0.45 }, { opacity: 1 }], { duration: 180, easing: 'ease-out' });
+    }
 }

@@ -1,0 +1,273 @@
+.caixa {
+    align-items: start;
+    display: grid;
+    gap: 1.25rem;
+    grid-template-areas:
+        "itens cliente"
+        "itens fechamento";
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    grid-template-rows: auto 1fr;
+}
+
+.caixa-cliente {
+    grid-area: cliente;
+    padding: 1.25rem;
+}
+
+.caixa-itens {
+    align-self: stretch;
+    grid-area: itens;
+    padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.caixa-fechamento {
+    display: grid;
+    gap: 0.75rem;
+    grid-area: fechamento;
+    position: sticky;
+    top: 1rem;
+}
+
+.caixa-cabecalho-do-cartao {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.caixa kbd {
+    background: var(--cor-fundo);
+    border: 1px solid var(--cor-borda);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    box-shadow: none;
+    color: var(--cor-texto);
+    font-family: var(--fonte);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.1rem 0.4rem;
+    white-space: nowrap;
+}
+
+.caixa-dica-de-teclado {
+    line-height: 1.9;
+}
+
+.caixa-fechamento .caixa-dica-de-teclado {
+    text-align: center;
+}
+
+.caixa-cliente-escolhido {
+    align-items: center;
+    background: var(--cor-primaria-suave);
+    border: 1px solid var(--cor-borda);
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+}
+
+.caixa-cliente-escolhido strong {
+    display: block;
+    font-size: 1.05rem;
+}
+
+.caixa-cliente-escolhido .numero {
+    color: var(--cor-texto-suave);
+}
+
+.caixa-cliente-escolhido .btn-link {
+    padding-inline: 0;
+}
+
+.caixa-data {
+    margin-top: 1rem;
+}
+
+.caixa-data .erro {
+    min-height: 0;
+}
+
+.caixa-cabecalho-dos-itens,
+.caixa-item {
+    align-items: start;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 1.5rem minmax(0, 1fr) 8rem 6.5rem 8rem 2.25rem;
+}
+
+.caixa-cabecalho-dos-itens::before {
+    content: "";
+}
+
+.caixa-cabecalho-dos-itens {
+    border-bottom: 1px solid var(--cor-borda);
+    color: var(--cor-texto-suave);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding-bottom: 0.5rem;
+}
+
+.caixa-lista-de-itens {
+    counter-reset: item;
+}
+
+.caixa-item {
+    border-bottom: 1px solid var(--cor-borda);
+    counter-increment: item;
+    padding-block: 0.6rem 0.15rem;
+}
+
+.caixa-item::before {
+    color: var(--cor-texto-suave);
+    content: counter(item);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    padding-top: 0.5rem;
+    text-align: right;
+}
+
+.caixa-rotulo {
+    border: 0;
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+.caixa-subtotal {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    padding-top: 0.45rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.caixa-remover {
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: var(--cor-texto-suave);
+    font-size: 1.4rem;
+    height: 2.35rem;
+    line-height: 1;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    width: 2.25rem;
+}
+
+.caixa-remover:hover {
+    background: var(--cor-perigo-fundo);
+    color: var(--cor-perigo);
+}
+
+.caixa-novo-item {
+    align-items: center;
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1rem;
+}
+
+.caixa-finalizar {
+    font-weight: 600;
+}
+
+.caixa button:focus-visible,
+.caixa a:focus-visible {
+    outline: 3px solid var(--cor-primaria);
+    outline-offset: 2px;
+}
+
+@media (max-width: 991.98px) {
+    .caixa {
+        grid-template-areas:
+            "cliente"
+            "itens"
+            "fechamento";
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
+    }
+
+    .caixa-fechamento {
+        position: static;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .caixa-cliente,
+    .caixa-itens {
+        padding: 1rem;
+    }
+
+    .caixa .atalho,
+    .caixa-dica-de-teclado {
+        display: none;
+    }
+
+    .caixa-cabecalho-dos-itens {
+        display: none;
+    }
+
+    .caixa-item {
+        grid-template-areas:
+            "produto produto remover"
+            "valor quantidade quantidade"
+            "subtotal subtotal subtotal";
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 2.25rem;
+        padding-block: 0.75rem;
+    }
+
+    .caixa-item::before {
+        display: none;
+    }
+
+    .caixa-produto {
+        grid-area: produto;
+    }
+
+    .caixa-valor {
+        grid-area: valor;
+    }
+
+    .caixa-quantidade {
+        grid-area: quantidade;
+    }
+
+    .caixa-subtotal {
+        display: flex;
+        grid-area: subtotal;
+        justify-content: space-between;
+        padding-top: 0;
+    }
+
+    .caixa-remover {
+        grid-area: remover;
+        margin-top: 1.75rem;
+    }
+
+    .caixa-rotulo {
+        clip: auto;
+        height: auto;
+        margin: 0 0 0.35rem;
+        position: static;
+        width: auto;
+    }
+
+    .caixa-subtotal .caixa-rotulo {
+        color: var(--cor-texto-suave);
+        font-weight: 500;
+        margin: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .caixa-remover {
+        transition: none;
+    }
+}
