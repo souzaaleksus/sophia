@@ -83,6 +83,14 @@ A tela de venda:
 
 Operações: listar as vendas, registrar uma nova e consultar o detalhe de uma venda.
 
+A tela é pensada para o balcão e funciona inteira pelo teclado: **F2** busca o cliente, **F4**
+lança um produto, **Enter** na quantidade abre a próxima linha e **Ctrl+Enter** finaliza.
+
+#### RF04 — Painel
+
+A página inicial resume o movimento: quantidade e total das vendas de hoje, quantidade, total e
+ticket médio do mês corrente e as cinco vendas mais recentes, com atalho para uma nova venda.
+
 ### 5. Regras de negócio
 
 | Código | Regra | Mensagem ao usuário | Cenário |
@@ -109,6 +117,8 @@ Operações: listar as vendas, registrar uma nova e consultar o detalhe de uma v
 | RN20 | Mesmo produto não se repete na venda | Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior. | Vendas › Não lançar o mesmo produto duas vezes |
 | RN21 | O valor do item é o praticado na venda: mudar o preço do produto depois não altera vendas já feitas | — | Vendas › O valor lançado na venda não muda quando o preço do produto muda |
 | RN22 | Subtotal e total são sempre calculados pelo sistema, nunca aceitos prontos da tela | — | Vendas › Registrar uma venda com vários produtos |
+| RN23 | O mês do painel vai do dia 1º até hoje | — | Painel › Totais do dia e do mês |
+| RN24 | Ticket médio = total do mês ÷ número de vendas do mês, arredondado aos centavos; sem vendas, é zero | — | Painel › Totais do dia e do mês |
 
 ### 6. Requisitos não funcionais
 
@@ -175,6 +185,7 @@ criaria duas fontes para o mesmo dado.
 | RF01 | `CadastroDeClientes.feature` | `Sophia.Domain.Tests` (Cpf, Cliente), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF02 | `CadastroDeProdutos.feature` | `Sophia.Domain.Tests` (Produto), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF03 | `RegistroDeVendas.feature` | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
+| RF04 | `PainelDeVendas.feature` | `Sophia.Application.Tests` (PainelServico, ResumoDoPeriodo) | `Sophia.Integration.Tests`, `Sophia.E2E` |
 
 ---
 
