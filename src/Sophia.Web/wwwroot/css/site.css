@@ -310,6 +310,24 @@ a {
     margin-bottom: 0.35rem;
 }
 
+.btn-link {
+    color: var(--cor-texto-suave);
+    text-decoration: none;
+}
+
+.btn-link:hover {
+    color: var(--cor-primaria);
+}
+
+.voltar {
+    margin-top: 1rem;
+}
+
+.erro:empty {
+    margin-top: 0;
+    min-height: 0;
+}
+
 .rodape-do-formulario {
     align-items: center;
     border-top: 1px solid var(--cor-borda);
@@ -508,29 +526,27 @@ a {
     margin-bottom: 1rem;
 }
 
-.resumo-da-venda dl {
-    display: grid;
-    gap: 0.5rem;
-    grid-template-columns: 1fr auto;
-    margin: 0 0 1.25rem;
+.linha-do-resumo {
+    align-items: baseline;
+    display: flex;
+    font-variant-numeric: tabular-nums;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
 }
 
-.resumo-da-venda dt {
+.linha-do-resumo > span:first-child {
     color: var(--cor-texto-suave);
     font-weight: 500;
 }
 
-.resumo-da-venda dd {
-    font-variant-numeric: tabular-nums;
-    margin: 0;
-    text-align: right;
+.linha-do-total {
+    border-top: 1px solid var(--cor-borda);
+    margin: 0.75rem 0 1.25rem;
+    padding-top: 0.75rem;
 }
 
-.resumo-da-venda .total-rotulo {
-    align-self: end;
-    border-top: 1px solid var(--cor-borda);
+.linha-do-total > span:first-child {
     color: var(--cor-texto);
-    padding-top: 0.75rem;
 }
 
 .resumo-da-venda .total,
@@ -538,11 +554,6 @@ a {
     color: var(--cor-primaria);
     font-size: 1.5rem;
     font-weight: 700;
-}
-
-.resumo-da-venda .total {
-    border-top: 1px solid var(--cor-borda);
-    padding-top: 0.75rem;
 }
 
 .resumo-da-venda .dica {
@@ -586,10 +597,7 @@ a {
     }
 
     .resumo-da-venda {
-        bottom: 0;
-        position: sticky;
-        top: auto;
-        z-index: 10;
+        position: static;
     }
 }
 

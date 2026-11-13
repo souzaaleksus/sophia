@@ -34,7 +34,7 @@
             <input type="hidden" asp-for="ClienteCpf" data-cliente="cpf" />
 
             <div class="busca-de-cliente" data-cliente="busca" hidden="@clienteEscolhido">
-                <label for="busca-cliente" class="form-label">Cliente</label>
+                <label for="busca-cliente" class="visually-hidden">Cliente</label>
                 <div class="autocompletar">
                     <input id="busca-cliente" type="text" class="form-control form-control-lg"
                            role="combobox" aria-autocomplete="list" aria-expanded="false"
@@ -119,12 +119,14 @@
 
     <aside class="cartao resumo-da-venda" aria-labelledby="titulo-resumo">
         <h2 id="titulo-resumo">Resumo</h2>
-        <dl>
-            <dt>Itens</dt>
-            <dd data-resumo="itens">0</dd>
-            <dt class="total-rotulo">Total da venda</dt>
-            <dd class="total" data-testid="total-da-venda" aria-live="polite">R$ 0,00</dd>
-        </dl>
+        <div class="linha-do-resumo">
+            <span>Itens</span>
+            <span data-resumo="itens">0</span>
+        </div>
+        <div class="linha-do-resumo linha-do-total">
+            <span>Total da venda</span>
+            <output class="total" data-testid="total-da-venda" aria-live="polite">R$ 0,00</output>
+        </div>
         <button type="submit" class="btn btn-primary btn-lg w-100">Finalizar venda</button>
         <p class="dica">Atalho: Ctrl + Enter.</p>
         <a class="btn btn-link w-100" asp-action="Index">Cancelar</a>
