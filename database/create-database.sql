@@ -1,6 +1,6 @@
 IF DB_ID(N'Sophia') IS NULL
 BEGIN
-    CREATE DATABASE [Sophia];
+    CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;
 END
 GO
 
