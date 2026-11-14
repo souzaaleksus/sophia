@@ -115,6 +115,21 @@ public sealed class VendaServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDi
     }
 
     [Fact]
+    public async Task A_mesma_chave_com_outro_conteudo_e_recusada_apontando_a_venda_ja_registrada()
+    {
+        var chave = Guid.NewGuid();
+        var primeira = await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], chave));
+
+        var outra = await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caderno, 2, 18.90m)], chave));
+
+        outra.Sucesso.Should().BeFalse();
+        outra.Erros.Should().ContainSingle().Which.Should().Be(new Erro(
+            "Chave",
+            $"Este formulário já tinha registrado a venda nº {primeira.Valor}. Esta venda ainda não foi gravada: confira os itens e finalize de novo."));
+        (await PrimeiraPaginaAsync()).Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task Chaves_diferentes_registram_duas_vendas()
     {
         var itens = new DadosItemVenda[] { new(_caneta, 1, 2.50m) };

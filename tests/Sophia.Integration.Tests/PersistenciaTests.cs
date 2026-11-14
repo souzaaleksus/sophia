@@ -185,8 +185,8 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         await using var contexto = banco.NovoContexto();
         var repositorio = new VendaRepositorio(contexto);
 
-        (await repositorio.ObterIdPelaChaveAsync(chave)).Should().Be(vendaId);
-        (await repositorio.ObterIdPelaChaveAsync(Guid.NewGuid())).Should().BeNull();
+        (await repositorio.ObterPelaChaveAsync(chave))!.Id.Should().Be(vendaId);
+        (await repositorio.ObterPelaChaveAsync(Guid.NewGuid())).Should().BeNull();
     }
 
     [Fact]

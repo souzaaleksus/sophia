@@ -93,11 +93,11 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         return maisVendidos.ConvertAll(p => new ProdutoMaisVendido(p.Id, p.Nome, p.Quantidade, p.Total));
     }
 
-    public Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default) =>
+    public Task<Venda?> ObterPelaChaveAsync(Guid chave, CancellationToken cancelamento = default) =>
         contexto.Vendas
-            .Where(v => v.ChaveDeRegistro == chave)
-            .Select(v => (int?)v.Id)
-            .FirstOrDefaultAsync(cancelamento);
+            .AsNoTracking()
+            .Include(v => v.Itens)
+            .FirstOrDefaultAsync(v => v.ChaveDeRegistro == chave, cancelamento);
 
     public void Adicionar(Venda venda) => contexto.Vendas.Add(venda);
 

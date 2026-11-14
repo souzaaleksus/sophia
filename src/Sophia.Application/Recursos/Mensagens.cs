@@ -21,6 +21,9 @@ internal static class Mensagens
 
     public static string ProdutoJaVendido => Ler(nameof(ProdutoJaVendido));
 
+    public static string FormularioJaUsado(int venda) =>
+        string.Format(PortuguesDoBrasil, Ler(nameof(FormularioJaUsado)), venda);
+
     public static string GravacaoRecusada(TipoDeConflito tipo) =>
         string.Format(PortuguesDoBrasil, Ler(nameof(GravacaoRecusada)), tipo);
 

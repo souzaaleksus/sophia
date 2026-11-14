@@ -30,6 +30,9 @@
   <data name="ProdutoJaVendido" xml:space="preserve">
     <value>Este produto já foi vendido e não pode ser excluído.</value>
   </data>
+  <data name="FormularioJaUsado" xml:space="preserve">
+    <value>Este formulário já tinha registrado a venda nº {0}. Esta venda ainda não foi gravada: confira os itens e finalize de novo.</value>
+  </data>
   <data name="GravacaoRecusada" xml:space="preserve">
     <value>O banco recusou a gravação: {0}.</value>
   </data>

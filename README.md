@@ -128,7 +128,7 @@ mais vendidos do mês e as cinco vendas mais recentes.
 | RN22 | Subtotal e total são sempre calculados pelo sistema, nunca aceitos prontos da tela | — | Vendas › Registrar uma venda com vários produtos |
 | RN23 | O mês do painel vai do dia 1º até hoje | — | Painel › Totais do dia e do mês |
 | RN24 | Ticket médio = total do mês ÷ número de vendas do mês, arredondado aos centavos; sem vendas, é zero | — | Painel › Totais do dia e do mês |
-| RN25 | Venda enviada duas vezes é registrada uma vez só: o segundo envio devolve a venda já gravada | — | Vendas › Enviar a mesma venda duas vezes registra uma só |
+| RN25 | Venda enviada duas vezes é registrada uma vez só: o segundo envio com o mesmo conteúdo devolve a venda já gravada; o mesmo formulário com outro conteúdo é recusado com aviso, para nenhuma venda se perder | — | Vendas › Enviar a mesma venda duas vezes registra uma só; Reaproveitar o formulário de uma venda registrada para outra venda é recusado |
 | RN26 | O painel mostra o total de cada um dos últimos 7 dias, até hoje, inclusive os dias sem venda | — | Painel › Total de cada um dos últimos 7 dias, inclusive os dias sem venda |
 | RN27 | O painel mostra os 5 produtos mais vendidos do mês por quantidade; no empate, vem o de maior total e depois a ordem alfabética | — | Painel › Os 5 produtos mais vendidos do mês, por quantidade |
 | RN28 | A lista de vendas mostra 25 vendas por página, das mais recentes para as mais antigas; página pedida antes da primeira mostra a primeira, e depois da última mostra a última | — | Consulta de vendas › A lista de vendas mostra 25 por página, das mais recentes para as mais antigas |
@@ -212,7 +212,7 @@ de novo acrescenta a coluna e o índice sem apagar nada.
 | RF02 | `CadastroDeProdutos.feature` | `Sophia.Domain.Tests` (Produto), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF03 | `RegistroDeVendas.feature` | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF04 | `PainelDeVendas.feature` | `Sophia.Application.Tests` (PainelServico, ResumoDoPeriodo) | `Sophia.Integration.Tests`, `Sophia.E2E` |
-| RN25 | `RegistroDeVendas.feature` › Enviar a mesma venda duas vezes registra uma só | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` (VendaServico, inclusive a corrida entre dois envios) | `Sophia.Integration.Tests` (índice único filtrado, corrida no SQL Server, atualização do banco pelo script) |
+| RN25 | `RegistroDeVendas.feature` › Enviar a mesma venda duas vezes registra uma só; Reaproveitar o formulário de uma venda registrada para outra venda é recusado | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` (VendaServico, inclusive a corrida entre dois envios) | `Sophia.Integration.Tests` (índice único filtrado, corrida no SQL Server, atualização do banco pelo script) |
 | RN26 | `PainelDeVendas.feature` › Total de cada um dos últimos 7 dias | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (totais por dia agregados no SQL Server) |
 | RN27 | `PainelDeVendas.feature` › Os 5 produtos mais vendidos do mês | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (mais vendidos agregados no SQL Server) |
 | RN28 | `ConsultaDeVendas.feature` | `Sophia.Application.Tests` (Pagina, VendaServico: tamanho, ordem e limites de página) | `Sophia.Integration.Tests` (contagem e recorte com `OFFSET`/`FETCH` no SQL Server) |
@@ -357,11 +357,11 @@ dotnet test
 
 | Projeto | Tipo | Testes | O que cobre | Precisa de |
 |---|---|---|---|---|
-| `Sophia.Domain.Tests` | unidade | 88 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
-| `Sophia.Application.Tests` | aplicação | 158 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
-| `Sophia.Specs` | BDD (Gherkin) | 73 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 41 | script do banco, mapeamento do EF, índices, consultas, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
-| `Sophia.E2E` | tela | 127 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, no navegador | SQL Server e Chromium |
+| `Sophia.Domain.Tests` | unidade | 94 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
+| `Sophia.Application.Tests` | aplicação | 160 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
+| `Sophia.Specs` | BDD (Gherkin) | 74 | os cenários da especificação, em português, sobre o banco real | SQL Server |
+| `Sophia.Integration.Tests` | integração | 44 | script do banco, mapeamento do EF, índices, consultas, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
+| `Sophia.E2E` | tela | 137 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, no navegador | SQL Server e Chromium |
 
 Os testes da aplicação, os cenários BDD, os de integração e os de tela criam um banco
 temporário a partir de `database/create-database.sql` e o apagam ao final; nenhum deles usa

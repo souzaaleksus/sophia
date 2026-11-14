@@ -42,6 +42,21 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task Diminuir_pelo_teclado_ate_um_deixa_o_foco_na_quantidade()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "2");
+        var diminuir = BotaoDaLinha(0, "Diminuir a quantidade");
+        await diminuir.FocusAsync();
+
+        await _pagina.Keyboard.PressAsync("Space");
+
+        await Expect(diminuir).ToBeDisabledAsync();
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("1");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToBeFocusedAsync();
+    }
+
+    [Fact]
     public async Task O_valor_unitario_da_linha_tem_o_prefixo_em_reais()
     {
         await _pagina.GotoAsync("/Vendas/Nova");

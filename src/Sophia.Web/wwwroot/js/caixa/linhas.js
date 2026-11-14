@@ -86,7 +86,7 @@ class Linhas {
         campoDe(item, 'ValorUnitario').addEventListener('blur', () => arredondarValor(item));
         campoDe(item, 'Quantidade').addEventListener('input', this.#aoMudar);
         campoDe(item, 'Quantidade').addEventListener('keydown', evento => this.#abrirProximaComEnter(evento));
-        item.querySelector('[data-acao=menos]').addEventListener('click', () => this.#mudarQuantidade(item, -1));
+        item.querySelector('[data-acao=menos]').addEventListener('click', evento => this.#mudarQuantidade(item, -1, evento.detail === 0));
         item.querySelector('[data-acao=mais]').addEventListener('click', () => this.#mudarQuantidade(item, 1));
         item.querySelector('[data-acao=remover-item]').addEventListener('click', () => this.#remover(item));
     }
@@ -132,10 +132,13 @@ class Linhas {
         this.#aoMudar();
     }
 
-    #mudarQuantidade(item, passo) {
+    #mudarQuantidade(item, passo, peloTeclado = false) {
         const campo = campoDe(item, 'Quantidade');
         campo.value = Math.max(1, (lerInteiro(campo.value) ?? 0) + passo);
         this.#aoMudar();
+        if (peloTeclado && item.querySelector('[data-acao=menos]').disabled) {
+            campo.focus();
+        }
     }
 
     #remover(item) {

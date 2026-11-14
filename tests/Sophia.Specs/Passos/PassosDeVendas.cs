@@ -8,6 +8,7 @@ namespace Sophia.Specs.Passos;
 [Binding]
 public sealed class PassosDeVendas(Cenario cenario)
 {
+    private readonly Guid _chaveDoFormulario = Guid.NewGuid();
     private DateOnly _dataSugerida;
     private int[] _idsDosEnvios = [];
 
@@ -34,6 +35,17 @@ public sealed class PassosDeVendas(Cenario cenario)
         var segundo = await cenario.Vendas.RegistrarAsync(dados);
 
         _idsDosEnvios = [primeiro.Valor, segundo.Valor];
+    }
+
+    [Given(@"^que eu registrei pelo mesmo formulário uma venda para o cliente ""(.*)"" em (\d{2}/\d{2}/\d{4}) com os itens$")]
+    [When(@"^eu registrar pelo mesmo formulário uma venda para o cliente ""(.*)"" em (\d{2}/\d{2}/\d{4}) com os itens$")]
+    public async Task QuandoEuRegistrarPeloMesmoFormulario(string cliente, string data, DataTable itens)
+    {
+        var comprador = await cenario.ClienteChamadoAsync(cliente);
+        var resultado = await cenario.Vendas.RegistrarAsync(
+            new DadosVenda(Cenario.Data(data), comprador.Id, await LerItensAsync(itens), _chaveDoFormulario));
+        cenario.UltimoResultado = resultado;
+        cenario.UltimaVendaId = resultado.Sucesso ? resultado.Valor : null;
     }
 
     [When(@"^eu registrar uma venda para o cliente ""(.*)"" em (\d{2}/\d{2}/\d{4}) sem itens$")]

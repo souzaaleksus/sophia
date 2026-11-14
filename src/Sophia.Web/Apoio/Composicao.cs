@@ -27,7 +27,7 @@ public static class Composicao
     {
         servicos.AddLocalization(opcoes => opcoes.ResourcesPath = Textos.Pasta);
         servicos
-            .AddControllersWithViews(opcoes => opcoes.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
+            .AddControllersWithViews(opcoes => opcoes.UsarDatasIso().Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
             .AddDataAnnotationsLocalization(opcoes =>
                 opcoes.DataAnnotationLocalizerProvider = (_, fabrica) => fabrica.Create(typeof(Textos)));
         servicos

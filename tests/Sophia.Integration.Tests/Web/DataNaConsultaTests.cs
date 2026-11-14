@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Sophia.Web.Apoio;
 
 namespace Sophia.Integration.Tests.Web;
 
@@ -31,13 +32,24 @@ public sealed class DataNaConsultaTests
         resultado.Model.Should().BeNull();
     }
 
+    [Theory]
+    [InlineData("?de=01/02/2026")]
+    [InlineData("?de=14/11/2026")]
+    [InlineData("?de=2026-02-30")]
+    public async Task Data_fora_do_formato_do_campo_de_data_e_recusada(string consulta)
+    {
+        var resultado = await LigarAsync(consulta);
+
+        resultado.IsModelSet.Should().BeFalse();
+    }
+
     private static async Task<ModelBindingResult> LigarAsync(string consulta)
     {
         var culturaAnterior = CultureInfo.CurrentCulture;
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
         try
         {
-            using var servicos = new ServiceCollection().AddLogging().AddControllersWithViews().Services.BuildServiceProvider();
+            using var servicos = new ServiceCollection().AddLogging().AddControllersWithViews(opcoes => opcoes.UsarDatasIso()).Services.BuildServiceProvider();
             var metadados = servicos.GetRequiredService<IModelMetadataProvider>().GetMetadataForType(typeof(DateOnly?));
             var ligador = servicos.GetRequiredService<IModelBinderFactory>().CreateBinder(new ModelBinderFactoryContext
             {

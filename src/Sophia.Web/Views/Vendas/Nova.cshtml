@@ -68,6 +68,10 @@
 </div>
 
 <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
+@if (ViewData.ModelState.PrimeiroErro(nameof(NovaVendaFormulario.Chave)) is { } formularioJaUsado)
+{
+    <div class="aviso aviso-falha" role="alert">@formularioJaUsado</div>
+}
 
 <form method="post" asp-action="Nova" id="nova-venda" class="caixa" novalidate
       data-endereco-busca-de-clientes="@Url.Action("Buscar", "Clientes")"
@@ -91,7 +95,7 @@
             <kbd class="atalho" title="@T["caixa.atalho-de-teclado"]">F2</kbd>
         </div>
 
-        <input type="hidden" asp-for="Chave" />
+        <input type="hidden" name="Chave" value="@Model.Chave" autocomplete="off" />
         <input type="hidden" asp-for="ClienteId" data-cliente="id" />
         <input type="hidden" asp-for="ClienteNome" data-cliente="nome" />
         <input type="hidden" asp-for="ClienteCpf" data-cliente="cpf" />

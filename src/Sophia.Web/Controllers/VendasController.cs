@@ -14,7 +14,7 @@ public sealed class VendasController(IVendaServico vendas, IStringLocalizer<Text
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         return ExibirLista(consulta, await vendas.ListarAsync(consulta, cancelamento));
@@ -47,6 +47,7 @@ public sealed class VendasController(IVendaServico vendas, IStringLocalizer<Text
         if (!resultado.Sucesso)
         {
             ModelState.AdicionarErros(resultado.Erros);
+            formulario.Chave = Guid.NewGuid();
             return ExibirNovaVenda(formulario);
         }
 
@@ -59,7 +60,7 @@ public sealed class VendasController(IVendaServico vendas, IStringLocalizer<Text
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var venda = await vendas.ObterAsync(id, cancelamento);

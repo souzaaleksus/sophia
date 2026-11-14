@@ -22,6 +22,14 @@ public sealed class Venda
 
     public decimal Total => _itens.Sum(item => item.Subtotal);
 
+    public bool TemOMesmoConteudoQue(Venda outra) =>
+        ClienteId == outra.ClienteId
+        && Data == outra.Data
+        && ConteudoDosItens().SetEquals(outra.ConteudoDosItens());
+
+    private HashSet<(int ProdutoId, int Quantidade, decimal ValorUnitario)> ConteudoDosItens() =>
+        _itens.Select(item => (item.ProdutoId, item.Quantidade, item.ValorUnitario)).ToHashSet();
+
     public static Resultado<Venda> Registrar(DadosVenda dados, DateOnly hoje)
     {
         var erros = new List<Erro>();

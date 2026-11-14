@@ -27,7 +27,7 @@
 {
     <div class="vazio">
         <svg class="ilustracao" aria-hidden="true"><use href="@(string.IsNullOrWhiteSpace(busca) ? "#ilustracao-clientes" : "#ilustracao-busca")" /></svg>
-        <p class="vazio-titulo">@T["clientes.nenhum"]</p>
+        <p class="vazio-titulo" data-anuncio>@T["clientes.nenhum"]</p>
         @if (string.IsNullOrWhiteSpace(busca))
         {
             <p>@T["clientes.vazio-convite"]</p>
@@ -45,7 +45,7 @@
 }
 else
 {
-    <p class="contagem" data-testid="contagem" aria-live="polite">
+    <p class="contagem" data-testid="contagem" data-anuncio>
         @(string.IsNullOrWhiteSpace(busca)
             ? Formato.Quantidade(Model.TotalDeItens, T["clientes.contagem-singular"], T["clientes.contagem-plural"])
             : Formato.Quantidade(Model.TotalDeItens, T["clientes.encontrados-singular"], T["clientes.encontrados-plural"]))

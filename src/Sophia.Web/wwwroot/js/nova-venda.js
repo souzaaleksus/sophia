@@ -44,6 +44,12 @@ formulario.addEventListener('submit', () => {
     }
 });
 
+window.addEventListener('pageshow', evento => {
+    if (evento.persisted) {
+        window.location.reload();
+    }
+});
+
 window.addEventListener('beforeunload', evento => {
     if (formulario.dataset.enviando !== 'true' && linhas.temProdutoLancado()) {
         evento.preventDefault();

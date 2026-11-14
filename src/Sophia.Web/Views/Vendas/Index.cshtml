@@ -75,7 +75,7 @@ else if (Model.TotalDeItens == 0)
 }
 else
 {
-    <p class="contagem" data-testid="contagem" aria-live="polite">@Formato.Quantidade(Model.TotalDeItens, T["vendas.contagem-singular"], T["vendas.contagem-plural"])</p>
+    <p class="contagem" data-testid="contagem">@Formato.Quantidade(Model.TotalDeItens, T["vendas.contagem-singular"], T["vendas.contagem-plural"])</p>
 
     <div class="cartao tabela-rolavel">
         <table class="tabela">

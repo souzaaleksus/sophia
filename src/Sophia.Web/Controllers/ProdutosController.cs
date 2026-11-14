@@ -14,7 +14,7 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var lista = await produtos.ListarAsync(consulta, cancelamento);
@@ -62,7 +62,7 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var produto = await produtos.ObterAsync(id, cancelamento);
@@ -94,7 +94,7 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var produto = await produtos.ObterAsync(id, cancelamento);
@@ -107,7 +107,7 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var resultado = await produtos.ExcluirAsync(id, cancelamento);

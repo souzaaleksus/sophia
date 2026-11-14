@@ -30,7 +30,7 @@ public interface IVendaRepositorio
         int limite,
         CancellationToken cancelamento = default);
 
-    Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default);
+    Task<Venda?> ObterPelaChaveAsync(Guid chave, CancellationToken cancelamento = default);
 
     void Adicionar(Venda venda);
 }

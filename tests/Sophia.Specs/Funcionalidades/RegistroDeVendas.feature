@@ -33,6 +33,16 @@ Funcionalidade: Registro de vendas
     Então os dois envios apontam para a mesma venda
     E existe 1 venda registrada
 
+  Cenário: Reaproveitar o formulário de uma venda registrada para outra venda é recusado
+    Dado que eu registrei pelo mesmo formulário uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 10         | 2,50          |
+    Quando eu registrar pelo mesmo formulário uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto           | Quantidade | ValorUnitario |
+      | Caderno 96 folhas | 1          | 18,90         |
+    Então a venda é recusada com a mensagem "Este formulário já tinha registrado a venda nº 1. Esta venda ainda não foi gravada: confira os itens e finalize de novo." no campo "Chave"
+    E existe 1 venda registrada
+
   Cenário: Duas vendas iguais feitas uma depois da outra são registradas as duas
     Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
       | Produto     | Quantidade | ValorUnitario |

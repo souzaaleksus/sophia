@@ -29,10 +29,11 @@ function prepararBusca(formulario) {
         const numeroDaBusca = ++ultimaBusca;
         const endereco = enderecoDaBusca(formulario);
         try {
-            const pagina = await carregar(endereco);
+            const novos = resultadosDe(await carregar(endereco));
             if (numeroDaBusca === ultimaBusca) {
                 formulario.querySelector('[data-falha-da-busca]').hidden = true;
-                trocarResultados(pagina);
+                document.querySelector('[data-resultados]').replaceWith(document.importNode(novos, true));
+                anunciar(formulario, novos);
                 history.replaceState(null, '', endereco);
             }
         } catch {
@@ -59,12 +60,18 @@ async function carregar(endereco) {
     return new DOMParser().parseFromString(await resposta.text(), 'text/html');
 }
 
-function trocarResultados(pagina) {
-    const atuais = document.querySelector('[data-resultados]');
+function resultadosDe(pagina) {
     const novos = pagina.querySelector('[data-resultados]');
-    if (atuais && novos) {
-        atuais.replaceWith(document.importNode(novos, true));
+    if (!novos) {
+        throw new Error('A resposta da busca veio sem a lista.');
     }
+
+    return novos;
+}
+
+function anunciar(formulario, novos) {
+    const resumo = novos.querySelector('[data-anuncio]');
+    formulario.querySelector('[data-anuncio-da-busca]').textContent = resumo ? resumo.textContent.replace(/\s+/g, ' ').trim() : '';
 }
 
 function avisarFalha(formulario) {

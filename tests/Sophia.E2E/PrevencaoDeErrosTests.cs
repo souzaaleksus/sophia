@@ -56,6 +56,32 @@ public sealed partial class PrevencaoDeErrosTests(AplicacaoEmExecucao aplicacao)
     }
 
     [Fact]
+    public async Task Formulario_reaproveitado_para_outra_venda_avisa_e_finalizar_de_novo_grava_a_nova_venda()
+    {
+        await MontarVendaAsync();
+        var chaveDaPrimeira = await _pagina.Locator("input[name=Chave]").InputValueAsync();
+        await _caixa.Finalizar.ClickAsync();
+        await EsperarODetalheAsync();
+
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "7");
+        await _pagina.Locator("input[name=Chave]").EvaluateAsync("(campo, chave) => campo.value = chave", chaveDaPrimeira);
+        await _caixa.Finalizar.ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Alert)).ToContainTextAsync("Esta venda ainda não foi gravada");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("7");
+        (await _pagina.Locator("input[name=Chave]").InputValueAsync()).Should().NotBe(chaveDaPrimeira);
+        (await VendasRegistradasAsync()).Should().Be(1);
+
+        await _caixa.Finalizar.ClickAsync();
+
+        await EsperarODetalheAsync();
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 17,50");
+        (await VendasRegistradasAsync()).Should().Be(2);
+    }
+
+    [Fact]
     public async Task Logo_apos_o_envio_o_botao_fica_desabilitado_mostrando_registrando()
     {
         await MontarVendaAsync();

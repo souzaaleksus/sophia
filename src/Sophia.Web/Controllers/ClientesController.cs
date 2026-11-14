@@ -14,7 +14,7 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var lista = await clientes.ListarAsync(consulta, cancelamento);
@@ -62,7 +62,7 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var cliente = await clientes.ObterAsync(id, cancelamento);
@@ -94,7 +94,7 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var cliente = await clientes.ObterAsync(id, cancelamento);
@@ -107,7 +107,7 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return BadRequest();
         }
 
         var resultado = await clientes.ExcluirAsync(id, cancelamento);

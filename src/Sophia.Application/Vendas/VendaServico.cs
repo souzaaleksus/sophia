@@ -47,39 +47,44 @@ public sealed class VendaServico(
         }
 
         var venda = registro.Valor;
-        if (await JaRegistradaAsync(venda, cancelamento) is { } existente)
+        if (await RegistradaPelaMesmaChaveAsync(venda, cancelamento) is { } existente)
         {
-            return Resultado.Ok(existente);
+            return ConferirReenvio(venda, existente);
         }
 
         var erros = await VerificarCadastrosAsync(venda, cancelamento);
         return erros.Count > 0
             ? Resultado.Falha<int>(erros)
-            : Resultado.Ok(await GravarAsync(venda, cancelamento));
+            : await GravarAsync(venda, cancelamento);
     }
 
-    private async Task<int> GravarAsync(Venda venda, CancellationToken cancelamento)
+    private static Resultado<int> ConferirReenvio(Venda enviada, Venda registrada) =>
+        registrada.TemOMesmoConteudoQue(enviada)
+            ? Resultado.Ok(registrada.Id)
+            : Resultado.Falha<int>(new Erro(nameof(DadosVenda.Chave), Mensagens.FormularioJaUsado(registrada.Id)));
+
+    private async Task<Resultado<int>> GravarAsync(Venda venda, CancellationToken cancelamento)
     {
         vendas.Adicionar(venda);
         try
         {
             await unidadeDeTrabalho.SalvarAsync(cancelamento);
-            return venda.Id;
+            return Resultado.Ok(venda.Id);
         }
         catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.ValorDuplicado)
         {
-            var vencedora = await JaRegistradaAsync(venda, cancelamento);
+            var vencedora = await RegistradaPelaMesmaChaveAsync(venda, cancelamento);
             if (vencedora is null)
             {
                 throw;
             }
 
-            return vencedora.Value;
+            return ConferirReenvio(venda, vencedora);
         }
     }
 
-    private async Task<int?> JaRegistradaAsync(Venda venda, CancellationToken cancelamento) =>
-        venda.ChaveDeRegistro is { } chave ? await vendas.ObterIdPelaChaveAsync(chave, cancelamento) : null;
+    private async Task<Venda?> RegistradaPelaMesmaChaveAsync(Venda venda, CancellationToken cancelamento) =>
+        venda.ChaveDeRegistro is { } chave ? await vendas.ObterPelaChaveAsync(chave, cancelamento) : null;
 
     private async Task<List<Erro>> VerificarCadastrosAsync(Venda venda, CancellationToken cancelamento)
     {

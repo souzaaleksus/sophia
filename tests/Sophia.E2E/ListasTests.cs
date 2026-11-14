@@ -65,6 +65,38 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task O_resultado_da_busca_enquanto_digita_e_anunciado_numa_regiao_que_nao_e_trocada()
+    {
+        await TresClientesAsync();
+        await _pagina.GotoAsync("/Clientes");
+        var anuncio = _pagina.GetByRole(AriaRole.Search).Locator("[aria-live=polite]");
+        await anuncio.EvaluateAsync("regiao => regiao.dataset.original = 'sim'");
+
+        await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("lima");
+
+        await Expect(anuncio).ToHaveTextAsync("1 cliente encontrado", new() { Timeout = 2000 });
+        await Expect(anuncio).ToHaveAttributeAsync("data-original", "sim");
+
+        await _pagina.GetByRole(AriaRole.Searchbox).FillAsync("ninguém com esse nome");
+
+        await Expect(anuncio).ToHaveTextAsync("Nenhum cliente encontrado.", new() { Timeout = 2000 });
+    }
+
+    [Fact]
+    public async Task Resposta_da_busca_sem_a_lista_avisa_a_falha_e_mantem_a_lista_e_o_endereco()
+    {
+        await TresClientesAsync();
+        await _pagina.GotoAsync("/Clientes");
+        await _pagina.RouteAsync("**/Clientes?busca=**", rota => rota.FulfillAsync(new() { Status = 200, ContentType = "text/html", Body = "<html><body></body></html>" }));
+
+        await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("lima");
+
+        await Expect(_pagina.GetByText("Não foi possível atualizar a lista")).ToBeVisibleAsync(new() { Timeout = 2000 });
+        await Expect(Linhas).ToHaveCountAsync(3);
+        await Expect(_pagina).Not.ToHaveURLAsync(ComBuscaPorLima());
+    }
+
+    [Fact]
     public async Task Limpar_a_busca_esvazia_o_campo_e_volta_a_lista_completa()
     {
         await TresClientesAsync();
@@ -264,6 +296,19 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
     [GeneratedRegex(@"[?&]ordem=-nome(&|$)")]
     private static partial Regex ComOrdemPorNomeDecrescente();
+
+    [Theory]
+    [InlineData("/Vendas?pagina=abc")]
+    [InlineData("/Clientes?pagina=abc")]
+    [InlineData("/Vendas?de=31/12/2026")]
+    public async Task Endereco_de_lista_com_valor_invalido_mostra_a_pagina_de_erro(string endereco)
+    {
+        var resposta = await _pagina.GotoAsync(endereco);
+
+        resposta!.Status.Should().Be(400);
+        await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToBeVisibleAsync();
+        (await _pagina.ContentAsync()).Should().NotContain("\"errors\"");
+    }
 
     [GeneratedRegex("^(ascending|descending)$")]
     private static partial Regex AscendenteOuDescendente();
