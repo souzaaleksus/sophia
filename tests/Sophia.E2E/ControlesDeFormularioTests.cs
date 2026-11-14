@@ -231,6 +231,44 @@ public sealed partial class ControlesDeFormularioTests(AplicacaoEmExecucao aplic
         (await _cadastro.QuantidadeDeClientesAsync()).Should().Be(0);
     }
 
+    [Fact]
+    public async Task Corrigir_o_campo_com_erro_some_com_a_mensagem_sem_deslocar_o_botao_de_salvar()
+    {
+        var nome = await ProvocarNomeRepetidoAsync();
+        var salvar = _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" });
+        var antes = (await salvar.BoundingBoxAsync())!.Y;
+
+        await nome.FillAsync("Caneta vermelha");
+        await nome.BlurAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for=Nome]")).ToBeEmptyAsync();
+        (await salvar.BoundingBoxAsync())!.Y.Should().Be(antes);
+    }
+
+    [Fact]
+    public async Task Depois_de_corrigir_o_erro_um_clique_em_salvar_basta()
+    {
+        var nome = await ProvocarNomeRepetidoAsync();
+
+        await nome.FillAsync("Caneta vermelha");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Produto cadastrado.");
+        (await _cadastro.QuantidadeDeProdutosAsync()).Should().Be(2);
+    }
+
+    private async Task<ILocator> ProvocarNomeRepetidoAsync()
+    {
+        await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
+        await _pagina.GotoAsync("/Produtos/Novo");
+        var nome = _pagina.GetByLabel("Nome");
+        await nome.FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("3,00");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+        await Expect(_pagina.Locator("[data-valmsg-for=Nome]")).ToHaveTextAsync("Já existe um produto com este nome.");
+        return nome;
+    }
+
     [GeneratedRegex(@"/Clientes/Novo$")]
     private static partial Regex EnderecoDoNovoCliente();
 }
