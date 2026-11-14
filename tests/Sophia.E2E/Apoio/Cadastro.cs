@@ -54,5 +54,67 @@ public sealed class Cadastro(BancoDeTestes banco)
         return int.Parse(linhas.Single());
     }
 
+    public async Task<int> QuantidadeDeClientesAsync()
+    {
+        var linhas = await banco.ConsultarAsync("SELECT CAST(COUNT(*) AS nvarchar(10)) FROM dbo.Clientes");
+        return int.Parse(linhas.Single());
+    }
+
+    public async Task<IReadOnlyList<int>> ClientesAsync(int quantidade)
+    {
+        var ids = new List<int>();
+        for (var numero = 1; numero <= quantidade; numero++)
+        {
+            ids.Add(await ClienteAsync(CpfValido(numero), $"Cliente {numero:D2}"));
+        }
+
+        return ids;
+    }
+
+    public async Task<IReadOnlyList<int>> ProdutosAsync(int quantidade)
+    {
+        var ids = new List<int>();
+        for (var numero = 1; numero <= quantidade; numero++)
+        {
+            ids.Add(await ProdutoAsync($"Produto {numero:D2}", numero + 0.90m));
+        }
+
+        return ids;
+    }
+
+    public async Task<IReadOnlyList<int>> VendasAsync(int quantidade)
+    {
+        var cliente = await ClienteAsync(CpfValido(900), "Cliente das vendas");
+        var produto = await ProdutoAsync("Produto das vendas", 2.50m);
+        var ids = new List<int>();
+        for (var numero = 1; numero <= quantidade; numero++)
+        {
+            ids.Add(await VendaAsync(Hoje, cliente, new DadosItemVenda(produto, numero, 2.50m)));
+        }
+
+        return ids;
+    }
+
+    public static string CpfValido(int numero)
+    {
+        var digitos = (200_000_000 + (numero * 7_919)).ToString("D9").Select(c => c - '0').ToList();
+        digitos.Add(DigitoVerificador(digitos));
+        digitos.Add(DigitoVerificador(digitos));
+        var texto = string.Concat(digitos);
+        return $"{texto[..3]}.{texto[3..6]}.{texto[6..9]}-{texto[9..]}";
+    }
+
+    private static int DigitoVerificador(IReadOnlyList<int> digitos)
+    {
+        var soma = 0;
+        for (var posicao = 0; posicao < digitos.Count; posicao++)
+        {
+            soma += digitos[posicao] * (digitos.Count + 1 - posicao);
+        }
+
+        var resto = soma % 11;
+        return resto < 2 ? 0 : 11 - resto;
+    }
+
     private static RelogioDoSistema Relogio() => new(TimeProvider.System, Fuso);
 }

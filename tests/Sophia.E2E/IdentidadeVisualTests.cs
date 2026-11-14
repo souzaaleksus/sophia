@@ -7,6 +7,8 @@ namespace Sophia.E2E;
 [Collection(ColecaoDaAplicacao.Nome)]
 public sealed class IdentidadeVisualTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
 {
+    private static readonly string[] ItensDoMenu = ["Painel", "Produto", "Cliente", "Venda"];
+
     private IPage _pagina = null!;
 
     public async Task InitializeAsync()
@@ -31,6 +33,18 @@ public sealed class IdentidadeVisualTests(AplicacaoEmExecucao aplicacao) : IAsyn
         {
             await Expect(ItemDoMenu(antigo)).ToHaveCountAsync(0);
         }
+    }
+
+    [Fact]
+    public async Task O_menu_principal_lista_painel_produto_cliente_e_venda_nessa_ordem()
+    {
+        await _pagina.GotoAsync("/");
+
+        var nomes = await _pagina.GetByRole(AriaRole.Navigation, new() { Name = "Navegação principal" })
+            .GetByRole(AriaRole.Link)
+            .EvaluateAllAsync<string[]>("links => links.map(link => link.textContent.trim().replace(/\\s+/g, ' '))");
+
+        nomes.Where(nome => ItensDoMenu.Contains(nome)).Should().Equal(ItensDoMenu);
     }
 
     [Theory]

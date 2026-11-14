@@ -25,7 +25,8 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.GetByLabel("CPF").FillAsync("52998224725");
         await _pagina.GetByLabel("Nome").FillAsync("Maria Santos");
-        await _pagina.GetByLabel("Data de nascimento").FillAsync("1990-03-15");
+        await Expect(_pagina.GetByLabel("Data de nascimento")).ToHaveAttributeAsync("type", "text");
+        await _pagina.GetByLabel("Data de nascimento").FillAsync("15/03/1990");
         await _pagina.GetByLabel("E-mail").FillAsync("maria@exemplo.com.br");
         await _pagina.GetByLabel("Telefone").FillAsync("11987654321");
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
@@ -73,7 +74,9 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Cliente alterado.");
 
         await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos Silva" }).ClickAsync();
-        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Excluir" }).ClickAsync();
+        var dialogo = _pagina.GetByRole(AriaRole.Dialog);
+        await Expect(dialogo).ToContainTextAsync("Maria Santos Silva");
+        await dialogo.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
 
         await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Cliente excluído.");
         await Expect(_pagina.GetByText("Nenhum cliente encontrado.")).ToBeVisibleAsync();
@@ -86,11 +89,10 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await CadastrarAsync("111.444.777-35", "João Lima");
 
         await _pagina.GotoAsync("/Clientes");
-        await _pagina.GetByRole(AriaRole.Searchbox).FillAsync("529.982");
-        await _pagina.GetByRole(AriaRole.Searchbox).PressAsync("Enter");
+        await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("529.982");
 
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "João Lima" })).ToHaveCountAsync(0, new() { Timeout = 2000 });
         await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Maria Santos" })).ToBeVisibleAsync();
-        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "João Lima" })).ToHaveCountAsync(0);
     }
 
     private async Task CadastrarAsync(string cpf, string nome)

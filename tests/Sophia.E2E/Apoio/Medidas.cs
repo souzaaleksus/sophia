@@ -50,6 +50,21 @@ public static class Medidas
         }
         """;
 
+    private const string AlturasPequenas = $$"""
+        ([seletor, minimo]) => {
+            const descrever = {{Descrever}};
+            return [...document.querySelectorAll(seletor)]
+                .filter(e => {
+                    const r = e.getBoundingClientRect();
+                    return r.width > 1 && r.height > 1
+                        && getComputedStyle(e).visibility !== 'hidden'
+                        && e.closest('[hidden]') === null;
+                })
+                .filter(e => e.getBoundingClientRect().height < minimo)
+                .map(descrever);
+        }
+        """;
+
     private const string NoCentro = $$"""
         ([e, aceitaDescendente]) => {
             const descrever = {{Descrever}};
@@ -68,6 +83,9 @@ public static class Medidas
 
     public static Task<string[]> AlvosMenoresQueAsync(IPage pagina, string seletor, int minimo) =>
         pagina.EvaluateAsync<string[]>(AlvosPequenos, new object[] { seletor, minimo });
+
+    public static Task<string[]> AlturasMenoresQueAsync(IPage pagina, string seletor, int minimo) =>
+        pagina.EvaluateAsync<string[]>(AlturasPequenas, new object[] { seletor, minimo });
 
     public static async Task<string> QuemOcupaOCentroAsync(ILocator elemento, bool aceitaDescendente)
     {
