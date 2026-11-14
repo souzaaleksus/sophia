@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Sophia.Domain.Recursos;
 
 namespace Sophia.Domain.Clientes;
 
@@ -72,11 +73,11 @@ public sealed partial class Cliente
     {
         if (data > hoje)
         {
-            erros.Add(new Erro("DataNascimento", "A data de nascimento não pode estar no futuro."));
+            erros.Add(new Erro("DataNascimento", Mensagens.DataDeNascimentoNoFuturo));
         }
         else if (data < DataNascimentoMinima)
         {
-            erros.Add(new Erro("DataNascimento", "Informe uma data de nascimento válida."));
+            erros.Add(new Erro("DataNascimento", Mensagens.DataDeNascimentoInvalida));
         }
 
         return data;
@@ -87,7 +88,7 @@ public sealed partial class Cliente
         var aparado = Texto.Aparar(email);
         if (aparado is not null && (aparado.Length > TamanhoMaximoEmail || !FormatoDeEmail().IsMatch(aparado)))
         {
-            erros.Add(new Erro("Email", "E-mail inválido."));
+            erros.Add(new Erro("Email", Mensagens.EmailInvalido));
         }
 
         return aparado;
@@ -103,7 +104,7 @@ public sealed partial class Cliente
         var digitos = Texto.SomenteDigitos(aparado);
         if (!FormatoDeTelefone().IsMatch(aparado) || digitos.Length is not (10 or 11))
         {
-            erros.Add(new Erro("Telefone", "Informe o telefone com DDD."));
+            erros.Add(new Erro("Telefone", Mensagens.TelefoneSemDdd));
         }
 
         return digitos;

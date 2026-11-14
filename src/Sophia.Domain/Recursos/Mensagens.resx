@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CpfObrigatorio" xml:space="preserve">
+    <value>Informe o CPF.</value>
+  </data>
+  <data name="CpfInvalido" xml:space="preserve">
+    <value>CPF inválido.</value>
+  </data>
+  <data name="NomeObrigatorio" xml:space="preserve">
+    <value>Informe o nome.</value>
+  </data>
+  <data name="NomeAcimaDoTamanho" xml:space="preserve">
+    <value>O nome deve ter no máximo {0} caracteres.</value>
+  </data>
+  <data name="DataDeNascimentoNoFuturo" xml:space="preserve">
+    <value>A data de nascimento não pode estar no futuro.</value>
+  </data>
+  <data name="DataDeNascimentoInvalida" xml:space="preserve">
+    <value>Informe uma data de nascimento válida.</value>
+  </data>
+  <data name="EmailInvalido" xml:space="preserve">
+    <value>E-mail inválido.</value>
+  </data>
+  <data name="TelefoneSemDdd" xml:space="preserve">
+    <value>Informe o telefone com DDD.</value>
+  </data>
+  <data name="ValorUnitarioObrigatorio" xml:space="preserve">
+    <value>Informe o valor unitário.</value>
+  </data>
+  <data name="ValorUnitarioNaoPositivo" xml:space="preserve">
+    <value>O valor unitário deve ser maior que zero.</value>
+  </data>
+  <data name="ValorUnitarioAcimaDoPermitido" xml:space="preserve">
+    <value>O valor unitário está acima do permitido.</value>
+  </data>
+  <data name="ValorUnitarioComMaisDeDuasCasas" xml:space="preserve">
+    <value>O valor unitário aceita no máximo duas casas decimais.</value>
+  </data>
+  <data name="DataDaVendaObrigatoria" xml:space="preserve">
+    <value>Informe a data da venda.</value>
+  </data>
+  <data name="DataDaVendaNoFuturo" xml:space="preserve">
+    <value>A data da venda não pode estar no futuro.</value>
+  </data>
+  <data name="ClienteNaoSelecionado" xml:space="preserve">
+    <value>Selecione o cliente.</value>
+  </data>
+  <data name="VendaSemItens" xml:space="preserve">
+    <value>Lance ao menos um produto na venda.</value>
+  </data>
+  <data name="ProdutoNaoSelecionado" xml:space="preserve">
+    <value>Selecione o produto.</value>
+  </data>
+  <data name="ProdutoRepetidoNaVenda" xml:space="preserve">
+    <value>Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior.</value>
+  </data>
+  <data name="QuantidadeObrigatoria" xml:space="preserve">
+    <value>Informe a quantidade.</value>
+  </data>
+  <data name="QuantidadeNaoPositiva" xml:space="preserve">
+    <value>A quantidade deve ser maior que zero.</value>
+  </data>
+  <data name="FalhaSemErros" xml:space="preserve">
+    <value>Uma falha precisa de ao menos um erro.</value>
+  </data>
+  <data name="ValorDeResultadoComErros" xml:space="preserve">
+    <value>Um resultado com erros não tem valor.</value>
+  </data>
+</root>

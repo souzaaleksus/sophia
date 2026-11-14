@@ -1,10 +1,9 @@
+using Sophia.Domain.Recursos;
+
 namespace Sophia.Domain.Vendas;
 
 public sealed class Venda
 {
-    private const string MensagemProdutoRepetido =
-        "Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior.";
-
     private readonly List<ItemVenda> _itens = [];
 
     private Venda()
@@ -49,11 +48,11 @@ public sealed class Venda
     {
         if (data is null)
         {
-            erros.Add(new Erro("Data", "Informe a data da venda."));
+            erros.Add(new Erro("Data", Mensagens.DataDaVendaObrigatoria));
         }
         else if (data > hoje)
         {
-            erros.Add(new Erro("Data", "A data da venda não pode estar no futuro."));
+            erros.Add(new Erro("Data", Mensagens.DataDaVendaNoFuturo));
         }
     }
 
@@ -61,7 +60,7 @@ public sealed class Venda
     {
         if (clienteId is null or <= 0)
         {
-            erros.Add(new Erro("ClienteId", "Selecione o cliente."));
+            erros.Add(new Erro("ClienteId", Mensagens.ClienteNaoSelecionado));
         }
     }
 
@@ -69,7 +68,7 @@ public sealed class Venda
     {
         if (itens.Count == 0)
         {
-            erros.Add(new Erro("Itens", "Lance ao menos um produto na venda."));
+            erros.Add(new Erro("Itens", Mensagens.VendaSemItens));
             return [];
         }
 
@@ -107,11 +106,11 @@ public sealed class Venda
     {
         if (produtoId is null or <= 0)
         {
-            erros.Add(new Erro($"{linha}.ProdutoId", "Selecione o produto."));
+            erros.Add(new Erro($"{linha}.ProdutoId", Mensagens.ProdutoNaoSelecionado));
         }
         else if (!produtosLancados.Add(produtoId.Value))
         {
-            erros.Add(new Erro($"{linha}.ProdutoId", MensagemProdutoRepetido));
+            erros.Add(new Erro($"{linha}.ProdutoId", Mensagens.ProdutoRepetidoNaVenda));
         }
     }
 
@@ -119,11 +118,11 @@ public sealed class Venda
     {
         if (quantidade is null)
         {
-            erros.Add(new Erro($"{linha}.Quantidade", "Informe a quantidade."));
+            erros.Add(new Erro($"{linha}.Quantidade", Mensagens.QuantidadeObrigatoria));
         }
         else if (quantidade <= 0)
         {
-            erros.Add(new Erro($"{linha}.Quantidade", "A quantidade deve ser maior que zero."));
+            erros.Add(new Erro($"{linha}.Quantidade", Mensagens.QuantidadeNaoPositiva));
         }
     }
 }

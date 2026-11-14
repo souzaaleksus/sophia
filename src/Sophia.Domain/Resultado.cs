@@ -1,3 +1,5 @@
+using Sophia.Domain.Recursos;
+
 namespace Sophia.Domain;
 
 public class Resultado
@@ -28,7 +30,7 @@ public class Resultado
         var lista = erros.ToList();
         if (lista.Count == 0)
         {
-            throw new ArgumentException("Uma falha precisa de ao menos um erro.", nameof(erros));
+            throw new ArgumentException(Mensagens.FalhaSemErros, nameof(erros));
         }
 
         return lista;
@@ -47,5 +49,5 @@ public sealed class Resultado<T> : Resultado
 
     public T Valor => Sucesso
         ? _valor!
-        : throw new InvalidOperationException("Um resultado com erros não tem valor.");
+        : throw new InvalidOperationException(Mensagens.ValorDeResultadoComErros);
 }

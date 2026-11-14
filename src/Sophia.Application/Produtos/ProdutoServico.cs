@@ -1,4 +1,5 @@
 using Sophia.Application.Abstracoes;
+using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Produtos;
 
@@ -10,9 +11,9 @@ public sealed class ProdutoServico(
     ParametrosDoSophia parametros) : IProdutoServico
 {
     private static readonly Ordenacao<ColunaDeProdutos> OrdemPadrao = new(ColunaDeProdutos.Nome, Decrescente: false);
-    private static readonly Erro NomeDuplicado = new("Nome", "Já existe um produto com este nome.");
-    private static readonly Erro NaoEncontrado = new(string.Empty, "Produto não encontrado.");
-    private static readonly Erro JaVendido = new(string.Empty, "Este produto já foi vendido e não pode ser excluído.");
+    private static readonly Erro NomeDuplicado = new("Nome", Mensagens.NomeDeProdutoDuplicado);
+    private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ProdutoNaoEncontrado);
+    private static readonly Erro JaVendido = new(string.Empty, Mensagens.ProdutoJaVendido);
 
     public async Task<Lista<ProdutoDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default)
     {

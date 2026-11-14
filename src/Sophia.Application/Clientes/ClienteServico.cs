@@ -1,4 +1,5 @@
 using Sophia.Application.Abstracoes;
+using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Clientes;
 
@@ -11,9 +12,9 @@ public sealed class ClienteServico(
     ParametrosDoSophia parametros) : IClienteServico
 {
     private static readonly Ordenacao<ColunaDeClientes> OrdemPadrao = new(ColunaDeClientes.Nome, Decrescente: false);
-    private static readonly Erro CpfDuplicado = new("Cpf", "Já existe um cliente com este CPF.");
-    private static readonly Erro NaoEncontrado = new(string.Empty, "Cliente não encontrado.");
-    private static readonly Erro PossuiVendas = new(string.Empty, "Este cliente possui vendas e não pode ser excluído.");
+    private static readonly Erro CpfDuplicado = new("Cpf", Mensagens.CpfDuplicado);
+    private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ClienteNaoEncontrado);
+    private static readonly Erro PossuiVendas = new(string.Empty, Mensagens.ClientePossuiVendas);
 
     public async Task<Lista<ClienteDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default)
     {

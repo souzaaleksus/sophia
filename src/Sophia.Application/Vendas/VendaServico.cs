@@ -1,6 +1,7 @@
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
 using Sophia.Application.Produtos;
+using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Vendas;
 
@@ -85,7 +86,7 @@ public sealed class VendaServico(
         var erros = new List<Erro>();
         if (!await clientes.ExisteAsync(venda.ClienteId, cancelamento))
         {
-            erros.Add(new Erro("ClienteId", "Cliente não encontrado."));
+            erros.Add(new Erro("ClienteId", Mensagens.ClienteNaoEncontrado));
         }
 
         var itens = venda.Itens.ToList();
@@ -94,7 +95,7 @@ public sealed class VendaServico(
         {
             if (!existentes.Contains(itens[linha].ProdutoId))
             {
-                erros.Add(new Erro($"Itens[{linha}].ProdutoId", "Produto não encontrado."));
+                erros.Add(new Erro($"Itens[{linha}].ProdutoId", Mensagens.ProdutoNaoEncontrado));
             }
         }
 
