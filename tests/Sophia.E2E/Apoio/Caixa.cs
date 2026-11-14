@@ -5,9 +5,6 @@ namespace Sophia.E2E.Apoio;
 
 public sealed class Caixa(IPage pagina)
 {
-    private const int TentativasDeBusca = 3;
-    private const float EsperaPelaSugestao = 5000;
-
     public ILocator ComboboxDeCliente =>
         pagina.GetByRole(AriaRole.Combobox, new() { Name = "Cliente", Exact = true });
 
@@ -58,28 +55,8 @@ public sealed class Caixa(IPage pagina)
 
     private async Task EscolherSugestaoAsync(ILocator combobox, string termo, string sugestao)
     {
-        var opcao = pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = sugestao });
-        var tentativa = 1;
-        while (!await SugeriuAsync(combobox, termo, opcao) && tentativa < TentativasDeBusca)
-        {
-            tentativa++;
-            await combobox.FillAsync(string.Empty);
-        }
-
-        await opcao.ClickAsync();
-    }
-
-    private static async Task<bool> SugeriuAsync(ILocator combobox, string termo, ILocator opcao)
-    {
+        await ProntoAsync();
         await combobox.FillAsync(termo);
-        try
-        {
-            await opcao.WaitForAsync(new() { Timeout = EsperaPelaSugestao });
-            return true;
-        }
-        catch (TimeoutException)
-        {
-            return false;
-        }
+        await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = sugestao }).ClickAsync();
     }
 }
