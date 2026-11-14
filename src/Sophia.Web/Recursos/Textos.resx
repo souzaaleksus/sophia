@@ -504,32 +504,8 @@
   <data name="tema.nome-escuro" xml:space="preserve">
     <value>escuro</value>
   </data>
-  <data name="validacao.cpf-invalido" xml:space="preserve">
-    <value>CPF inválido.</value>
-  </data>
-  <data name="validacao.cpf-obrigatorio" xml:space="preserve">
-    <value>Informe o CPF.</value>
-  </data>
-  <data name="validacao.email-invalido" xml:space="preserve">
-    <value>E-mail inválido.</value>
-  </data>
-  <data name="validacao.nascimento-invalido" xml:space="preserve">
-    <value>Informe uma data de nascimento válida.</value>
-  </data>
-  <data name="validacao.nome-obrigatorio" xml:space="preserve">
-    <value>Informe o nome.</value>
-  </data>
-  <data name="validacao.nome-tamanho" xml:space="preserve">
-    <value>O nome deve ter no máximo {1} caracteres.</value>
-  </data>
-  <data name="validacao.telefone-sem-ddd" xml:space="preserve">
-    <value>Informe o telefone com DDD.</value>
-  </data>
   <data name="validacao.valor-invalido" xml:space="preserve">
     <value>Valor inválido. Use 12,50 ou 1.250,00.</value>
-  </data>
-  <data name="validacao.valor-obrigatorio" xml:space="preserve">
-    <value>Informe o valor unitário.</value>
   </data>
   <data name="venda.comprovante" xml:space="preserve">
     <value>Comprovante da venda</value>
