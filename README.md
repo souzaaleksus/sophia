@@ -1,6 +1,6 @@
 # Sophia — Controle de Venda
 
-Aplicação web para o controle de vendas a clientes, em **ASP.NET Core MVC (.NET 8)**, **C#** e
+Aplicação web para o controle de vendas a clientes, em **ASP.NET Core MVC (.NET 10)**, **C#** e
 **SQL Server**, com cadastro de clientes, produtos e vendas.
 
 - [Especificação](#especificação)
@@ -144,7 +144,7 @@ vendas e o atalho de dias da lista de vendas) são parâmetros da seção `Sophi
 
 | Código | Requisito |
 |---|---|
-| RNF01 | ASP.NET Core MVC (.NET 8) com C#. |
+| RNF01 | ASP.NET Core MVC (.NET 10, versão de suporte longo) com C#. |
 | RNF02 | SQL Server (Express), acesso via Entity Framework Core. |
 | RNF03 | Banco com chaves primárias e estrangeiras, índices, campos obrigatórios e normalização; o script de criação é entregue em `database/create-database.sql`. |
 | RNF04 | Interface simples e moderna, em português do Brasil (datas `dd/mm/aaaa`, valores `R$ 1.234,56`), com tema claro, escuro ou automático. Funciona a partir de 360 px de largura sem rolagem lateral, com alvos de toque de 44 px e contraste WCAG AA. |
@@ -162,12 +162,12 @@ para compilar, testar ou rodar.
 
 | Camada | Tecnologia | Por que usamos |
 |---|---|---|
-| Linguagem e plataforma | C# 12 · .NET 8 | O enunciado pede ASP.NET Core MVC, e o .NET 8 foi a versão LTS (suporte de longo prazo) quando o projeto começou. O suporte oficial do .NET 8 terminou em 10/11/2026: a atualização para o .NET 10, o LTS atual, é o próximo passo de manutenção. |
+| Linguagem e plataforma | C# 14 · .NET 10 | O enunciado pede ASP.NET Core MVC, e o .NET 10 é a versão LTS (suporte de longo prazo) atual, com correções garantidas até novembro de 2028. O projeto nasceu no .NET 8 e foi atualizado quando o suporte dele terminou, em 10/11/2026. O .NET 11, mais novo, tem suporte curto (STS) e não compensa para um sistema de loja. |
 | Web | ASP.NET Core MVC · Razor | Pedido no enunciado. As páginas chegam prontas do servidor, então a tela funciona antes de qualquer JavaScript, e o framework já entrega validação do modelo, proteção contra envio forjado (antiforgery), localização e página de erro. |
 | Interface | Bootstrap 5.3 · CSS próprio por área · JavaScript puro em módulos ES | O Bootstrap dá grade, formulários e o tema escuro (`data-bs-theme`) prontos e já cuidados em acessibilidade. O CSS próprio, dividido por área em `wwwroot/css`, aplica a identidade da Sophia. O JavaScript roda direto no navegador, sem npm nem bundler na aplicação: o que precisa de interação (caixa, busca enquanto digita, diálogo) é pequeno demais para justificar um framework. |
 | Validação no navegador | jQuery Validation · validação discreta do ASP.NET Core | É o par que transforma as regras (`DataAnnotations`) do modelo em validação no navegador, com as mesmas mensagens do servidor. O jQuery entra só por causa dele, e só nas telas com formulário de cadastro. |
 | Tipografia e ícones | Poppins (arquivos próprios em `wwwroot/fontes`, licença OFL) · ícones Lucide em sprite SVG | A Poppins é a fonte da identidade da Sophia e tem algarismos tabulares, que alinham os valores em coluna. Os arquivos ficam no próprio Sophia: a tela não depende da internet nem consulta o Google a cada página. Os ícones Lucide (licença ISC) ficam num sprite SVG da própria página: uma requisição a menos e cor herdada do texto, inclusive no tema escuro. |
-| Acesso a dados | Entity Framework Core 8 | Consultas tipadas e sempre parametrizadas (nada de SQL montado com texto do usuário), projeção direta para os DTOs da tela e tradução da violação de índice único para a mensagem do negócio. Sem migrations: o enunciado pede o script, e ele é a única fonte do esquema. |
+| Acesso a dados | Entity Framework Core 10 | Consultas tipadas e sempre parametrizadas (nada de SQL montado com texto do usuário), projeção direta para os DTOs da tela e tradução da violação de índice único para a mensagem do negócio. Sem migrations: o enunciado pede o script, e ele é a única fonte do esquema. |
 | Banco de dados | SQL Server Express (2019 ou mais novo local, 2022 no Docker) | Edição gratuita do SQL Server. O mesmo script T-SQL roda no local e no contêiner, e recursos como o índice único filtrado garantem regras do negócio, como a RN25, no próprio banco. |
 | Testes de unidade e de serviço | xUnit · FluentAssertions 6 | O xUnit é o padrão do ecossistema .NET, com fixtures que compartilham um banco por coleção de testes. O FluentAssertions faz a falha dizer o esperado e o encontrado em forma de frase. A versão 6 tem licença Apache 2.0; a 8 passou a ser paga para uso comercial. |
 | Especificação executável (BDD) | Reqnroll · Gherkin em português | Sucessor de código aberto do SpecFlow. Os cenários desta especificação rodam como testes, então o documento não fica desatualizado em relação ao código. |
@@ -234,7 +234,7 @@ de novo acrescenta a coluna e o índice sem apagar nada.
 ## Como executar
 
 Roteiro do zero até a primeira venda. Escolha **um** dos dois caminhos: Docker (nada para
-instalar além do Docker) ou local (.NET 8 e SQL Server Express na máquina).
+instalar além do Docker) ou local (.NET 10 e SQL Server Express na máquina).
 
 ### Passo 0 — Baixar o código
 
@@ -284,12 +284,12 @@ variável `SOPHIA_SENHA_DO_BANCO`. O SQL Server fica acessível apenas nesta má
 Para subir com o banco vazio, sem os dados de demonstração, defina
 `SOPHIA_DADOS_DE_DEMONSTRACAO=nao` (no ambiente ou no arquivo `.env`) antes do primeiro `up`.
 
-### Caminho B — Local, com .NET 8 e SQL Server Express
+### Caminho B — Local, com .NET 10 e SQL Server Express
 
 Pré-requisitos:
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (`dotnet --version` deve
-  mostrar 8.x);
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (`dotnet --version` deve
+  mostrar 10.x);
 - SQL Server Express com a instância `.\SQLEXPRESS` (qualquer edição 2019 ou mais nova);
 - `sqlcmd` ou o SQL Server Management Studio (SSMS), para rodar o script.
 
@@ -318,7 +318,7 @@ Pré-requisitos:
    dotnet run --project src/Sophia.Web
    ```
 
-   Ou abra `Sophia.sln` no Visual Studio, marque `Sophia.Web` como projeto de inicialização e
+   Ou abra `Sophia.sln` no Visual Studio 2026 ou mais novo, marque `Sophia.Web` como projeto de inicialização e
    pressione F5.
 
 4. Abra http://localhost:5080. Para parar, `Ctrl+C` no terminal.
@@ -384,7 +384,7 @@ outro, defina `SOPHIA_TESTES_SQLSERVER` com o texto de conexão (sem o nome do b
 Os testes de tela precisam do navegador do Playwright, instalado uma vez:
 
 ```bash
-pwsh tests/Sophia.E2E/bin/Debug/net8.0/playwright.ps1 install chromium
+pwsh tests/Sophia.E2E/bin/Debug/net10.0/playwright.ps1 install chromium
 ```
 
 Para usar o Google Chrome já instalado, defina `SOPHIA_E2E_CANAL=chrome`. Para **ver** o

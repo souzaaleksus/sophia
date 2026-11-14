@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /codigo
 
 COPY global.json Directory.Build.props .editorconfig CodeMetricsConfig.txt ./
@@ -11,7 +11,7 @@ RUN dotnet restore src/Sophia.Web/Sophia.Web.csproj
 COPY src/ src/
 RUN dotnet publish src/Sophia.Web/Sophia.Web.csproj -c Release -o /publicacao --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     TZ=America/Sao_Paulo
