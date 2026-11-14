@@ -9,7 +9,7 @@ public sealed class ClienteServico(
     IClienteRepositorio clientes,
     IUnidadeDeTrabalho unidadeDeTrabalho,
     IRelogio relogio,
-    ParametrosDoSophia parametros) : IClienteServico
+    ParametrosDoSophia parametros) : IServicoDeCadastro<ClienteDto, DadosCliente>
 {
     private static readonly Ordenacao<ColunaDeClientes> OrdemPadrao = new(ColunaDeClientes.Nome, Decrescente: false);
     private static readonly Erro CpfDuplicado = new(nameof(DadosCliente.Cpf), Mensagens.CpfDuplicado);

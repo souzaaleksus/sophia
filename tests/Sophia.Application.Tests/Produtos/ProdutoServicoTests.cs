@@ -15,7 +15,7 @@ public sealed class ProdutoServicoTests(BancoDeTestes banco) : IAsyncLifetime, I
 
     private readonly SistemaEmTeste _sistema = new(banco, Hoje);
 
-    private IProdutoServico Servico => _sistema.Produtos;
+    private IServicoDeCadastro<ProdutoDto, DadosProduto> Servico => _sistema.Produtos;
 
     public Task InitializeAsync() => banco.LimparAsync();
 

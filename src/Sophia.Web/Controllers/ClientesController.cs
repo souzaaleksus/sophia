@@ -6,9 +6,12 @@ using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class ClientesController(IClienteServico clientes, ParametrosDoSophia parametros, IStringLocalizer<Textos> textos)
+public sealed class ClientesController(
+    IServicoDeCadastro<ClienteDto, DadosCliente> clientes,
+    ParametrosDoSophia parametros,
+    IStringLocalizer<Textos> textos)
     : CadastroController<ClienteDto, ClienteFormulario, DadosCliente>(
-        new(clientes.ListarAsync, clientes.BuscarAsync, clientes.ObterAsync, clientes.CadastrarAsync, clientes.AlterarAsync, clientes.ExcluirAsync),
+        clientes,
         new(textos["clientes.cadastrado"], textos["clientes.alterado"], textos["clientes.excluido"]),
         parametros)
 {

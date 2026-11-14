@@ -6,9 +6,12 @@ using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSophia parametros, IStringLocalizer<Textos> textos)
+public sealed class ProdutosController(
+    IServicoDeCadastro<ProdutoDto, DadosProduto> produtos,
+    ParametrosDoSophia parametros,
+    IStringLocalizer<Textos> textos)
     : CadastroController<ProdutoDto, ProdutoFormulario, DadosProduto>(
-        new(produtos.ListarAsync, produtos.BuscarAsync, produtos.ObterAsync, produtos.CadastrarAsync, produtos.AlterarAsync, produtos.ExcluirAsync),
+        produtos,
         new(textos["produtos.cadastrado"], textos["produtos.alterado"], textos["produtos.excluido"]),
         parametros)
 {

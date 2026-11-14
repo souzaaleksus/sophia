@@ -12,11 +12,11 @@ public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
 {
     private const string Formulario = "Formulario";
 
-    private readonly ServicoDeCadastro<TDto, TDados> servico;
+    private readonly IServicoDeCadastro<TDto, TDados> servico;
     private readonly AvisosDeCadastro avisos;
     private readonly ParametrosDoSophia parametros;
 
-    protected CadastroController(ServicoDeCadastro<TDto, TDados> servico, AvisosDeCadastro avisos, ParametrosDoSophia parametros)
+    protected CadastroController(IServicoDeCadastro<TDto, TDados> servico, AvisosDeCadastro avisos, ParametrosDoSophia parametros)
     {
         this.servico = servico;
         this.avisos = avisos;
@@ -26,7 +26,7 @@ public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
     {
-        var lista = await servico.Listar(consulta, cancelamento);
+        var lista = await servico.ListarAsync(consulta, cancelamento);
         ViewData["Busca"] = consulta.Busca;
         ViewData["Ordem"] = lista.Ordem;
         return View(lista.Pagina);
@@ -40,7 +40,7 @@ public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
             return Json(Array.Empty<object>());
         }
 
-        var encontrados = await servico.Buscar(termo, parametros.SugestoesNaBusca, cancelamento);
+        var encontrados = await servico.BuscarAsync(termo, parametros.SugestoesNaBusca, cancelamento);
         return Json(encontrados.Select(Sugestao));
     }
 
@@ -49,12 +49,12 @@ public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
 
     [HttpPost]
     public Task<IActionResult> Novo(TFormulario formulario, CancellationToken cancelamento) =>
-        GravarAsync(formulario, () => servico.Cadastrar(formulario.ParaDados(), cancelamento), avisos.Cadastrado);
+        GravarAsync(formulario, () => servico.CadastrarAsync(formulario.ParaDados(), cancelamento), avisos.Cadastrado);
 
     [HttpGet]
     public async Task<IActionResult> Editar(int id, CancellationToken cancelamento)
     {
-        var registro = await servico.Obter(id, cancelamento);
+        var registro = await servico.ObterAsync(id, cancelamento);
         return registro is null ? NotFound() : View(Formulario, ParaFormulario(registro));
     }
 
@@ -62,13 +62,13 @@ public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
     public Task<IActionResult> Editar(int id, TFormulario formulario, CancellationToken cancelamento)
     {
         formulario.Id = id;
-        return GravarAsync(formulario, () => servico.Alterar(id, formulario.ParaDados(), cancelamento), avisos.Alterado);
+        return GravarAsync(formulario, () => servico.AlterarAsync(id, formulario.ParaDados(), cancelamento), avisos.Alterado);
     }
 
     [HttpGet]
     public async Task<IActionResult> Excluir(int id, CancellationToken cancelamento)
     {
-        var registro = await servico.Obter(id, cancelamento);
+        var registro = await servico.ObterAsync(id, cancelamento);
         return registro is null ? NotFound() : View(registro);
     }
 
@@ -81,7 +81,7 @@ public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
             return BadRequest();
         }
 
-        var resultado = await servico.Excluir(id, cancelamento);
+        var resultado = await servico.ExcluirAsync(id, cancelamento);
         if (resultado.Sucesso)
         {
             TempData.Sucesso(avisos.Excluido);

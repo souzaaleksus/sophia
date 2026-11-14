@@ -6,6 +6,8 @@ using Sophia.Application.Painel;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
 using Sophia.Domain;
+using Sophia.Domain.Clientes;
+using Sophia.Domain.Produtos;
 using Sophia.Testes.Banco;
 
 namespace Sophia.Specs.Apoio;
@@ -22,9 +24,9 @@ public sealed partial class Cenario : IDisposable
         set => _sistema.Hoje = value;
     }
 
-    public IClienteServico Clientes => _sistema.Clientes;
+    public IServicoDeCadastro<ClienteDto, DadosCliente> Clientes => _sistema.Clientes;
 
-    public IProdutoServico Produtos => _sistema.Produtos;
+    public IServicoDeCadastro<ProdutoDto, DadosProduto> Produtos => _sistema.Produtos;
 
     public IVendaServico Vendas => _sistema.Vendas;
 

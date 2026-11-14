@@ -8,7 +8,7 @@ namespace Sophia.Application.Produtos;
 public sealed class ProdutoServico(
     IProdutoRepositorio produtos,
     IUnidadeDeTrabalho unidadeDeTrabalho,
-    ParametrosDoSophia parametros) : IProdutoServico
+    ParametrosDoSophia parametros) : IServicoDeCadastro<ProdutoDto, DadosProduto>
 {
     private static readonly Ordenacao<ColunaDeProdutos> OrdemPadrao = new(ColunaDeProdutos.Nome, Decrescente: false);
     private static readonly Erro NomeDuplicado = new(nameof(DadosProduto.Nome), Mensagens.NomeDeProdutoDuplicado);
@@ -27,11 +27,11 @@ public sealed class ProdutoServico(
     }
 
     public async Task<IReadOnlyList<ProdutoDto>> BuscarAsync(
-        string? trechoDoNome,
+        string? termo,
         int limite,
         CancellationToken cancelamento = default)
     {
-        var encontrados = await produtos.ListarAsync(Texto.Aparar(trechoDoNome), limite, cancelamento);
+        var encontrados = await produtos.ListarAsync(Texto.Aparar(termo), limite, cancelamento);
         return encontrados.Select(ProdutoDto.De).ToList();
     }
 
