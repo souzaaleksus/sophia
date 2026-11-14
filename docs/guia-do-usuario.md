@@ -204,7 +204,7 @@ Valem na tela de venda:
 | `F4` | vai para o próximo produto em branco, abrindo uma linha se precisar |
 | `↑` `↓` | navegam pelas sugestões de cliente ou de produto |
 | `Enter` | confirma a sugestão; na quantidade, abre a próxima linha |
-| `Esc` | fecha as sugestões; se a busca foi aberta pelo `F2`, devolve o cliente que estava escolhido |
+| `Esc` | fecha as sugestões; com as sugestões já fechadas, se a busca foi aberta pelo `F2`, devolve o cliente que estava escolhido |
 | `Ctrl` + `Enter` | finaliza a venda |
 
 ## 10. Mensagens e o que fazer
@@ -225,6 +225,8 @@ Valem na tela de venda:
 | Selecione o produto. | a linha tem valor ou quantidade, mas não tem produto | escolha o produto na lista de sugestões |
 | A quantidade deve ser maior que zero. | quantidade zero ou vazia | informe a quantidade |
 | Quantidade aceita no máximo 2.147.483.647. | número grande demais, em geral zeros a mais | confira a quantidade |
+| Quantidade deve ser maior que zero. | número negativo grande demais | confira a quantidade |
+| Valor unitário está acima do permitido. | valor com dígitos demais, em geral zeros a mais | confira o valor |
 | A data da venda não pode estar no futuro. | data depois de hoje | corrija a data |
 | Não foi possível atualizar a lista. Tente de novo. | a busca da lista falhou | aguarde um instante e digite de novo |
 | Não foi possível concluir a operação. Tente de novo em instantes. | falha inesperada | tente de novo; se persistir, avise o responsável pelo sistema |

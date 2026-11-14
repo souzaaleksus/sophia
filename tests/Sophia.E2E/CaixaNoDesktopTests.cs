@@ -211,6 +211,107 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task O_aviso_de_soma_mostra_o_nome_do_produto_como_cadastrado()
+    {
+        await new Cadastro(aplicacao.Banco).ProdutoAsync("Caneta $& azul", 3.10m);
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "$&", "Caneta $& azul", "1");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
+
+        await _caixa.ProdutoDaLinha(1).FillAsync("$&");
+        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Caneta $& azul" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status).Filter(new() { HasText = "já estava" }))
+            .ToHaveTextAsync("Caneta $& azul já estava na venda: quantidade somada na linha 1.");
+    }
+
+    [Fact]
+    public async Task Somar_de_novo_enquanto_o_realce_corre_reinicia_o_realce()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await AbrirSugestoesNaLinhaAsync(1, "Caneta", "Caneta azul");
+        await _caixa.ProdutoDaLinha(1).PressAsync("Enter");
+        await Expect(_caixa.Linha(0)).ToHaveClassAsync(new Regex("caixa-item-novo"));
+        await _caixa.Linha(0).EvaluateAsync("linha => { window.realceAnterior = linha.getAnimations()[0]; window.realceAnterior.pause(); }");
+        await AbrirSugestoesNaLinhaAsync(1, "Caneta", "Caneta azul");
+
+        var reiniciou = await _caixa.ProdutoDaLinha(1).EvaluateAsync<bool>(
+            """
+            async entrada => {
+                const linha = entrada.closest('[data-item]').parentElement.querySelector('[data-item]');
+                entrada.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+                await new Promise(pronto => requestAnimationFrame(() => requestAnimationFrame(pronto)));
+                return linha.getAnimations().some(realce => realce !== window.realceAnterior && realce.playState === 'running');
+            }
+            """);
+
+        reiniciou.Should().BeTrue("o realce recomeça quando o produto é somado de novo enquanto ele corre");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("3");
+    }
+
+    [Fact]
+    public async Task Com_movimento_reduzido_somar_de_novo_nao_anima_a_linha()
+    {
+        await _pagina.EmulateMediaAsync(new() { ReducedMotion = ReducedMotion.Reduce });
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await AbrirSugestoesNaLinhaAsync(1, "Caneta", "Caneta azul");
+
+        await _caixa.ProdutoDaLinha(1).PressAsync("Enter");
+
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("2");
+        await Expect(_caixa.Linha(0)).Not.ToHaveClassAsync(new Regex("caixa-item-novo"));
+        (await _caixa.Linha(0).EvaluateAsync<int>("linha => linha.getAnimations().length")).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Esc_com_a_lista_de_sugestoes_aberta_so_fecha_a_lista_e_o_segundo_devolve_o_cliente()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _pagina.Keyboard.PressAsync("F2");
+        await _caixa.ComboboxDeCliente.FillAsync("Maria");
+        await Expect(_pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Maria Santos" })).ToBeVisibleAsync();
+
+        await _caixa.ComboboxDeCliente.PressAsync("Escape");
+
+        await Expect(_pagina.GetByRole(AriaRole.Option)).ToHaveCountAsync(0);
+        await Expect(_caixa.ComboboxDeCliente).ToBeFocusedAsync();
+        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToBeHiddenAsync();
+
+        await _caixa.ComboboxDeCliente.PressAsync("Escape");
+
+        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync("Maria Santos");
+        await Expect(_pagina.GetByRole(AriaRole.Button, new() { Name = "Trocar cliente" })).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    public async Task Devolver_o_cliente_mantem_o_erro_do_servidor_sobre_ele_e_escolher_outro_limpa()
+    {
+        await new Cadastro(aplicacao.Banco).ClienteAsync("111.444.777-35", "João Lima");
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await aplicacao.Banco.ExecutarAsync("DELETE FROM dbo.Clientes WHERE Nome = N'Maria Santos'");
+        await _caixa.Finalizar.ClickAsync();
+        var erroDoCliente = _pagina.Locator("[data-valmsg-for=ClienteId]");
+        await Expect(erroDoCliente).ToHaveTextAsync("Cliente não encontrado.");
+        await _caixa.ProntoAsync();
+
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Trocar cliente" }).ClickAsync();
+        await _caixa.ComboboxDeCliente.PressAsync("Escape");
+
+        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync("Maria Santos");
+        await Expect(erroDoCliente).ToHaveTextAsync("Cliente não encontrado.");
+
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Trocar cliente" }).ClickAsync();
+        await _caixa.EscolherClienteAsync("João", "João Lima");
+
+        await Expect(erroDoCliente).ToBeEmptyAsync();
+    }
+
+    [Fact]
     public async Task Esc_na_busca_aberta_pelo_F2_devolve_o_cliente_escolhido()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
@@ -268,6 +369,17 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("O valor \"2,5x\" não é válido para Valor unitário.");
         await Expect(_caixa.Linha(0).GetByLabel("Valor unitário")).ToHaveValueAsync("2,5x");
+    }
+
+    private async Task AbrirSugestoesNaLinhaAsync(int linha, string termo, string produto)
+    {
+        if (await _caixa.Itens.CountAsync() <= linha)
+        {
+            await _pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
+        }
+
+        await _caixa.ProdutoDaLinha(linha).FillAsync(termo);
+        await Expect(_pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto })).ToBeVisibleAsync();
     }
 
     private ILocator BotaoDaLinha(int linha, string nome) =>

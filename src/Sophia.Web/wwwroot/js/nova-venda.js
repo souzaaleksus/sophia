@@ -20,7 +20,7 @@ const linhas = criarLinhas({
     movimentoReduzido,
     aoMudar: () => recalcularTotais(),
     aoRemover: (item, posicao) => desfazer.oferecer(item, posicao),
-    aoSomar: (produto, linha) => anunciar(configuracao.textoProdutoSomado.replace('{produto}', produto.nome).replace('{linha}', linha)),
+    aoSomar: (produto, linha) => anunciar(configuracao.textoProdutoSomado.replace('{produto}', () => produto.nome).replace('{linha}', () => linha)),
 });
 const cliente = criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, () => linhas.focarLivre());
 

@@ -17,6 +17,7 @@ export function criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, a
         aoEscolher: cliente => {
             anterior = null;
             mostrarEscolhido(cliente);
+            limparErro(formulario, 'ClienteId');
             aoEscolher();
         },
     });
@@ -33,7 +34,6 @@ export function criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, a
         mostrarAvatar(parte('avatar'), cliente.nome);
         busca.hidden = true;
         escolhido.hidden = false;
-        limparErro(formulario, 'ClienteId');
     }
 
     function devolverAnterior() {

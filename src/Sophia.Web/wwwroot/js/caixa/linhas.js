@@ -108,10 +108,9 @@ class Linhas {
         }
 
         item.classList.remove('caixa-item-novo');
-        requestAnimationFrame(() => {
-            item.classList.add('caixa-item-novo');
-            item.addEventListener('animationend', () => item.classList.remove('caixa-item-novo'), { once: true });
-        });
+        void item.offsetWidth;
+        item.classList.add('caixa-item-novo');
+        item.addEventListener('animationend', () => item.classList.remove('caixa-item-novo'), { once: true });
     }
 
     #escolherProduto(item, produto) {
