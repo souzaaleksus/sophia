@@ -24,7 +24,7 @@ internal sealed class ClienteConfiguracao : IEntityTypeConfiguration<Cliente>
     private static void ConfigurarCpf(EntityTypeBuilder<Cliente> cliente)
     {
         cliente.Property(c => c.Cpf)
-            .HasConversion(cpf => cpf.Numero, numero => Cpf.Criar(numero).Valor)
+            .HasConversion(cpf => cpf.Numero, numero => Cpf.DoBanco(numero))
             .HasColumnType("char(11)")
             .IsRequired();
         cliente.HasIndex(c => c.Cpf).IsUnique().HasDatabaseName("UQ_Clientes_Cpf");
