@@ -148,6 +148,17 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Venda_que_aponta_para_cadastro_inexistente_e_um_conflito_de_referencia()
+    {
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+
+        var gravar = () => RegistrarVendaAsync(999, [new(caneta, 1, 2.50m)]);
+
+        (await gravar.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.ReferenciaInexistente);
+    }
+
+    [Fact]
     public async Task O_indice_unico_da_chave_de_registro_barra_a_segunda_gravacao()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");

@@ -82,6 +82,16 @@ public sealed class VendaServico(
 
             return ConferirReenvio(venda, vencedora);
         }
+        catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.ReferenciaInexistente)
+        {
+            var ausentes = await VerificarCadastrosAsync(venda, cancelamento);
+            if (ausentes.Count == 0)
+            {
+                throw;
+            }
+
+            return Resultado.Falha<int>(ausentes);
+        }
     }
 
     private async Task<Venda?> RegistradaPelaMesmaChaveAsync(Venda venda, CancellationToken cancelamento) =>

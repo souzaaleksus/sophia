@@ -169,15 +169,30 @@ public sealed class VendaServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDi
     }
 
     [Fact]
-    public async Task Conflito_que_nao_e_da_chave_continua_sendo_erro()
+    public async Task Produto_excluido_na_corrida_com_a_gravacao_e_apontado_na_linha_do_item()
     {
         _sistema.AntesDoProximoSalvamento(async () =>
-            (await _sistema.Produtos.ExcluirAsync(_caneta)).Sucesso.Should().BeTrue());
+            (await _sistema.Produtos.ExcluirAsync(_caderno)).Sucesso.Should().BeTrue());
 
-        var registrar = () => Servico.RegistrarAsync(
-            new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], Guid.NewGuid()));
+        var resultado = await Servico.RegistrarAsync(
+            new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m), new(_caderno, 1, 18.90m)], Guid.NewGuid()));
 
-        await registrar.Should().ThrowAsync<ConflitoAoSalvarException>();
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("ProdutoId", "Produto não encontrado.", 1));
+        (await PrimeiraPaginaAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Cliente_excluido_na_corrida_com_a_gravacao_e_apontado_no_campo_do_cliente()
+    {
+        _sistema.AntesDoProximoSalvamento(async () =>
+            (await _sistema.Clientes.ExcluirAsync(_maria)).Sucesso.Should().BeTrue());
+
+        var resultado = await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)]));
+
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("ClienteId", "Cliente não encontrado."));
+        (await PrimeiraPaginaAsync()).Should().BeEmpty();
     }
 
     [Fact]
