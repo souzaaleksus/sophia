@@ -41,6 +41,7 @@ public sealed class ParametrosNaSubidaTests
     [InlineData("MaisVendidosNoPainel", "0")]
     [InlineData("UltimasVendasNoPainel", "-5")]
     [InlineData("SugestoesNaBusca", "500")]
+    [InlineData("DiasDoAtalhoDePeriodo", "1")]
     public async Task Valor_fora_da_faixa_impede_a_subida(string parametro, string valor)
     {
         using var aplicacao = Montar(new() { [$"Sophia:{parametro}"] = valor });

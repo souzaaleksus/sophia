@@ -18,4 +18,7 @@ public sealed class ParametrosDoSophia
 
     [Range(1, 50)]
     public int SugestoesNaBusca { get; init; } = 8;
+
+    [Range(2, 90)]
+    public int DiasDoAtalhoDePeriodo { get; init; } = 7;
 }

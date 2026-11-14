@@ -14,6 +14,7 @@ public sealed class ParametrosDoSophiaTests
             MaisVendidosNoPainel = 5,
             UltimasVendasNoPainel = 5,
             SugestoesNaBusca = 8,
+            DiasDoAtalhoDePeriodo = 7,
         });
     }
 
@@ -34,6 +35,8 @@ public sealed class ParametrosDoSophiaTests
     [InlineData(nameof(ParametrosDoSophia.UltimasVendasNoPainel), 51)]
     [InlineData(nameof(ParametrosDoSophia.SugestoesNaBusca), 0)]
     [InlineData(nameof(ParametrosDoSophia.SugestoesNaBusca), 51)]
+    [InlineData(nameof(ParametrosDoSophia.DiasDoAtalhoDePeriodo), 1)]
+    [InlineData(nameof(ParametrosDoSophia.DiasDoAtalhoDePeriodo), 91)]
     public void Valor_fora_da_faixa_e_recusado_apontando_o_parametro(string parametro, int valor)
     {
         var parametros = new ParametrosDoSophia();
@@ -44,9 +47,9 @@ public sealed class ParametrosDoSophiaTests
     }
 
     [Theory]
-    [InlineData(1, 1, 1, 1, 1)]
-    [InlineData(200, 31, 50, 50, 50)]
-    public void As_pontas_da_faixa_sao_aceitas(int pagina, int dias, int maisVendidos, int ultimas, int sugestoes)
+    [InlineData(1, 1, 1, 1, 1, 2)]
+    [InlineData(200, 31, 50, 50, 50, 90)]
+    public void As_pontas_da_faixa_sao_aceitas(int pagina, int dias, int maisVendidos, int ultimas, int sugestoes, int atalho)
     {
         var parametros = new ParametrosDoSophia
         {
@@ -55,6 +58,7 @@ public sealed class ParametrosDoSophiaTests
             MaisVendidosNoPainel = maisVendidos,
             UltimasVendasNoPainel = ultimas,
             SugestoesNaBusca = sugestoes,
+            DiasDoAtalhoDePeriodo = atalho,
         };
 
         Validar(parametros).Should().BeEmpty();

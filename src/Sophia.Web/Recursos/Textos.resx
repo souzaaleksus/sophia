@@ -543,8 +543,8 @@
   <data name="venda.voltar" xml:space="preserve">
     <value>Voltar para as vendas</value>
   </data>
-  <data name="vendas.atalho-7-dias" xml:space="preserve">
-    <value>7 dias</value>
+  <data name="vendas.atalho-dias" xml:space="preserve">
+    <value>{0} dias</value>
   </data>
   <data name="vendas.atalho-hoje" xml:space="preserve">
     <value>Hoje</value>

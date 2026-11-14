@@ -1,5 +1,6 @@
 @model Sophia.Application.Pagina<VendaResumoDto>
 @inject Sophia.Application.Abstracoes.IRelogio Relogio
+@inject Sophia.Application.ParametrosDoSophia Parametros
 @{
     ViewData["Title"] = T["menu.vendas"].Value;
     var ordem = ViewData["Ordem"] as string ?? "-data";
@@ -8,10 +9,11 @@
     var filtros = FiltrosDaLista.De(ViewData);
     var hoje = Relogio.Hoje;
     var comPeriodo = de is not null || ate is not null;
+    var diasDoAtalho = Parametros.DiasDoAtalhoDePeriodo;
     var atalhos = new[]
     {
         (Rotulo: T["vendas.atalho-hoje"].Value, De: hoje, Ate: hoje),
-        (Rotulo: T["vendas.atalho-7-dias"].Value, De: hoje.AddDays(-6), Ate: hoje),
+        (Rotulo: T["vendas.atalho-dias", diasDoAtalho].Value, De: hoje.AddDays(1 - diasDoAtalho), Ate: hoje),
         (Rotulo: T["vendas.atalho-mes"].Value, De: new DateOnly(hoje.Year, hoje.Month, 1), Ate: hoje),
     };
     var colunaData = new ColunaOrdenavel(T["campo.data"], "data", ordem, filtros, "coluna-opcional");
