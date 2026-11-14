@@ -124,6 +124,8 @@ ticket médio do mês corrente e as cinco vendas mais recentes, com atalho para 
 | RN26 | O painel mostra o total de cada um dos últimos 7 dias, até hoje, inclusive os dias sem venda | — | Painel › Total de cada um dos últimos 7 dias, inclusive os dias sem venda |
 | RN27 | O painel mostra os 5 produtos mais vendidos do mês por quantidade; no empate, vem o de maior total e depois a ordem alfabética | — | Painel › Os 5 produtos mais vendidos do mês, por quantidade |
 | RN28 | A lista de vendas mostra 25 vendas por página, das mais recentes para as mais antigas; página pedida antes da primeira mostra a primeira, e depois da última mostra a última | — | Consulta de vendas › A lista de vendas mostra 25 por página, das mais recentes para as mais antigas |
+| RN29 | As listas de clientes e de produtos mostram 25 por página, com a busca aplicada antes da divisão em páginas (clientes por CPF ou nome, produtos por nome) e ordenação por coluna: clientes por nome ou CPF, produtos por nome ou valor, em ordem crescente ou decrescente; o padrão é o nome em ordem alfabética, ordem desconhecida volta ao padrão e, no empate, vale a ordem de cadastro | — | Consulta de clientes › Ordenar a lista pela coluna escolhida; Consulta de produtos › Ordenar a lista pela coluna escolhida |
+| RN30 | A lista de vendas pode ser filtrada por período, com as duas datas inclusive (data inicial depois da final é lida ao contrário; uma data só deixa o outro lado aberto), e ordenada pela data ou pelo total, em ordem crescente ou decrescente; o padrão é da mais recente para a mais antiga e, no empate, vale o número da venda no mesmo sentido | — | Consulta de vendas › Filtrar as vendas por período, com as duas datas inclusive; Consulta de vendas › Ordenar pelo total da venda |
 
 ### 6. Requisitos não funcionais
 
@@ -202,6 +204,8 @@ de novo acrescenta a coluna e o índice sem apagar nada.
 | RN26 | `PainelDeVendas.feature` › Total de cada um dos últimos 7 dias | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (totais por dia agregados no SQL Server) |
 | RN27 | `PainelDeVendas.feature` › Os 5 produtos mais vendidos do mês | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (mais vendidos agregados no SQL Server) |
 | RN28 | `ConsultaDeVendas.feature` | `Sophia.Application.Tests` (Pagina, VendaServico: tamanho, ordem e limites de página) | `Sophia.Integration.Tests` (contagem e recorte com `OFFSET`/`FETCH` no SQL Server) |
+| RN29 | `ConsultaDeClientes.feature`, `ConsultaDeProdutos.feature` | `Sophia.Application.Tests` (Ordenacao, ClienteServico, ProdutoServico: busca, ordem, desempate e limites de página) | `Sophia.Integration.Tests` (contagem, `ORDER BY` e recorte com `OFFSET`/`FETCH` no SQL Server) |
+| RN30 | `ConsultaDeVendas.feature` | `Sophia.Application.Tests` (ConsultaDeVendas, VendaServico: período, ordem pela data ou pelo total) | `Sophia.Integration.Tests` (período e total somado no SQL Server, ligação das datas `yyyy-MM-dd` da consulta) |
 
 ---
 
