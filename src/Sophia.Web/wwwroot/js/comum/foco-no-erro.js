@@ -1,3 +1,5 @@
+import { ligarMensagem } from './erros.js';
+
 const campoDoErro = erro => {
     const nome = erro.dataset.valmsgFor;
     const direto = nome ? document.querySelector(`[name="${CSS.escape(nome)}"]:not([type=hidden])`) : null;
@@ -16,10 +18,7 @@ document.querySelectorAll('[data-valmsg-for]').forEach((erro, posicao) => {
     }
 
     erro.id ||= `erro-${posicao}`;
-    const descricoes = new Set((campo.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean));
-    descricoes.add(erro.id);
-    campo.setAttribute('aria-describedby', [...descricoes].join(' '));
-    campo.setAttribute('aria-invalid', 'true');
+    ligarMensagem(campo, erro);
     primeiro ??= campo;
 });
 

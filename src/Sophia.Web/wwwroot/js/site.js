@@ -4,3 +4,4 @@ import './comum/tema.js';
 import './comum/avisos.js';
 import './comum/foco-no-erro.js';
 import './comum/trava-de-envio.js';
+import './comum/decimais.js';

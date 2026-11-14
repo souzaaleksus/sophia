@@ -1,9 +1,14 @@
-import { lerDecimal } from './formato.js';
+import { escritaDecimalValida, lerDecimal } from './formato.js';
 
 if (window.jQuery?.validator) {
     jQuery.validator.methods.number = function (valor, elemento) {
-        return this.optional(elemento) || lerDecimal(valor) !== null;
+        return this.optional(elemento) || escritaDecimalValida(valor);
     };
+
+    jQuery.validator.addMethod('maximo', function (valor, elemento) {
+        return this.optional(elemento) || !escritaDecimalValida(valor) || lerDecimal(valor) !== null;
+    });
+    jQuery.validator.unobtrusive.adapters.addBool('maximo');
 
     jQuery.validator.methods.range = function (valor, elemento, limites) {
         const numero = lerDecimal(valor);

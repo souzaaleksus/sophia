@@ -32,11 +32,25 @@ function normalizarDecimal(numero) {
     return comPontoDecimal.test(numero) || soDigitos.test(numero) ? numero : null;
 }
 
-function separarDecimal(texto) {
+function decompor(texto) {
     const limpo = String(texto ?? '').replace(/\s/g, '');
     const negativo = limpo.startsWith('-');
-    const numero = normalizarDecimal(negativo ? limpo.slice(1) : limpo);
+    return { numero: normalizarDecimal(negativo ? limpo.slice(1) : limpo), negativo };
+}
+
+export function escritaDecimalValida(texto) {
+    return decompor(texto).numero !== null;
+}
+
+function separarDecimal(texto) {
+    const { numero, negativo } = decompor(texto);
     return numero === null || Number(numero) >= limiteDoValor ? null : { numero, negativo };
+}
+
+export function reescreverDecimal(texto) {
+    const separado = separarDecimal(texto);
+    const casas = separado?.numero.split('.')[1]?.length ?? 0;
+    return separado === null || casas > 2 ? null : formatarDecimalDeCentavos(lerCentavos(texto));
 }
 
 export function lerDecimal(texto) {

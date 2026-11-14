@@ -57,12 +57,15 @@ public sealed class NumeroNoFormularioTests
     [Theory]
     [InlineData("٣")]
     [InlineData("１２,50")]
-    public async Task Digito_fora_do_teclado_comum_no_valor_e_valor_invalido(string digitado)
+    [InlineData("1.2.3")]
+    [InlineData("10,")]
+    [InlineData("1,234.56")]
+    public async Task Valor_mal_escrito_ou_com_digito_fora_do_teclado_comum_mostra_como_escrever(string digitado)
     {
         var (resultado, erros) = await LigarAsync(nameof(Formulario.ValorUnitario), digitado);
 
         resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal($"O valor \"{digitado}\" não é válido para Valor unitário.");
+        erros.Should().Equal("Valor inválido. Use 12,50 ou 1.250,00.");
     }
 
     [Theory]

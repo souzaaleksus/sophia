@@ -510,6 +510,9 @@
   <data name="validacao.nome-tamanho" xml:space="preserve">
     <value>O nome deve ter no máximo {1} caracteres.</value>
   </data>
+  <data name="validacao.valor-invalido" xml:space="preserve">
+    <value>Valor inválido. Use 12,50 ou 1.250,00.</value>
+  </data>
   <data name="validacao.valor-obrigatorio" xml:space="preserve">
     <value>Informe o valor unitário.</value>
   </data>
