@@ -1,7 +1,12 @@
 const esperaAntesDeBuscar = 200;
+const esperaAntesDeAvisarBusca = 150;
 
-export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoDigitar }) {
+export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoDigitar, vazio = 'Nada encontrado.', cadastro }) {
     const lista = entrada.parentElement.querySelector('[role=listbox]');
+    const aviso = document.createElement('div');
+    aviso.className = 'opcoes opcoes-aviso';
+    aviso.hidden = true;
+    lista.after(aviso);
     let encontrados = [];
     let ativo = -1;
     let temporizador;
@@ -20,6 +25,11 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
     });
 
     entrada.addEventListener('keydown', evento => {
+        if (evento.key === 'Escape') {
+            fechar();
+            return;
+        }
+
         if (lista.hidden) {
             return;
         }
@@ -34,8 +44,6 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
             evento.preventDefault();
             evento.stopPropagation();
             escolher(ativo);
-        } else if (evento.key === 'Escape') {
-            fechar();
         }
     });
 
@@ -43,24 +51,72 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
 
     async function pesquisar(termo) {
         const numeroDaBusca = ++ultimaBusca;
-        let itens = [];
+        const ehAtual = () => numeroDaBusca === ultimaBusca && document.activeElement === entrada;
+        const avisoDeBusca = setTimeout(() => {
+            if (ehAtual()) {
+                avisar('Buscando…', 'status');
+                entrada.setAttribute('aria-busy', 'true');
+            }
+        }, esperaAntesDeAvisarBusca);
+
+        let itens;
         try {
             itens = await buscar(termo);
         } catch {
-            itens = [];
+            clearTimeout(avisoDeBusca);
+            if (ehAtual()) {
+                avisar('Não foi possível buscar. Tente de novo.', 'alert');
+            }
+
+            return;
+        } finally {
+            entrada.removeAttribute('aria-busy');
         }
 
-        if (numeroDaBusca === ultimaBusca && document.activeElement === entrada) {
+        clearTimeout(avisoDeBusca);
+        if (ehAtual()) {
             mostrar(itens);
         }
     }
 
     function mostrar(itens) {
+        if (itens.length === 0) {
+            avisar(vazio, 'status', cadastro);
+            return;
+        }
+
+        esconderAviso();
         encontrados = itens;
-        lista.replaceChildren(...(itens.length > 0 ? itens.map(criarOpcao) : [criarAvisoDeVazio()]));
+        lista.replaceChildren(...itens.map(criarOpcao));
         lista.hidden = false;
         entrada.setAttribute('aria-expanded', 'true');
-        destacar(itens.length > 0 ? 0 : -1);
+        destacar(0);
+    }
+
+    function avisar(texto, papel, atalho) {
+        fecharLista();
+        const mensagem = document.createElement('p');
+        mensagem.className = 'opcoes-mensagem';
+        mensagem.textContent = texto;
+        aviso.replaceChildren(mensagem);
+        if (atalho) {
+            const link = document.createElement('a');
+            link.className = 'opcoes-atalho';
+            link.href = atalho.endereco;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.textContent = atalho.texto;
+            link.addEventListener('mousedown', evento => evento.preventDefault());
+            aviso.append(link);
+        }
+
+        aviso.setAttribute('role', papel);
+        aviso.hidden = false;
+    }
+
+    function esconderAviso() {
+        aviso.hidden = true;
+        aviso.replaceChildren();
     }
 
     function criarOpcao(item, indice) {
@@ -82,13 +138,6 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
             escolher(indice);
         });
         return opcao;
-    }
-
-    function criarAvisoDeVazio() {
-        const aviso = document.createElement('li');
-        aviso.className = 'opcao vazia';
-        aviso.textContent = 'Nada encontrado.';
-        return aviso;
     }
 
     function destacar(indice) {
@@ -114,6 +163,11 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
     }
 
     function fechar() {
+        esconderAviso();
+        fecharLista();
+    }
+
+    function fecharLista() {
         lista.hidden = true;
         lista.replaceChildren();
         entrada.setAttribute('aria-expanded', 'false');

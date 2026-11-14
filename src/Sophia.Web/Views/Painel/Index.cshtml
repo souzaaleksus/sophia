@@ -31,6 +31,78 @@
     </div>
 </section>
 
+@{
+    var maiorDia = Model.UltimosDias.Count == 0 ? 0m : Model.UltimosDias.Max(dia => dia.Total);
+    var maiorQuantidade = Model.MaisVendidos.Count == 0 ? 0 : Model.MaisVendidos.Max(produto => produto.Quantidade);
+    var totalDaSemana = Model.UltimosDias.Sum(dia => dia.Total);
+}
+
+<div class="graficos">
+    <section class="cartao grafico" aria-labelledby="titulo-ultimos-dias">
+        <div class="cabecalho-do-grafico">
+            <h2 id="titulo-ultimos-dias">Últimos 7 dias</h2>
+            <p class="grafico-resumo numero">@Formato.Moeda(totalDaSemana)</p>
+        </div>
+        <ol class="barras" data-testid="grafico-ultimos-dias" aria-hidden="true">
+            @foreach (var dia in Model.UltimosDias)
+            {
+                var ehHoje = dia.Dia == Model.Hoje;
+                <li class="barra-do-dia@(ehHoje ? " hoje" : string.Empty)" data-dia="@Formato.DataParaCampo(dia.Dia)" aria-current="@(ehHoje ? "date" : null)"
+                    title="@Formato.DiaDaSemanaCurto(dia.Dia) @Formato.DiaEMes(dia.Dia): @Formato.Moeda(dia.Total), @Formato.Quantidade(dia.QuantidadeDeVendas, "venda", "vendas")">
+                    <span class="barra-valor numero">@Formato.Moeda(dia.Total)</span>
+                    <span class="barra-trilho"><span class="barra" style="--altura: @Formato.Percentual(dia.Total, maiorDia)"></span></span>
+                    <span class="barra-rotulo">@(ehHoje ? "hoje" : Formato.DiaDaSemanaCurto(dia.Dia))</span>
+                </li>
+            }
+        </ol>
+        <div class="visually-hidden">
+            <table>
+                <caption>Total vendido em cada um dos últimos 7 dias</caption>
+                <thead>
+                    <tr><th scope="col">Dia</th><th scope="col">Total</th><th scope="col">Vendas</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var dia in Model.UltimosDias)
+                    {
+                        <tr>
+                            <th scope="row">@Formato.DiaDaSemanaCurto(dia.Dia) @Formato.Data(dia.Dia)</th>
+                            <td>@Formato.Moeda(dia.Total)</td>
+                            <td>@dia.QuantidadeDeVendas</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="cartao grafico" aria-labelledby="titulo-mais-vendidos">
+        <div class="cabecalho-do-grafico">
+            <h2 id="titulo-mais-vendidos">Mais vendidos em @nomeDoMes</h2>
+            <p class="grafico-resumo">por unidades</p>
+        </div>
+        @if (Model.MaisVendidos.Count == 0)
+        {
+            <p class="grafico-vazio">Nenhum produto vendido neste mês ainda.</p>
+        }
+        else
+        {
+            <ol class="ranking" data-testid="mais-vendidos">
+                @foreach (var produto in Model.MaisVendidos)
+                {
+                    <li class="ranking-item" data-testid="mais-vendido">
+                        <div class="ranking-linha">
+                            <span class="ranking-nome">@produto.Nome</span>
+                            <span class="ranking-quantidade numero">@Formato.Quantidade(produto.Quantidade, "unidade", "unidades")</span>
+                        </div>
+                        <span class="ranking-trilho" aria-hidden="true"><span class="ranking-barra" style="--largura: @Formato.Percentual(produto.Quantidade, maiorQuantidade)"></span></span>
+                        <span class="secundario numero">@Formato.Moeda(produto.Total)</span>
+                    </li>
+                }
+            </ol>
+        }
+    </section>
+</div>
+
 <section class="cartao ultimas-vendas" aria-labelledby="titulo-ultimas-vendas">
     <div class="cabecalho-do-cartao">
         <h2 id="titulo-ultimas-vendas">Últimas vendas</h2>
@@ -40,7 +112,7 @@
     @if (Model.UltimasVendas.Count == 0)
     {
         <div class="vazio vazio-embutido">
-            <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-carrinho" /></svg></span>
+            <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-vendas" /></svg>
             <p class="vazio-titulo">Nenhuma venda registrada ainda.</p>
             <a class="btn btn-primary" asp-controller="Vendas" asp-action="Nova">
                 <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
@@ -54,8 +126,8 @@
             <table class="tabela">
                 <thead>
                     <tr>
-                        <th scope="col">Nº</th>
-                        <th scope="col">Data</th>
+                        <th scope="col" class="coluna-opcional">Nº</th>
+                        <th scope="col" class="coluna-opcional">Data</th>
                         <th scope="col">Cliente</th>
                         <th scope="col" class="valor">Total</th>
                         <th scope="col"><span class="visually-hidden">Ações</span></th>
@@ -65,15 +137,16 @@
                     @foreach (var venda in Model.UltimasVendas)
                     {
                         <tr>
-                            <td class="numero">@venda.Id</td>
-                            <td>@Formato.Data(venda.Data)</td>
+                            <td class="numero coluna-opcional">@venda.Id</td>
+                            <td class="numero coluna-opcional">@Formato.Data(venda.Data)</td>
                             <td>
                                 <div class="destaque">@venda.ClienteNome</div>
                                 <div class="secundario numero">@venda.ClienteCpf</div>
+                                <div class="secundario numero apenas-no-celular">nº @venda.Id, @Formato.Data(venda.Data)</div>
                             </td>
                             <td class="valor destaque">@Formato.Moeda(venda.Total)</td>
                             <td class="acoes">
-                                <a asp-controller="Vendas" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="Ver a venda @venda.Id">Ver</a>
+                                <a class="acao" asp-controller="Vendas" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="Ver a venda @venda.Id">Ver</a>
                             </td>
                         </tr>
                     }

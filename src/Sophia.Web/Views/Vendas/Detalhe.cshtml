@@ -1,6 +1,8 @@
 @model VendaDetalheDto
 @{
     ViewData["Title"] = $"Venda nº {Model.Id}";
+    var recemRegistrada = TempData.Peek(Avisos.ChaveDeSucesso) is not null;
+    var unidades = Model.Itens.Sum(item => item.Quantidade);
 }
 
 <div class="cabecalho-da-pagina">
@@ -16,42 +18,62 @@
     </div>
 </div>
 
-<section class="cartao comprovante" aria-label="Comprovante da venda">
+<section class="cupom@(recemRegistrada ? " cupom-recem-emitido" : string.Empty)" aria-label="Comprovante da venda">
+    <header class="cupom-topo">
+        <img class="cupom-logo" src="~/img/sophia.png" alt="Sophia" width="117" height="32" />
+        <dl class="cupom-identificacao">
+            <div>
+                <dt>Venda</dt>
+                <dd class="numero">nº @Model.Id</dd>
+            </div>
+            <div>
+                <dt>Data</dt>
+                <dd class="numero">@Formato.Data(Model.Data)</dd>
+            </div>
+        </dl>
+    </header>
+
     <div class="cliente-da-venda" data-testid="cliente-da-venda">
         <span class="rotulo">Cliente</span>
         <strong>@Model.ClienteNome</strong>
         <span class="numero">CPF @Model.ClienteCpf</span>
     </div>
 
-    <div class="tabela-rolavel">
-        <table class="tabela">
-            <thead>
+    <table class="cupom-itens">
+        <caption class="visually-hidden">Produtos da venda</caption>
+        <thead>
+            <tr>
+                <th scope="col">Produto</th>
+                <th scope="col" class="valor coluna-opcional">Quantidade</th>
+                <th scope="col" class="valor coluna-opcional">Valor unitário</th>
+                <th scope="col" class="valor">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Itens)
+            {
                 <tr>
-                    <th scope="col">Produto</th>
-                    <th scope="col" class="valor">Quantidade</th>
-                    <th scope="col" class="valor">Valor unitário</th>
-                    <th scope="col" class="valor">Subtotal</th>
+                    <td>
+                        <span class="destaque">@item.Produto</span>
+                        <span class="cupom-conta numero apenas-no-celular">@item.Quantidade × @Formato.Moeda(item.ValorUnitario)</span>
+                    </td>
+                    <td class="valor coluna-opcional">@item.Quantidade</td>
+                    <td class="valor coluna-opcional">@Formato.Moeda(item.ValorUnitario)</td>
+                    <td class="valor">@Formato.Moeda(item.Subtotal)</td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Itens)
-                {
-                    <tr>
-                        <td class="destaque">@item.Produto</td>
-                        <td class="valor">@item.Quantidade</td>
-                        <td class="valor">@Formato.Moeda(item.ValorUnitario)</td>
-                        <td class="valor">@Formato.Moeda(item.Subtotal)</td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th scope="row" colspan="3" class="valor">Total da venda</th>
-                    <td class="valor total" data-testid="total-da-venda">@Formato.Moeda(Model.Total)</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
+
+    <footer class="cupom-rodape">
+        <p class="cupom-resumo numero">
+            @Formato.Quantidade(Model.Itens.Count, "item", "itens"), @Formato.Quantidade(unidades, "unidade", "unidades")
+        </p>
+        <p class="cupom-total">
+            <span>Total da venda</span>
+            <strong class="numero" data-testid="total-da-venda">@Formato.Moeda(Model.Total)</strong>
+        </p>
+    </footer>
 </section>
 
 <p class="nao-imprimir voltar"><a asp-action="Index">Voltar para as vendas</a></p>

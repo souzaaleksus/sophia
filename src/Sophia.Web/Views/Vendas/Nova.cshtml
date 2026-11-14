@@ -36,9 +36,13 @@
             </div>
             <div class="campo caixa-quantidade">
                 <label class="form-label caixa-rotulo" for="item-@indice-Quantidade">Quantidade</label>
-                <input id="item-@indice-Quantidade" name="Itens[@indice].Quantidade" value="@item.Quantidade"
-                       type="number" min="1" step="1" class="form-control valor" inputmode="numeric"
-                       data-campo="Quantidade" />
+                <div class="quantidade-com-botoes">
+                    <button type="button" class="botao-quantidade" data-acao="menos" aria-label="Diminuir a quantidade">&minus;</button>
+                    <input id="item-@indice-Quantidade" name="Itens[@indice].Quantidade" value="@item.Quantidade"
+                           type="number" min="1" step="1" class="form-control valor" inputmode="numeric"
+                           data-campo="Quantidade" />
+                    <button type="button" class="botao-quantidade" data-acao="mais" aria-label="Aumentar a quantidade">+</button>
+                </div>
                 <span class="erro" data-erro="Quantidade" data-valmsg-for="Itens[@indice].Quantidade">@ErroDe("Quantidade")</span>
             </div>
             <div class="campo caixa-subtotal">
@@ -71,6 +75,7 @@
             <kbd class="atalho" title="Atalho de teclado">F2</kbd>
         </div>
 
+        <input type="hidden" asp-for="Chave" />
         <input type="hidden" asp-for="ClienteId" data-cliente="id" />
         <input type="hidden" asp-for="ClienteNome" data-cliente="nome" />
         <input type="hidden" asp-for="ClienteCpf" data-cliente="cpf" />

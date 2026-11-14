@@ -27,7 +27,7 @@
 @if (Model.Count == 0)
 {
     <div class="vazio">
-        <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-clientes" /></svg></span>
+        <svg class="ilustracao" aria-hidden="true"><use href="@(string.IsNullOrWhiteSpace(busca) ? "#ilustracao-clientes" : "#ilustracao-busca")" /></svg>
         <p class="vazio-titulo">Nenhum cliente encontrado.</p>
         @if (string.IsNullOrWhiteSpace(busca))
         {
@@ -46,13 +46,19 @@
 }
 else
 {
+    <p class="contagem" data-testid="contagem">
+        @(string.IsNullOrWhiteSpace(busca)
+            ? Formato.Quantidade(Model.Count, "cliente", "clientes")
+            : Formato.Quantidade(Model.Count, "cliente encontrado", "clientes encontrados"))
+    </p>
+
     <div class="cartao tabela-rolavel">
         <table class="tabela">
             <thead>
                 <tr>
                     <th scope="col">Nome</th>
-                    <th scope="col">CPF</th>
-                    <th scope="col" class="coluna-opcional">Nascimento</th>
+                    <th scope="col" class="coluna-opcional">CPF</th>
+                    <th scope="col" class="coluna-larga">Nascimento</th>
                     <th scope="col" class="coluna-opcional">Contato</th>
                     <th scope="col"><span class="visually-hidden">Ações</span></th>
                 </tr>
@@ -61,10 +67,18 @@ else
                 @foreach (var cliente in Model)
                 {
                     <tr>
-                        <td class="destaque">@cliente.Nome</td>
-                        <td class="numero">@cliente.Cpf</td>
-                        <td class="numero coluna-opcional">@Formato.Data(cliente.DataNascimento)</td>
-                        <td class="coluna-opcional">
+                        <td>
+                            <div class="pessoa">
+                                <span class="avatar avatar-tom-@Formato.TomDoAvatar(cliente.Nome)" aria-hidden="true" data-testid="avatar">@Formato.Iniciais(cliente.Nome)</span>
+                                <div>
+                                    <div class="destaque">@cliente.Nome</div>
+                                    <div class="secundario numero apenas-no-celular">@cliente.Cpf</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="numero coluna-opcional">@cliente.Cpf</td>
+                        <td class="numero coluna-larga">@Formato.Data(cliente.DataNascimento)</td>
+                        <td class="coluna-opcional contato">
                             <div>@cliente.Email</div>
                             <div class="secundario numero">@cliente.Telefone</div>
                         </td>

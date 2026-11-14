@@ -27,7 +27,7 @@
 @if (Model.Count == 0)
 {
     <div class="vazio">
-        <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-produtos" /></svg></span>
+        <svg class="ilustracao" aria-hidden="true"><use href="@(string.IsNullOrWhiteSpace(busca) ? "#ilustracao-produtos" : "#ilustracao-busca")" /></svg>
         <p class="vazio-titulo">Nenhum produto encontrado.</p>
         @if (string.IsNullOrWhiteSpace(busca))
         {
@@ -46,12 +46,18 @@
 }
 else
 {
+    <p class="contagem" data-testid="contagem">
+        @(string.IsNullOrWhiteSpace(busca)
+            ? Formato.Quantidade(Model.Count, "produto", "produtos")
+            : Formato.Quantidade(Model.Count, "produto encontrado", "produtos encontrados"))
+    </p>
+
     <div class="cartao tabela-rolavel">
         <table class="tabela">
             <thead>
                 <tr>
                     <th scope="col">Nome</th>
-                    <th scope="col" class="valor">Valor unitário</th>
+                    <th scope="col" class="valor coluna-opcional">Valor unitário</th>
                     <th scope="col"><span class="visually-hidden">Ações</span></th>
                 </tr>
             </thead>
@@ -59,8 +65,11 @@ else
                 @foreach (var produto in Model)
                 {
                     <tr>
-                        <td class="destaque">@produto.Nome</td>
-                        <td class="valor">@Formato.Moeda(produto.ValorUnitario)</td>
+                        <td>
+                            <div class="destaque">@produto.Nome</div>
+                            <div class="secundario numero apenas-no-celular">@Formato.Moeda(produto.ValorUnitario)</div>
+                        </td>
+                        <td class="valor coluna-opcional">@Formato.Moeda(produto.ValorUnitario)</td>
                         <td class="acoes">
                             <a class="acao" asp-action="Editar" asp-route-id="@produto.Id" aria-label="Editar @produto.Nome">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-editar" /></svg>

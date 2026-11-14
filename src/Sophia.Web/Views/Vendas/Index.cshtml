@@ -13,7 +13,7 @@
 @if (Model.Count == 0)
 {
     <div class="vazio">
-        <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-carrinho" /></svg></span>
+        <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-vendas" /></svg>
         <p class="vazio-titulo">Nenhuma venda registrada ainda.</p>
         <p>Escolha o cliente, lance os produtos e a primeira venda aparece aqui.</p>
         <a class="btn btn-primary" asp-action="Nova">
@@ -24,6 +24,8 @@
 }
 else
 {
+    <p class="contagem" data-testid="contagem">@Formato.Quantidade(Model.Count, "venda", "vendas")</p>
+
     <div class="cartao tabela-rolavel">
         <table class="tabela">
             <thead>

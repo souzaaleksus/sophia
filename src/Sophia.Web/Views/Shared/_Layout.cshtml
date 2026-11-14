@@ -23,7 +23,10 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />
+    <link rel="icon" type="image/png" sizes="64x64" href="~/img/simbolo.png" />
+    <link rel="apple-touch-icon" href="~/img/simbolo-180.png" />
+    <meta name="theme-color" content="#134169" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
@@ -35,8 +38,8 @@
     <header class="barra-superior">
         <nav class="navbar navbar-expand-md container" aria-label="Navegação principal">
             <a class="marca" href="~/">
-                <span class="marca-simbolo" aria-hidden="true">S</span>
-                <span>Sophia</span>
+                <img class="marca-logo marca-logo-claro" src="~/img/sophia.png" alt="Sophia" width="138" height="38" />
+                <img class="marca-logo marca-logo-escuro" src="~/img/sophia-branco.png" alt="" width="138" height="38" aria-hidden="true" />
             </a>
 
             <div class="ferramentas-do-topo">
@@ -87,21 +90,21 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="@Ativo("Vendas")" aria-current="@Atual("Vendas")" asp-controller="Vendas" asp-action="Index">
-                            <svg class="icone" aria-hidden="true"><use href="#icone-vendas" /></svg>
-                            Vendas
+                        <a class="@Ativo("Produtos")" aria-current="@Atual("Produtos")" asp-controller="Produtos" asp-action="Index">
+                            <svg class="icone" aria-hidden="true"><use href="#icone-produtos" /></svg>
+                            Produto
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="@Ativo("Clientes")" aria-current="@Atual("Clientes")" asp-controller="Clientes" asp-action="Index">
                             <svg class="icone" aria-hidden="true"><use href="#icone-clientes" /></svg>
-                            Clientes
+                            Cliente
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="@Ativo("Produtos")" aria-current="@Atual("Produtos")" asp-controller="Produtos" asp-action="Index">
-                            <svg class="icone" aria-hidden="true"><use href="#icone-produtos" /></svg>
-                            Produtos
+                        <a class="@Ativo("Vendas")" aria-current="@Atual("Vendas")" asp-controller="Vendas" asp-action="Index">
+                            <svg class="icone" aria-hidden="true"><use href="#icone-vendas" /></svg>
+                            Venda
                         </a>
                     </li>
                 </ul>
@@ -114,7 +117,7 @@
         @RenderBody()
     </main>
 
-    <footer class="rodape container">Sophia, o controle de vendas da sua loja.</footer>
+    <footer class="rodape container">Sophia, a força de venda da sua loja.</footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
