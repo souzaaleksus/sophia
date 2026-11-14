@@ -241,6 +241,20 @@
     display: none;
 }
 
+.caixa-anuncio {
+    background: var(--cor-realce);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-pequeno);
+    margin: 0.75rem 0 0;
+    padding: 0.5rem 0.9rem;
+}
+
+.caixa-anuncio:empty {
+    border: 0;
+    margin: 0;
+    padding: 0;
+}
+
 .botao-quantidade:active {
     background: var(--cor-primaria);
     color: var(--cor-sobre-primaria);

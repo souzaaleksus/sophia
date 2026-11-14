@@ -42,6 +42,12 @@
   <data name="binder.numero" xml:space="preserve">
     <value>Informe um número.</value>
   </data>
+  <data name="binder.numero-abaixo-do-minimo-no-campo" xml:space="preserve">
+    <value>{0} aceita no mínimo {1}.</value>
+  </data>
+  <data name="binder.numero-acima-do-maximo-no-campo" xml:space="preserve">
+    <value>{0} aceita no máximo {1}.</value>
+  </data>
   <data name="binder.numero-no-campo" xml:space="preserve">
     <value>Informe um número em {0}.</value>
   </data>
@@ -107,6 +113,9 @@
   </data>
   <data name="caixa.produto-removido" xml:space="preserve">
     <value>Produto removido.</value>
+  </data>
+  <data name="caixa.produto-somado" xml:space="preserve">
+    <value>{produto} já estava na venda: quantidade somada na linha {linha}.</value>
   </data>
   <data name="caixa.produtos" xml:space="preserve">
     <value>Produtos</value>

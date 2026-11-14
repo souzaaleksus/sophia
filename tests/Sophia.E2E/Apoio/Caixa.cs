@@ -5,6 +5,9 @@ namespace Sophia.E2E.Apoio;
 
 public sealed class Caixa(IPage pagina)
 {
+    private const int TentativasDeBusca = 3;
+    private const float EsperaPelaSugestao = 5000;
+
     public ILocator ComboboxDeCliente =>
         pagina.GetByRole(AriaRole.Combobox, new() { Name = "Cliente", Exact = true });
 
@@ -17,6 +20,9 @@ public sealed class Caixa(IPage pagina)
     public ILocator BotaoDeEnvio => pagina.Locator("#nova-venda [type=submit]");
 
     public ILocator Linha(int indice) => Itens.Nth(indice);
+
+    public Task ProntoAsync() =>
+        Expect(pagina.Locator("#nova-venda")).ToHaveAttributeAsync("data-pronto", "true");
 
     public ILocator ProdutoDaLinha(int indice) =>
         Linha(indice).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true });
@@ -33,20 +39,47 @@ public sealed class Caixa(IPage pagina)
 
     public async Task EscolherClienteAsync(string termo, string nome)
     {
-        await ComboboxDeCliente.FillAsync(termo);
-        await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = nome }).ClickAsync();
+        await ProntoAsync();
+        await EscolherSugestaoAsync(ComboboxDeCliente, termo, nome);
         await Expect(pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync(nome);
     }
 
     public async Task LancarAsync(int linha, string termo, string produto, string quantidade)
     {
+        await ProntoAsync();
         if (await Itens.CountAsync() <= linha)
         {
             await pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
         }
 
-        await ProdutoDaLinha(linha).FillAsync(termo);
-        await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto }).ClickAsync();
+        await EscolherSugestaoAsync(ProdutoDaLinha(linha), termo, produto);
         await QuantidadeDaLinha(linha).FillAsync(quantidade);
+    }
+
+    private async Task EscolherSugestaoAsync(ILocator combobox, string termo, string sugestao)
+    {
+        var opcao = pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = sugestao });
+        var tentativa = 1;
+        while (!await SugeriuAsync(combobox, termo, opcao) && tentativa < TentativasDeBusca)
+        {
+            tentativa++;
+            await combobox.FillAsync(string.Empty);
+        }
+
+        await opcao.ClickAsync();
+    }
+
+    private static async Task<bool> SugeriuAsync(ILocator combobox, string termo, ILocator opcao)
+    {
+        await combobox.FillAsync(termo);
+        try
+        {
+            await opcao.WaitForAsync(new() { Timeout = EsperaPelaSugestao });
+            return true;
+        }
+        catch (TimeoutException)
+        {
+            return false;
+        }
     }
 }

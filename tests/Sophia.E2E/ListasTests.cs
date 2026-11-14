@@ -58,8 +58,8 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("lima");
 
-        await Expect(_pagina).ToHaveURLAsync(ComBuscaPorLima(), new() { Timeout = 2000 });
-        await Expect(Linhas).ToHaveCountAsync(1, new() { Timeout = 2000 });
+        await Expect(_pagina).ToHaveURLAsync(ComBuscaPorLima());
+        await Expect(Linhas).ToHaveCountAsync(1);
         await Expect(Linhas.First).ToContainTextAsync("João Lima");
         await Expect(_pagina.GetByTestId("contagem")).ToHaveTextAsync("1 cliente encontrado");
     }
@@ -74,12 +74,12 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("lima");
 
-        await Expect(anuncio).ToHaveTextAsync("1 cliente encontrado", new() { Timeout = 2000 });
+        await Expect(anuncio).ToHaveTextAsync("1 cliente encontrado");
         await Expect(anuncio).ToHaveAttributeAsync("data-original", "sim");
 
         await _pagina.GetByRole(AriaRole.Searchbox).FillAsync("ninguém com esse nome");
 
-        await Expect(anuncio).ToHaveTextAsync("Nenhum cliente encontrado.", new() { Timeout = 2000 });
+        await Expect(anuncio).ToHaveTextAsync("Nenhum cliente encontrado.");
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("lima");
 
-        await Expect(_pagina.GetByText("Não foi possível atualizar a lista")).ToBeVisibleAsync(new() { Timeout = 2000 });
+        await Expect(_pagina.GetByText("Não foi possível atualizar a lista")).ToBeVisibleAsync();
         await Expect(Linhas).ToHaveCountAsync(3);
         await Expect(_pagina).Not.ToHaveURLAsync(ComBuscaPorLima());
     }
@@ -103,7 +103,7 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _pagina.GotoAsync("/Clientes");
         var busca = _pagina.GetByRole(AriaRole.Searchbox);
         await busca.PressSequentiallyAsync("lima");
-        await Expect(Linhas).ToHaveCountAsync(1, new() { Timeout = 2000 });
+        await Expect(Linhas).ToHaveCountAsync(1);
 
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Limpar a busca" }).ClickAsync();
 

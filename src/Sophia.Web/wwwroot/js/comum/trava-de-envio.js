@@ -6,7 +6,7 @@ const travar = (formulario, botao) => {
         return;
     }
 
-    conteudoOriginal.set(botao, botao.innerHTML);
+    conteudoOriginal.set(botao, [...botao.childNodes]);
     botao.disabled = true;
     botao.setAttribute('aria-busy', 'true');
     botao.textContent = formulario.dataset.textoEnviando;
@@ -17,7 +17,7 @@ const liberar = formulario => {
     formulario.querySelectorAll('[aria-busy=true]').forEach(botao => {
         botao.disabled = false;
         botao.removeAttribute('aria-busy');
-        botao.innerHTML = conteudoOriginal.get(botao) ?? botao.innerHTML;
+        botao.replaceChildren(...(conteudoOriginal.get(botao) ?? botao.childNodes));
     });
 };
 

@@ -12,6 +12,8 @@ public static class Formato
 
     public static string Numero(decimal? valor) => valor?.ToString("N2", PortuguesDoBrasil) ?? string.Empty;
 
+    public static string Inteiro(int? valor) => valor?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+
     public static string Data(DateOnly? data) => data?.ToString("dd/MM/yyyy", PortuguesDoBrasil) ?? string.Empty;
 
     public static string DataPorExtenso(DateOnly data) =>
