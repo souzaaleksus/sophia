@@ -21,6 +21,23 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
 
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
 
+    [Fact]
+    public async Task Enquanto_a_exclusao_e_enviada_o_dialogo_nao_fecha()
+    {
+        await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        await _pagina.GotoAsync("/Clientes");
+        await _pagina.EvaluateAsync("() => window.addEventListener('submit', evento => evento.preventDefault())");
+        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos" }).ClickAsync();
+        var dialogo = _pagina.GetByRole(AriaRole.Dialog);
+        var excluir = dialogo.Locator("[type=submit]");
+
+        await excluir.ClickAsync();
+        await Expect(excluir).ToBeDisabledAsync();
+        await _pagina.Keyboard.PressAsync("Escape");
+
+        await Expect(dialogo).ToBeVisibleAsync();
+    }
+
     private ILocator Dialogo => _pagina.GetByRole(AriaRole.Dialog);
 
     [Fact]

@@ -28,6 +28,30 @@ public sealed class CaixaNoCelularTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
 
     [Fact]
+    public async Task No_celular_o_produto_novo_nao_fica_escondido_atras_da_barra_do_total()
+    {
+        var celular = await aplicacao.NovaPaginaAsync(375, 667, toque: true);
+        try
+        {
+            await celular.GotoAsync("/Vendas/Nova");
+            var adicionar = celular.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" });
+            for (var vez = 1; vez <= 4; vez++)
+            {
+                await adicionar.ClickAsync();
+                var produto = celular.GetByTestId("item-da-venda").Last.GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true });
+                await Expect(produto).ToBeFocusedAsync();
+                await Task.Delay(500);
+                (await Medidas.QuemOcupaOCentroAsync(produto, aceitaDescendente: false))
+                    .Should().BeEmpty($"o produto da linha {vez + 1} precisa ficar à vista depois de adicionado");
+            }
+        }
+        finally
+        {
+            await celular.Context.CloseAsync();
+        }
+    }
+
+    [Fact]
     public async Task Sem_rolar_o_total_e_o_botao_de_finalizar_aparecem_inteiros()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
