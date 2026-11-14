@@ -22,6 +22,19 @@
     --cor-perigo: #b42318;
     --cor-perigo-fundo: #fdecea;
     --cor-sobre-perigo: #ffffff;
+    --cor-papel-impresso: #ffffff;
+    --avatar-0-fundo: #dff0f6;
+    --avatar-0-texto: #00566f;
+    --avatar-1-fundo: #e3eaf3;
+    --avatar-1-texto: #134169;
+    --avatar-2-fundo: #efe5f3;
+    --avatar-2-texto: #5a2370;
+    --avatar-3-fundo: #fdeadf;
+    --avatar-3-texto: #9a3a0e;
+    --avatar-4-fundo: #def4fe;
+    --avatar-4-texto: #005b85;
+    --sombra-interna-do-visor: inset 0 2px 12px rgb(0 0 0 / 35%);
+    --sombra-da-barra-fixa: 0 -8px 24px rgb(19 65 105 / 14%);
     --raio: 12px;
     --raio-pequeno: 8px;
     --sombra: 0 1px 2px rgb(19 65 105 / 6%), 0 2px 8px rgb(19 65 105 / 6%);
@@ -52,6 +65,17 @@
     --cor-perigo: #f97066;
     --cor-perigo-fundo: #3a1a18;
     --cor-sobre-perigo: #1f0907;
+    --avatar-0-fundo: #183049;
+    --avatar-0-texto: #e8eff3;
+    --avatar-1-fundo: #183049;
+    --avatar-1-texto: #e8eff3;
+    --avatar-2-fundo: #183049;
+    --avatar-2-texto: #e8eff3;
+    --avatar-3-fundo: #183049;
+    --avatar-3-texto: #e8eff3;
+    --avatar-4-fundo: #183049;
+    --avatar-4-texto: #e8eff3;
+    --sombra-da-barra-fixa: 0 -8px 24px rgb(0 0 0 / 45%);
     --sombra: 0 1px 2px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 25%);
     --sombra-flutuante: 0 16px 36px rgb(0 0 0 / 55%);
 }
@@ -904,7 +928,7 @@ a:hover {
     }
 
     body {
-        background: #ffffff;
+        background: var(--cor-papel-impresso);
 
     }
 
@@ -930,7 +954,7 @@ a:hover {
     border-radius: var(--raio);
     box-shadow:
         inset 0 0 0 1px color-mix(in srgb, var(--cor-visor-texto) 14%, transparent),
-        inset 0 2px 12px rgb(0 0 0 / 35%);
+        var(--sombra-interna-do-visor);
     color: var(--cor-visor-texto);
     container-type: inline-size;
     padding: 0.9rem 1.25rem 1rem;
@@ -1062,33 +1086,28 @@ a:hover {
 }
 
 .avatar-tom-0 {
-    background: #dff0f6;
-    color: #00566f;
+    background: var(--avatar-0-fundo);
+    color: var(--avatar-0-texto);
 }
 
 .avatar-tom-1 {
-    background: #e3eaf3;
-    color: #134169;
+    background: var(--avatar-1-fundo);
+    color: var(--avatar-1-texto);
 }
 
 .avatar-tom-2 {
-    background: #efe5f3;
-    color: #5a2370;
+    background: var(--avatar-2-fundo);
+    color: var(--avatar-2-texto);
 }
 
 .avatar-tom-3 {
-    background: #fdeadf;
-    color: #9a3a0e;
+    background: var(--avatar-3-fundo);
+    color: var(--avatar-3-texto);
 }
 
 .avatar-tom-4 {
-    background: #def4fe;
-    color: #005b85;
-}
-
-[data-bs-theme=dark] .avatar {
-    background: var(--cor-realce);
-    color: var(--cor-texto);
+    background: var(--avatar-4-fundo);
+    color: var(--avatar-4-texto);
 }
 
 .contato {
@@ -1124,7 +1143,7 @@ a:hover {
 .cupom {
     --cupom-papel: #ffffff;
     --cupom-texto: #26323f;
-    --cupom-texto-suave: #566370;
+    --cupom-texto-suave: #5a6b73;
     --cupom-titulo: #134169;
     --cupom-linha: #b9c9d3;
     --cupom-serrilha: 0.6rem;
@@ -1137,11 +1156,11 @@ a:hover {
     padding: 1.5rem 1.75rem calc(1.5rem + var(--cupom-serrilha));
     position: relative;
     -webkit-mask:
-        conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--cupom-serrilha) * 2) var(--cupom-serrilha) repeat-x,
-        linear-gradient(#000 0 0) top / 100% calc(100% - var(--cupom-serrilha) + 1px) no-repeat;
+        conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg) bottom / calc(var(--cupom-serrilha) * 2) var(--cupom-serrilha) repeat-x,
+        linear-gradient(black 0 0) top / 100% calc(100% - var(--cupom-serrilha) + 1px) no-repeat;
     mask:
-        conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--cupom-serrilha) * 2) var(--cupom-serrilha) repeat-x,
-        linear-gradient(#000 0 0) top / 100% calc(100% - var(--cupom-serrilha) + 1px) no-repeat;
+        conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg) bottom / calc(var(--cupom-serrilha) * 2) var(--cupom-serrilha) repeat-x,
+        linear-gradient(black 0 0) top / 100% calc(100% - var(--cupom-serrilha) + 1px) no-repeat;
 }
 
 .cupom-topo {

@@ -262,7 +262,7 @@
         background: var(--cor-cartao);
         border-top: 1px solid var(--cor-borda);
         bottom: 0;
-        box-shadow: 0 -8px 24px rgb(19 65 105 / 14%);
+        box-shadow: var(--sombra-da-barra-fixa);
         gap: 0.75rem;
         grid-template-columns: minmax(0, 1fr) auto;
         left: 0;
