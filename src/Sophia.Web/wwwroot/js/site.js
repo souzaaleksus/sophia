@@ -16,6 +16,10 @@
             const fim = numero.slice(corte);
             return `(${numero.slice(0, 2)}) ${meio}${fim ? `-${fim}` : ''}`;
         },
+        data: digitos => digitos
+            .slice(0, 8)
+            .replace(/^(\d{2})(\d)/, '$1/$2')
+            .replace(/^(\d{2})\/(\d{2})(\d)/, '$1/$2/$3'),
     };
 
     document.querySelectorAll('[data-mascara]').forEach(campo => {
@@ -164,4 +168,51 @@
     });
 
     primeiro?.focus();
+})();
+
+(() => {
+    const conteudoOriginal = new WeakMap();
+
+    const travar = (formulario, botao) => {
+        formulario.dataset.enviando = 'true';
+        if (!botao) {
+            return;
+        }
+
+        conteudoOriginal.set(botao, botao.innerHTML);
+        botao.disabled = true;
+        botao.setAttribute('aria-busy', 'true');
+        botao.textContent = formulario.dataset.textoEnviando;
+    };
+
+    const liberar = formulario => {
+        delete formulario.dataset.enviando;
+        formulario.querySelectorAll('[aria-busy=true]').forEach(botao => {
+            botao.disabled = false;
+            botao.removeAttribute('aria-busy');
+            botao.innerHTML = conteudoOriginal.get(botao) ?? botao.innerHTML;
+        });
+    };
+
+    window.addEventListener('submit', evento => {
+        const formulario = evento.target;
+        if (!(formulario instanceof HTMLFormElement) || !formulario.hasAttribute('data-envio')) {
+            return;
+        }
+
+        if (formulario.dataset.enviando === 'true') {
+            evento.preventDefault();
+            return;
+        }
+
+        if (!evento.defaultPrevented) {
+            travar(formulario, evento.submitter ?? formulario.querySelector('[type=submit]'));
+        }
+    });
+
+    window.addEventListener('pageshow', evento => {
+        if (evento.persisted) {
+            document.querySelectorAll('form[data-envio]').forEach(liberar);
+        }
+    });
 })();

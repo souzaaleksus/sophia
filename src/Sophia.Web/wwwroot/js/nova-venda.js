@@ -15,9 +15,6 @@ const itensDaVenda = formulario.querySelector('[data-testid=itens-da-venda]');
 const unidadesDaVenda = formulario.querySelector('[data-testid=unidades-da-venda]');
 const movimentoReduzido = window.matchMedia('(prefers-reduced-motion: reduce)');
 const camposDoItem = ['ProdutoId', 'ProdutoNome', 'ValorUnitario', 'Quantidade'];
-const botaoFinalizar = formulario.querySelector('[type=submit]');
-const textoDoBotaoFinalizar = botaoFinalizar.textContent.trim();
-let enviando = false;
 
 const cliente = prepararCliente();
 areaDosItens.querySelectorAll('[data-item]').forEach(prepararItem);
@@ -40,39 +37,19 @@ document.addEventListener('keydown', evento => {
     }
 });
 
-formulario.addEventListener('submit', evento => {
-    if (enviando) {
-        evento.preventDefault();
-        return;
-    }
-
-    enviando = true;
-    descartarLinhasEmBranco();
-    renumerarItens();
-    botaoFinalizar.disabled = true;
-    botaoFinalizar.setAttribute('aria-busy', 'true');
-    botaoFinalizar.textContent = configuracao.textoRegistrando;
-});
-
-window.addEventListener('pageshow', evento => {
-    if (evento.persisted) {
-        liberarEnvio();
+formulario.addEventListener('submit', () => {
+    if (formulario.dataset.enviando !== 'true') {
+        descartarLinhasEmBranco();
+        renumerarItens();
     }
 });
 
 window.addEventListener('beforeunload', evento => {
-    if (!enviando && temProdutoLancado()) {
+    if (formulario.dataset.enviando !== 'true' && temProdutoLancado()) {
         evento.preventDefault();
         evento.returnValue = '';
     }
 });
-
-function liberarEnvio() {
-    enviando = false;
-    botaoFinalizar.disabled = false;
-    botaoFinalizar.removeAttribute('aria-busy');
-    botaoFinalizar.textContent = textoDoBotaoFinalizar;
-}
 
 function temProdutoLancado() {
     return [...areaDosItens.querySelectorAll('[data-campo=ProdutoId]')].some(campo => campo.value !== '');

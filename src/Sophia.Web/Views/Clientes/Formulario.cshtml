@@ -7,31 +7,34 @@
 <div class="cabecalho-da-pagina">
     <div>
         <h1>@ViewData["Title"]</h1>
-        <p class="subtitulo">CPF e nome são obrigatórios.</p>
+        <p class="subtitulo">Quem compra da loja.</p>
     </div>
 </div>
 
-<form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate>
+<form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate
+      data-envio data-texto-enviando="Salvando…">
     <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
+    <p class="legenda-obrigatorio"><span aria-hidden="true">*</span> obrigatório</p>
 
     <div class="grade-de-campos">
         <div class="campo">
-            <label asp-for="Cpf" class="form-label"></label>
-            <input asp-for="Cpf" class="form-control" inputmode="numeric" autocomplete="off"
-                   placeholder="000.000.000-00" data-mascara="cpf" />
+            <label asp-for="Cpf" class="form-label">CPF <span class="obrigatorio" aria-hidden="true">*</span></label>
+            <input asp-for="Cpf" class="form-control" inputmode="numeric" autocomplete="off" autofocus
+                   aria-required="true" placeholder="000.000.000-00" data-mascara="cpf" data-val-cpf="CPF inválido." />
             <span asp-validation-for="Cpf" class="erro"></span>
         </div>
 
         <div class="campo campo-largo">
-            <label asp-for="Nome" class="form-label"></label>
-            <input asp-for="Nome" class="form-control" autocomplete="off" />
+            <label asp-for="Nome" class="form-label">Nome <span class="obrigatorio" aria-hidden="true">*</span></label>
+            <input asp-for="Nome" class="form-control" autocomplete="off" aria-required="true" />
+            <span class="campo-dica">Como o cliente aparece na venda e no cupom.</span>
             <span asp-validation-for="Nome" class="erro"></span>
         </div>
 
         <div class="campo">
             <label asp-for="DataNascimento" class="form-label"></label>
-            <input id="DataNascimento" name="DataNascimento" type="date" class="form-control"
-                   value="@Formato.DataParaCampo(Model.DataNascimento)" />
+            <input asp-for="DataNascimento" type="text" class="form-control" inputmode="numeric" autocomplete="bday"
+                   placeholder="dd/mm/aaaa" data-mascara="data" />
             <span asp-validation-for="DataNascimento" class="erro"></span>
         </div>
 

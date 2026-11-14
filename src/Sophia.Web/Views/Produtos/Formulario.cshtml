@@ -11,23 +11,26 @@
     </div>
 </div>
 
-<form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate>
+<form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate
+      data-envio data-texto-enviando="Salvando…">
     <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
+    <p class="legenda-obrigatorio"><span aria-hidden="true">*</span> obrigatório</p>
 
     <div class="grade-de-campos">
         <div class="campo campo-largo">
-            <label asp-for="Nome" class="form-label"></label>
-            <input asp-for="Nome" class="form-control" autocomplete="off" />
+            <label asp-for="Nome" class="form-label">Nome <span class="obrigatorio" aria-hidden="true">*</span></label>
+            <input asp-for="Nome" class="form-control" autocomplete="off" autofocus aria-required="true" />
             <span asp-validation-for="Nome" class="erro"></span>
         </div>
 
         <div class="campo">
-            <label asp-for="ValorUnitario" class="form-label"></label>
+            <label asp-for="ValorUnitario" class="form-label">Valor unitário <span class="obrigatorio" aria-hidden="true">*</span></label>
             <div class="input-group">
                 <span class="input-group-text">R$</span>
                 <input asp-for="ValorUnitario" type="text" class="form-control valor" inputmode="decimal"
-                       autocomplete="off" placeholder="0,00" value="@Formato.Numero(Model.ValorUnitario)" />
+                       autocomplete="off" aria-required="true" placeholder="0,00" value="@Formato.Numero(Model.ValorUnitario)" />
             </div>
+            <span class="campo-dica">Preço sugerido no caixa; pode ser ajustado em cada venda.</span>
             <span asp-validation-for="ValorUnitario" class="erro"></span>
         </div>
     </div>

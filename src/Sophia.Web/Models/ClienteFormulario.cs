@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Sophia.Application.Clientes;
 using Sophia.Domain.Clientes;
+using Sophia.Web.Apoio;
 
 namespace Sophia.Web.Models;
 
@@ -18,7 +19,8 @@ public sealed class ClienteFormulario
     public string? Nome { get; set; }
 
     [Display(Name = "Data de nascimento")]
-    public DateOnly? DataNascimento { get; set; }
+    [DataBrasileira(ErrorMessage = "Informe uma data de nascimento válida.")]
+    public string? DataNascimento { get; set; }
 
     [Display(Name = "E-mail")]
     [EmailAddress(ErrorMessage = "E-mail inválido.")]
@@ -35,10 +37,10 @@ public sealed class ClienteFormulario
         Id = cliente.Id,
         Cpf = cliente.Cpf,
         Nome = cliente.Nome,
-        DataNascimento = cliente.DataNascimento,
+        DataNascimento = Formato.Data(cliente.DataNascimento),
         Email = cliente.Email,
         Telefone = cliente.Telefone,
     };
 
-    public DadosCliente ParaDados() => new(Cpf, Nome, DataNascimento, Email, Telefone);
+    public DadosCliente ParaDados() => new(Cpf, Nome, DataBrasileiraAttribute.Ler(DataNascimento), Email, Telefone);
 }
