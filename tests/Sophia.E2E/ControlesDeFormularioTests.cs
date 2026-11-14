@@ -232,6 +232,26 @@ public sealed partial class ControlesDeFormularioTests(AplicacaoEmExecucao aplic
     }
 
     [Fact]
+    public async Task Voltar_pelo_navegador_devolve_o_botao_de_salvar_com_o_proprio_conteudo()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("2,50");
+        var envio = _pagina.Locator("main form [type=submit]");
+        await envio.EvaluateAsync("botao => { window.conteudoDoBotao = [...botao.childNodes]; }");
+        await _pagina.EvaluateAsync("() => window.addEventListener('submit', evento => evento.preventDefault())");
+        await envio.ClickAsync();
+        await Expect(envio).ToContainTextAsync("Salvando…");
+
+        await _pagina.EvaluateAsync("() => window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))");
+
+        await Expect(envio).ToBeEnabledAsync();
+        await Expect(envio).ToHaveTextAsync("Salvar");
+        (await envio.EvaluateAsync<bool>("botao => botao.childNodes.length === window.conteudoDoBotao.length && [...botao.childNodes].every((no, i) => no === window.conteudoDoBotao[i])"))
+            .Should().BeTrue("o botão volta com os mesmos nós, sem reescrever o HTML");
+    }
+
+    [Fact]
     public async Task Corrigir_o_campo_com_erro_some_com_a_mensagem_sem_deslocar_o_botao_de_salvar()
     {
         var nome = await ProvocarNomeRepetidoAsync();
