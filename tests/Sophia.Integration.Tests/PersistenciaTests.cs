@@ -84,10 +84,10 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         var vendaId = await RegistrarVendaAsync(maria, [new(caneta, 10, 2.50m), new(caderno, 2, 18.90m)]);
 
         await using var contexto = banco.NovoContexto();
-        var repositorio = new VendaRepositorio(contexto);
-        (await repositorio.ListarAsync()).Should().ContainSingle()
+        var consultas = new ConsultasDeVendas(contexto);
+        (await consultas.ListarAsync()).Should().ContainSingle()
             .Which.Should().Be(new VendaResumoDto(vendaId, Hoje, "529.982.247-25", "Maria Santos", 2, 62.80m));
-        var detalhe = await repositorio.ObterDetalheAsync(vendaId);
+        var detalhe = await consultas.ObterDetalheAsync(vendaId);
         detalhe!.Itens.Should().Equal(
             new ItemVendaDto("Caneta azul", 10, 2.50m, 25.00m),
             new ItemVendaDto("Caderno 96 folhas", 2, 18.90m, 37.80m));
@@ -104,11 +104,11 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         await RegistrarVendaAsync(maria, [new(caneta, 2, 2.50m)]);
 
         await using var contexto = banco.NovoContexto();
-        var repositorio = new VendaRepositorio(contexto);
+        var painel = new ConsultasDoPainel(contexto);
 
-        (await repositorio.ResumirAsync(Hoje, Hoje)).Should().Be(new ResumoDoPeriodo(2, 48.90m));
-        (await repositorio.ResumirAsync(Hoje.AddDays(1), Hoje.AddDays(30))).Should().Be(ResumoDoPeriodo.Vazio);
-        (await repositorio.ListarAsync(limite: 1)).Should().ContainSingle().Which.Total.Should().Be(5.00m);
+        (await painel.ResumirAsync(Hoje, Hoje)).Should().Be(new ResumoDoPeriodo(2, 48.90m));
+        (await painel.ResumirAsync(Hoje.AddDays(1), Hoje.AddDays(30))).Should().Be(ResumoDoPeriodo.Vazio);
+        (await new ConsultasDeVendas(contexto).ListarAsync(limite: 1)).Should().ContainSingle().Which.Total.Should().Be(5.00m);
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
 
         await using var contexto = banco.NovoContexto();
-        (await new VendaRepositorio(contexto).ListarAsync()).Should().HaveCount(2);
+        (await new ConsultasDeVendas(contexto).ListarAsync()).Should().HaveCount(2);
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         await RegistrarVendaAsync(maria, [new(caneta, 10, 2.50m), new(caderno, 2, 18.90m)], data: Hoje);
 
         await using var contexto = banco.NovoContexto();
-        var totais = await new VendaRepositorio(contexto).TotaisPorDiaAsync(new DateOnly(2026, 11, 7), Hoje);
+        var totais = await new ConsultasDoPainel(contexto).TotaisPorDiaAsync(new DateOnly(2026, 11, 7), Hoje);
 
         totais.Should().Equal(
             new TotalDoDia(new DateOnly(2026, 11, 7), 23.90m, 2),
@@ -223,15 +223,15 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         await RegistrarVendaAsync(maria, [new(borracha, 3, 1.50m), new(regua, 1, 4m)], data: Hoje);
 
         await using var contexto = banco.NovoContexto();
-        var repositorio = new VendaRepositorio(contexto);
-        var doMes = await repositorio.MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 4);
+        var painel = new ConsultasDoPainel(contexto);
+        var doMes = await painel.MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 4);
 
         doMes.Should().Equal(
             new ProdutoMaisVendido(caneta, "Caneta azul", 10, 24.60m),
             new ProdutoMaisVendido(caderno, "Caderno 96 folhas", 3, 56.70m),
             new ProdutoMaisVendido(borracha, "Borracha", 3, 4.50m),
             new ProdutoMaisVendido(lapis, "Lápis", 3, 4.50m));
-        (await repositorio.MaisVendidosAsync(new DateOnly(2026, 12, 1), new DateOnly(2026, 12, 31), 5))
+        (await painel.MaisVendidosAsync(new DateOnly(2026, 12, 1), new DateOnly(2026, 12, 31), 5))
             .Should().BeEmpty();
     }
 
@@ -244,7 +244,7 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         await RegistrarVendaAsync(maria, [new(caneta, 1_000_000_000, 0.01m)], data: Hoje);
 
         await using var contexto = banco.NovoContexto();
-        var doMes = await new VendaRepositorio(contexto).MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 5);
+        var doMes = await new ConsultasDoPainel(contexto).MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 5);
 
         doMes.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul", 2_500_000_000, 25_000_000m));
     }
@@ -261,10 +261,10 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         }
 
         await using var contexto = banco.NovoContexto();
-        var repositorio = new VendaRepositorio(contexto);
-        var primeira = await repositorio.ListarPaginaAsync(null, null, MaisRecentes, 1, 2);
-        var ultima = await repositorio.ListarPaginaAsync(null, null, MaisRecentes, 3, 2);
-        var alemDaUltima = await repositorio.ListarPaginaAsync(null, null, MaisRecentes, 4, 2);
+        var consultas = new ConsultasDeVendas(contexto);
+        var primeira = await consultas.ListarPaginaAsync(null, null, MaisRecentes, 1, 2);
+        var ultima = await consultas.ListarPaginaAsync(null, null, MaisRecentes, 3, 2);
+        var alemDaUltima = await consultas.ListarPaginaAsync(null, null, MaisRecentes, 4, 2);
 
         primeira.Should().BeEquivalentTo(new { Numero = 1, Tamanho = 2, TotalDeItens = 5 });
         primeira.Itens.Select(v => v.Id).Should().Equal(ids[4], ids[3]);
@@ -283,7 +283,7 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         var comandos = new List<string>();
 
         await using var contexto = banco.NovoContexto(comandos.Add);
-        await new VendaRepositorio(contexto).ListarPaginaAsync(
+        await new ConsultasDeVendas(contexto).ListarPaginaAsync(
             Hoje.AddDays(-7),
             Hoje,
             new Ordenacao<ColunaDeVendas>(ColunaDeVendas.Total, Decrescente: true),
@@ -308,14 +308,14 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         var dia5DeNovo = await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], data: new DateOnly(2026, 11, 5));
 
         await using var contexto = banco.NovoContexto();
-        var repositorio = new VendaRepositorio(contexto);
+        var consultas = new ConsultasDeVendas(contexto);
         var inicio = new DateOnly(2026, 11, 5);
         var fim = new DateOnly(2026, 11, 12);
 
         async Task<IEnumerable<int>> IdsAsync(DateOnly? de, DateOnly? ate, ColunaDeVendas coluna, bool decrescente) =>
-            (await repositorio.ListarPaginaAsync(de, ate, new(coluna, decrescente), 1, 10)).Itens.Select(v => v.Id);
+            (await consultas.ListarPaginaAsync(de, ate, new(coluna, decrescente), 1, 10)).Itens.Select(v => v.Id);
 
-        var maiores = await repositorio.ListarPaginaAsync(inicio, fim, new(ColunaDeVendas.Total, Decrescente: true), 1, 10);
+        var maiores = await consultas.ListarPaginaAsync(inicio, fim, new(ColunaDeVendas.Total, Decrescente: true), 1, 10);
         maiores.TotalDeItens.Should().Be(4);
         maiores.Itens.Select(v => v.Id).Should().Equal(dia10, dia12, dia5DeNovo, dia5);
         maiores.Itens[1].Should().Be(

@@ -9,6 +9,7 @@ namespace Sophia.Application.Vendas;
 
 public sealed class VendaServico(
     IVendaRepositorio vendas,
+    IConsultasDeVendas consultas,
     IClienteRepositorio clientes,
     IProdutoRepositorio produtos,
     IUnidadeDeTrabalho unidadeDeTrabalho,
@@ -24,7 +25,7 @@ public sealed class VendaServico(
         var ordem = Ordenacao.Interpretar(consulta.Ordem, OrdemPadrao);
         var pagina = await Paginacao.RecortarAsync(
             consulta.Pagina,
-            numero => vendas.ListarPaginaAsync(
+            numero => consultas.ListarPaginaAsync(
                 consulta.Inicio,
                 consulta.Fim,
                 ordem,
@@ -36,7 +37,7 @@ public sealed class VendaServico(
     }
 
     public Task<VendaDetalheDto?> ObterAsync(int id, CancellationToken cancelamento = default) =>
-        vendas.ObterDetalheAsync(id, cancelamento);
+        consultas.ObterDetalheAsync(id, cancelamento);
 
     public async Task<Resultado<int>> RegistrarAsync(DadosVenda dados, CancellationToken cancelamento = default)
     {

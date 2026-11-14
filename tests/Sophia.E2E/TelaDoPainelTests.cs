@@ -57,7 +57,7 @@ public sealed class TelaDoPainelTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         var clientes = new ClienteServico(new ClienteRepositorio(contexto), unidade, relogio, new Sophia.Application.ParametrosDoSophia());
         var produtos = new ProdutoServico(new ProdutoRepositorio(contexto), unidade, new Sophia.Application.ParametrosDoSophia());
         var vendas = new VendaServico(
-            new VendaRepositorio(contexto), new ClienteRepositorio(contexto), new ProdutoRepositorio(contexto), unidade, relogio, new Sophia.Application.ParametrosDoSophia());
+            new VendaRepositorio(contexto), new ConsultasDeVendas(contexto), new ClienteRepositorio(contexto), new ProdutoRepositorio(contexto), unidade, relogio, new Sophia.Application.ParametrosDoSophia());
 
         var maria = (await clientes.CadastrarAsync(new DadosCliente("529.982.247-25", "Maria Santos", null, null, null))).Valor;
         var caneta = (await produtos.CadastrarAsync(new DadosProduto("Caneta azul", 2.50m))).Valor;
