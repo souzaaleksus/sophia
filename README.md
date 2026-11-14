@@ -85,20 +85,25 @@ A tela de venda:
 5. ao confirmar, grava a venda e mostra o comprovante: número da venda, data, CPF e nome do
    cliente, itens com quantidades, preços e subtotais, e o total.
 
-Operações: listar as vendas (em páginas, com filtro de período e atalhos Hoje, 7 dias e Mês,
-ordenadas por data ou total), registrar uma nova e consultar o comprovante de uma venda.
+Operações: listar as vendas (em páginas, com filtro de período e atalhos Hoje, últimos dias e
+Mês, ordenadas por data ou total), registrar uma nova e consultar o comprovante de uma venda.
 
 A tela é pensada para o balcão e funciona inteira pelo teclado: **F2** busca o cliente, **F4**
 lança um produto, **Enter** na quantidade abre a próxima linha e **Ctrl+Enter** finaliza. No
 celular, o total e o botão de finalizar ficam numa barra fixa, e a quantidade tem botões − e +.
 Um produto removido por engano pode ser devolvido com **Desfazer**; sair da tela com produtos
-lançados pede confirmação; cliente não encontrado oferece o cadastro numa nova aba.
+lançados pede confirmação; cliente não encontrado oferece o cadastro numa nova aba. **Esc**
+fecha as sugestões e, se a busca foi aberta pelo F2, devolve o cliente que estava escolhido.
+Escolher de novo um produto já lançado soma 1 na linha dele, e a tela avisa em qual linha. Os
+avisos de erro somem assim que o problema é resolvido, sem esperar um novo envio.
 
 #### RF04 — Painel
 
 A página inicial resume o movimento: quantidade e total das vendas de hoje, quantidade, total e
 ticket médio do mês corrente, um gráfico com o total de cada um dos últimos 7 dias, os 5 produtos
-mais vendidos do mês e as cinco vendas mais recentes.
+mais vendidos do mês e as cinco vendas mais recentes. As quantidades (dias do gráfico, produtos,
+vendas e o atalho de dias da lista de vendas) são parâmetros da seção `Sophia` do
+`appsettings.json`.
 
 ### 5. Regras de negócio
 
@@ -113,7 +118,7 @@ mais vendidos do mês e as cinco vendas mais recentes.
 | RN07 | Telefone, se informado, com DDD | Informe o telefone com DDD. | Clientes › Recusar dados inválidos |
 | RN08 | Cliente com venda não pode ser excluído | Este cliente possui vendas e não pode ser excluído. | Clientes › Não excluir cliente que já comprou |
 | RN09 | Nome do produto obrigatório | Informe o nome. | Produtos › Recusar dados inválidos |
-| RN10 | Nome do produto não se repete | Já existe um produto com este nome. | Produtos › Não aceitar dois produtos com o mesmo nome |
+| RN10 | Nome do produto não se repete; maiúsculas e espaços a mais não fazem outro nome | Já existe um produto com este nome. | Produtos › Não aceitar dois produtos com o mesmo nome |
 | RN11 | Valor unitário obrigatório | Informe o valor unitário. | Produtos › Recusar dados inválidos |
 | RN12 | Valor unitário maior que zero | O valor unitário deve ser maior que zero. | Produtos › Recusar dados inválidos |
 | RN13 | Valor unitário com até duas casas | O valor unitário aceita no máximo duas casas decimais. | Produtos › Recusar dados inválidos |
@@ -160,7 +165,7 @@ para compilar, testar ou rodar.
 | Linguagem e plataforma | C# 12 · .NET 8 | O enunciado pede ASP.NET Core MVC, e o .NET 8 foi a versão LTS (suporte de longo prazo) quando o projeto começou. O suporte oficial do .NET 8 terminou em 10/11/2026: a atualização para o .NET 10, o LTS atual, é o próximo passo de manutenção. |
 | Web | ASP.NET Core MVC · Razor | Pedido no enunciado. As páginas chegam prontas do servidor, então a tela funciona antes de qualquer JavaScript, e o framework já entrega validação do modelo, proteção contra envio forjado (antiforgery), localização e página de erro. |
 | Interface | Bootstrap 5.3 · CSS próprio por área · JavaScript puro em módulos ES | O Bootstrap dá grade, formulários e o tema escuro (`data-bs-theme`) prontos e já cuidados em acessibilidade. O CSS próprio, dividido por área em `wwwroot/css`, aplica a identidade da Sophia. O JavaScript roda direto no navegador, sem npm nem bundler na aplicação: o que precisa de interação (caixa, busca enquanto digita, diálogo) é pequeno demais para justificar um framework. |
-| Validação no navegador | jQuery Validation · validação discreta do ASP.NET Core | É o par que transforma as regras (`DataAnnotations`) do modelo em validação no navegador, com as mesmas mensagens do servidor. O jQuery entra só por causa dele. |
+| Validação no navegador | jQuery Validation · validação discreta do ASP.NET Core | É o par que transforma as regras (`DataAnnotations`) do modelo em validação no navegador, com as mesmas mensagens do servidor. O jQuery entra só por causa dele, e só nas telas com formulário de cadastro. |
 | Tipografia e ícones | Poppins (Google Fonts) · ícones Lucide em sprite SVG | A Poppins é a fonte da identidade da Sophia e tem algarismos tabulares, que alinham os valores em coluna. Os ícones Lucide (licença ISC) ficam num sprite SVG da própria página: uma requisição a menos e cor herdada do texto, inclusive no tema escuro. |
 | Acesso a dados | Entity Framework Core 8 | Consultas tipadas e sempre parametrizadas (nada de SQL montado com texto do usuário), projeção direta para os DTOs da tela e tradução da violação de índice único para a mensagem do negócio. Sem migrations: o enunciado pede o script, e ele é a única fonte do esquema. |
 | Banco de dados | SQL Server Express (2019 ou mais novo local, 2022 no Docker) | Edição gratuita do SQL Server. O mesmo script T-SQL roda no local e no contêiner, e recursos como o índice único filtrado garantem regras do negócio, como a RN25, no próprio banco. |
@@ -442,19 +447,36 @@ Caminho de uma venda:
   na consulta. Gravar o resultado seria guardar o mesmo dado duas vezes.
 - **O script SQL é a única fonte do esquema.** Não há migrations: o enunciado pede o script, e
   duas definições do banco abririam espaço para divergência. O mapeamento do EF espelha o
-  script, e os testes de integração criam o banco pelo script e usam o EF em cima dele; se os
-  dois divergirem, o teste quebra.
+  script, e os testes de integração criam o banco pelo script e usam o EF em cima dele. O teste
+  `MapeamentoContraOScriptTests` compara os índices e os CHECKs dos dois lados: se alguém
+  acrescentar um índice só no script ou só no EF, ele quebra.
 - **Leitura por projeção.** Listagens e comprovante de venda são consultas que já devolvem os
   DTOs, sem carregar as entidades inteiras.
 - **CPF e telefone guardados só com os dígitos**, exibidos com máscara. A busca de cliente
-  entende o termo: com letras, procura no nome; só com números, pelo começo do CPF.
+  entende o termo: com letras, procura no nome; só com números, pelo começo do CPF; só com
+  pontuação, não encontra ninguém. A busca por nome, de cliente e de produto, ignora acentos e
+  maiúsculas ("joao" acha "João") sem mudar o agrupamento do banco: a consulta compara com
+  `Latin1_General_CI_AI`. Um CPF gravado direto no banco fora do dígito verificador é lido como
+  está, para as telas não caírem; ao alterar esse cliente, o cadastro exige um CPF válido.
 - **A data de hoje vem de um relógio injetável no fuso de Brasília**, e não do relógio do
   servidor. No contêiner o relógio é UTC, e uma venda às 22h sugeriria a data do dia seguinte.
 - **Front-end sem framework.** A tela de venda usa JavaScript puro em módulos, com
   autocompletar acessível por teclado e leitor de tela. Os totais na tela são conveniência: o
   servidor recalcula tudo.
 - **O mesmo produto em duas linhas é recusado.** Na tela, escolher um produto já lançado soma 1
-  à quantidade da linha existente.
+  à quantidade da linha existente, avisa em qual linha e a realça.
+- **Números no formato brasileiro, com a mesma regra no navegador e no servidor.** Vírgula é
+  decimal e ponto é milhar (`1.250,00`). Sem vírgula, um ponto seguido de uma ou duas casas é
+  decimal (`12.50` vale 12,50) e grupos de três depois do ponto são milhar (`1.250`); qualquer
+  outra forma é recusada com aviso, em vez de virar outro valor. A regra mora em `formato.js` e
+  em `Apoio/DecimalPtBr.cs`, e um teste de integração confere os mesmos casos no servidor.
+- **O domínio fala de campo e de linha, não de tela.** Um erro diz o campo (`ProdutoId`) e,
+  num item da venda, a linha; só a Web monta a chave do formulário (`Itens[2].ProdutoId`), em
+  `Apoio/ModelStateExtensions.cs`. Mudar o nome de um campo na tela não mexe no domínio.
+- **O comprovante mostra o nome atual do produto.** O item da venda guarda o produto e o valor
+  unitário da época; o nome vem do cadastro. O enunciado pede o preço congelado, não o nome, e
+  renomear um produto costuma ser correção de digitação. Se o nome histórico passar a importar,
+  basta uma coluna no item.
 - **Venda registrada uma vez só, mesmo com duplo envio.** A tela trava o botão, mas a defesa
   real está no servidor: cada formulário de venda leva uma chave única, gravada com índice único
   filtrado. O segundo envio devolve a venda já gravada, e a corrida entre dois envios simultâneos
@@ -464,17 +486,29 @@ Caminho de uma venda:
   corrida entre duas gravações é provocada de verdade, com dois contextos. O custo é precisar de
   SQL Server para quase toda a suíte; só o domínio roda sem banco.
 - **Nada fixo no código.** Textos em `Recursos/Textos.resx` (Web) e `Mensagens.resx` (domínio e
-  aplicação); um teste confere que toda chave usada existe e que nenhuma sobra. Parâmetros de
+  aplicação); um teste confere que toda chave usada existe e que nenhuma sobra. A aplicação
+  tem um idioma só: o `.resx` não está ali para traduzir, e sim para deixar todo o texto que o
+  operador lê num lugar só, revisável sem abrir código. Parâmetros de
   negócio na seção `Sophia` do `appsettings.json`, validados na subida: valor fora da faixa impede
   a aplicação de subir. O JavaScript recebe endereços e textos por atributos `data-*` gerados pela
   view. Exceção consciente: a mensagem de configuração ausente no `Program`, que é para quem
   instala, não para quem usa a tela.
 - **DRY sem herança forçada.** Listas, busca, cabeçalho ordenável, paginador e páginas de
-  exclusão são partials comuns. Os controllers de cliente e de produto continuam separados: com
-  dois casos, uma classe base genérica custaria mais leitura do que economizaria.
+  exclusão são partials comuns; listar, gravar e excluir cadastro ficam em `Apoio/AcoesDeCadastro`
+  e o salvamento com tradução de duplicidade em `GravacaoDeCadastro`. Os controllers e os serviços
+  de cliente e de produto continuam separados e parecidos: com dois casos, uma classe base
+  genérica custaria mais leitura do que economizaria.
 - **Duas regras de qualidade valem só para o código de produção.** Nos testes, nomes com
   sublinhado (CA1707) deixam o nome do teste legível como frase, e o índice de manutenibilidade
   (CA1505) não se aplica: um teste é um roteiro declarativo de preparar, agir e conferir.
+- **Uma regra do Sonar fica desligada no código de produção: S6967** (conferir o `ModelState` em
+  cada action). A conferência existe, mas num lugar só: o filtro `RecusarConsultaInvalida` recusa
+  toda consulta GET com valor inválido, e o envio de formulário é conferido em `AcoesDeCadastro`.
+  Repetir a mesma linha em cada action era o que a regra pedia.
+- **Docker para avaliação.** O `docker-compose.yml` conecta como `sa`, com senha padrão se
+  `SOPHIA_SENHA_DO_BANCO` não for definida, e o script cria o banco com o nome fixo `Sophia`:
+  se ele já existir, o script reaproveita e só cria o que falta, sem apagar dados. Fora da
+  avaliação, defina a senha e use um login próprio da aplicação.
 - **Identidade visual da Sophia.** Paleta, fonte e logo seguem o site da marca; o azul-petróleo
   foi escurecido de `#007B9E` para `#007596` porque o original não atingia contraste AA sobre o
   fundo claro.
@@ -492,19 +526,14 @@ Caminho de uma venda:
 
 ## Qualidade
 
-O build falha se qualquer regra abaixo for violada; o CI confere também a formatação e o
-JavaScript.
+O build falha se qualquer item abaixo for violado, na máquina e no CI:
 
-| Verificação | Antes desta rodada | Agora |
-|---|---|---|
-| Analisadores do .NET (`latest-recommended`) | ligados, com 14 regras silenciadas | ligados, nenhuma regra silenciada no código de produção |
-| SonarAnalyzer.CSharp | ausente | ligado; 23 achados corrigidos (membros sem uso, `ModelState` não verificado nas actions, ternário aninhado, bloco vazio, `RunAsync`) |
-| Complexidade ciclomática (CA1502) | não medida | até 10 por método |
-| Índice de manutenibilidade (CA1505) | não medido | no mínimo 60; 23 achados resolvidos dividindo métodos e classes em partes nomeadas |
-| Estilo de código no build | não | sim (`EnforceCodeStyleInBuild`) e `dotnet format` no CI |
-| JavaScript | sem verificação | ESLint com complexidade até 10, funções de até 60 linhas e no máximo 3 níveis de aninhamento |
-| Maior arquivo JavaScript | `nova-venda.js` com 335 linhas | `autocompletar.js` com 231 linhas; `nova-venda.js` e `site.js` só compõem os módulos de `js/caixa/` e `js/comum/` |
-| Maior arquivo CSS | `site.css` com 1.877 linhas | `componentes.css` com 462 linhas; o estilo fica dividido por área em `wwwroot/css` |
+- analisadores do .NET e SonarAnalyzer.CSharp, com aviso tratado como erro;
+- complexidade ciclomática até 10 por método (CA1502) e índice de manutenibilidade de no mínimo
+  60 (CA1505);
+- estilo de código no build e `dotnet format --verify-no-changes`;
+- ESLint no JavaScript: complexidade até 10, funções de até 60 linhas e no máximo 3 níveis de
+  aninhamento.
 
 ---
 
