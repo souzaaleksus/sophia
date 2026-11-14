@@ -60,8 +60,9 @@
     const guardarPreferencia = preferencia => {
         try {
             localStorage.setItem(chaveDoTema, preferencia);
+            return true;
         } catch {
-            return;
+            return false;
         }
     };
 
