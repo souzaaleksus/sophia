@@ -59,6 +59,14 @@ internal sealed class Tabela<T>
         Descartar();
     }
 
+    public void GravarPorOutraConexao(T entidade, Action<T, int>? aoGerarId = null)
+    {
+        var id = ++_ultimoId;
+        PropriedadeId.SetValue(entidade, id);
+        aoGerarId?.Invoke(entidade, id);
+        _gravados = [.. _gravados, entidade];
+    }
+
     public void Descartar()
     {
         _novos.Clear();

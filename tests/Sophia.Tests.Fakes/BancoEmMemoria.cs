@@ -11,6 +11,7 @@ namespace Sophia.Tests.Fakes;
 public sealed class BancoEmMemoria : IUnidadeDeTrabalho
 {
     private bool _simularConcorrencia;
+    private Venda? _vendaConcorrente;
 
     public BancoEmMemoria()
     {
@@ -33,12 +34,21 @@ public sealed class BancoEmMemoria : IUnidadeDeTrabalho
 
     public void SimularCadastroConcorrenteNoProximoSalvamento() => _simularConcorrencia = true;
 
+    public void SimularVendaConcorrenteNoProximoSalvamento(DadosVenda dados) =>
+        _vendaConcorrente = Venda.Registrar(dados, dados.Data!.Value).Valor;
+
     public void RegistrarVendaPara(int clienteId) => RegistrarVenda(clienteId, produtoId: int.MaxValue);
 
     public void RegistrarVendaDoProduto(int produtoId) => RegistrarVenda(clienteId: int.MaxValue, produtoId);
 
     public Task SalvarAsync(CancellationToken cancelamento = default)
     {
+        if (_vendaConcorrente is { } concorrente)
+        {
+            _vendaConcorrente = null;
+            TabelaDeVendas.GravarPorOutraConexao(concorrente, NumerarItens);
+        }
+
         if (_simularConcorrencia)
         {
             _simularConcorrencia = false;
@@ -76,8 +86,11 @@ public sealed class BancoEmMemoria : IUnidadeDeTrabalho
     {
         var cpfs = TabelaDeClientes.EstadoAposSalvar().Select(c => c.Cpf.Numero);
         var nomes = TabelaDeProdutos.EstadoAposSalvar().Select(p => p.Nome.ToUpperInvariant());
-        return cpfs.Count() != cpfs.Distinct().Count() || nomes.Count() != nomes.Distinct().Count();
+        var chaves = TabelaDeVendas.EstadoAposSalvar().Where(v => v.ChaveDeRegistro is not null).Select(v => v.ChaveDeRegistro);
+        return Repete(cpfs) || Repete(nomes) || Repete(chaves);
     }
+
+    private static bool Repete<T>(IEnumerable<T> valores) => valores.Count() != valores.Distinct().Count();
 
     private bool RemoveRegistroEmUso()
     {

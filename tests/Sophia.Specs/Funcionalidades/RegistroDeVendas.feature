@@ -26,6 +26,22 @@ Funcionalidade: Registro de vendas
       | Caderno 96 folhas | 2          | 18,90         | 37,80    |
     E o total da venda é "62,80"
 
+  Cenário: Enviar a mesma venda duas vezes registra uma só
+    Quando eu enviar duas vezes a mesma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 10         | 2,50          |
+    Então os dois envios apontam para a mesma venda
+    E existe 1 venda registrada
+
+  Cenário: Duas vendas iguais feitas uma depois da outra são registradas as duas
+    Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 10         | 2,50          |
+    E eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 10         | 2,50          |
+    Então existem 2 vendas registradas
+
   Cenário: O valor lançado na venda não muda quando o preço do produto muda
     Dado que o cliente "Maria Santos" comprou 4 "Caneta azul"
     Quando eu alterar o valor do produto "Caneta azul" para "3,00"

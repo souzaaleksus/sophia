@@ -49,5 +49,8 @@ internal sealed class VendaRepositorioEmMemoria(BancoEmMemoria banco) : IVendaRe
         return Task.FromResult(new ResumoDoPeriodo(doPeriodo.Count, doPeriodo.Sum(v => v.Total)));
     }
 
+    public Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default) =>
+        Task.FromResult(banco.TabelaDeVendas.Gravados.FirstOrDefault(v => v.ChaveDeRegistro == chave)?.Id);
+
     public void Adicionar(Venda venda) => banco.TabelaDeVendas.Adicionar(venda);
 }

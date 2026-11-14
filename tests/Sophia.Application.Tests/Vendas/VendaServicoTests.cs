@@ -1,3 +1,4 @@
+using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
@@ -104,6 +105,66 @@ public sealed class VendaServicoTests : IAsyncLifetime
         vendas.Select(v => (v.Data, v.ClienteNome, v.QuantidadeDeItens, v.Total)).Should().Equal(
             (Hoje, "Maria Santos", 2, 21.40m),
             (Hoje.AddDays(-1), "Maria Santos", 1, 5.00m));
+    }
+
+    [Fact]
+    public async Task A_mesma_chave_enviada_duas_vezes_registra_uma_venda_so()
+    {
+        var dados = new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], Guid.NewGuid());
+
+        var primeira = await _servico.RegistrarAsync(dados);
+        var segunda = await _servico.RegistrarAsync(dados);
+
+        segunda.Sucesso.Should().BeTrue();
+        segunda.Valor.Should().Be(primeira.Valor);
+        (await _servico.ListarAsync()).Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Chaves_diferentes_registram_duas_vendas()
+    {
+        var itens = new DadosItemVenda[] { new(_caneta, 1, 2.50m) };
+
+        var primeira = await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, itens, Guid.NewGuid()));
+        var segunda = await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, itens, Guid.NewGuid()));
+
+        segunda.Valor.Should().NotBe(primeira.Valor);
+        (await _servico.ListarAsync()).Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Sem_chave_cada_envio_registra_uma_venda()
+    {
+        var dados = new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)]);
+
+        await _servico.RegistrarAsync(dados);
+        await _servico.RegistrarAsync(dados);
+
+        (await _servico.ListarAsync()).Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Na_corrida_entre_dois_envios_devolve_a_venda_que_o_banco_gravou_primeiro()
+    {
+        var dados = new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], Guid.NewGuid());
+        _banco.SimularVendaConcorrenteNoProximoSalvamento(dados);
+
+        var resultado = await _servico.RegistrarAsync(dados);
+
+        resultado.Sucesso.Should().BeTrue();
+        (await _servico.ListarAsync()).Should().ContainSingle()
+            .Which.Id.Should().Be(resultado.Valor);
+    }
+
+    [Fact]
+    public async Task Conflito_que_nao_e_da_chave_continua_sendo_erro()
+    {
+        _banco.SimularCadastroConcorrenteNoProximoSalvamento();
+
+        var registrar = () => _servico.RegistrarAsync(
+            new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], Guid.NewGuid()));
+
+        await registrar.Should().ThrowAsync<ConflitoAoSalvarException>();
     }
 
     [Fact]

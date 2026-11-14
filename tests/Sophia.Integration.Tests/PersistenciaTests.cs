@@ -144,6 +144,74 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
             .Which.Tipo.Should().Be(TipoDeConflito.RegistroEmUso);
     }
 
+    [Fact]
+    public async Task O_indice_unico_da_chave_de_registro_barra_a_segunda_gravacao()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var chave = Guid.NewGuid();
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], chave);
+
+        var gravarDeNovo = () => RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], chave);
+
+        (await gravarDeNovo.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.ValorDuplicado);
+    }
+
+    [Fact]
+    public async Task Vendas_sem_chave_de_registro_nao_esbarram_no_indice_unico()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
+
+        await using var contexto = banco.NovoContexto();
+        (await new VendaRepositorio(contexto).ListarAsync()).Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Acha_o_numero_da_venda_pela_chave_de_registro()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var chave = Guid.NewGuid();
+        var vendaId = await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], chave);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+
+        (await repositorio.ObterIdPelaChaveAsync(chave)).Should().Be(vendaId);
+        (await repositorio.ObterIdPelaChaveAsync(Guid.NewGuid())).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Na_corrida_o_servico_devolve_a_venda_que_o_banco_gravou_primeiro()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var dados = new DadosVenda(Hoje, maria, [new(caneta, 1, 2.50m)], Guid.NewGuid());
+        var idDoOutroEnvio = 0;
+
+        await using var contexto = banco.NovoContexto();
+        var unidade = new UnidadeQueDeixaOutroEnvioGravarAntes(
+            new UnidadeDeTrabalho(contexto),
+            async () => idDoOutroEnvio = await RegistrarVendaAsync(maria, dados.Itens, dados.Chave));
+        var servico = new VendaServico(
+            new VendaRepositorio(contexto),
+            new ClienteRepositorio(contexto),
+            new ProdutoRepositorio(contexto),
+            unidade,
+            new RelogioParado());
+
+        var resultado = await servico.RegistrarAsync(dados);
+
+        resultado.Valor.Should().Be(idDoOutroEnvio);
+        await using var leitura = banco.NovoContexto();
+        (await new VendaRepositorio(leitura).ListarAsync()).Should().ContainSingle();
+    }
+
     private async Task<int> CadastrarClienteAsync(string cpf, string nome, string? telefone = null)
     {
         await using var contexto = banco.NovoContexto();
@@ -162,12 +230,27 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         return produto.Id;
     }
 
-    private async Task<int> RegistrarVendaAsync(int clienteId, IReadOnlyList<DadosItemVenda> itens)
+    private async Task<int> RegistrarVendaAsync(int clienteId, IReadOnlyList<DadosItemVenda> itens, Guid? chave = null)
     {
         await using var contexto = banco.NovoContexto();
-        var venda = Venda.Registrar(new DadosVenda(Hoje, clienteId, itens), Hoje).Valor;
+        var venda = Venda.Registrar(new DadosVenda(Hoje, clienteId, itens, chave), Hoje).Valor;
         new VendaRepositorio(contexto).Adicionar(venda);
         await new UnidadeDeTrabalho(contexto).SalvarAsync();
         return venda.Id;
+    }
+
+    private sealed class RelogioParado : IRelogio
+    {
+        public DateOnly Hoje => PersistenciaTests.Hoje;
+    }
+
+    private sealed class UnidadeQueDeixaOutroEnvioGravarAntes(IUnidadeDeTrabalho unidade, Func<Task> outroEnvio)
+        : IUnidadeDeTrabalho
+    {
+        public async Task SalvarAsync(CancellationToken cancelamento = default)
+        {
+            await outroEnvio();
+            await unidade.SalvarAsync(cancelamento);
+        }
     }
 }

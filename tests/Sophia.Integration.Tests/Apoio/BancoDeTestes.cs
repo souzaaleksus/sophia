@@ -21,6 +21,12 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await ExecutarScriptAsync();
+        TextoDeConexao = new SqlConnectionStringBuilder(Servidor) { InitialCatalog = _nome }.ConnectionString;
+    }
+
+    public async Task ExecutarScriptAsync()
+    {
         var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "create-database.sql"));
         script = script.Replace("[Sophia]", $"[{_nome}]", StringComparison.Ordinal)
             .Replace("N'Sophia'", $"N'{_nome}'", StringComparison.Ordinal);
@@ -32,8 +38,14 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
             await using var comando = new SqlCommand(lote, conexao);
             await comando.ExecuteNonQueryAsync();
         }
+    }
 
-        TextoDeConexao = new SqlConnectionStringBuilder(Servidor) { InitialCatalog = _nome }.ConnectionString;
+    public async Task ExecutarAsync(string sql)
+    {
+        await using var conexao = new SqlConnection(TextoDeConexao);
+        await conexao.OpenAsync();
+        await using var comando = new SqlCommand(sql, conexao);
+        await comando.ExecuteNonQueryAsync();
     }
 
     public async Task DisposeAsync()

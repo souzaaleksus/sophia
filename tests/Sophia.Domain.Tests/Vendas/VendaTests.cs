@@ -29,6 +29,24 @@ public sealed class VendaTests
     }
 
     [Fact]
+    public void Guarda_a_chave_de_registro_enviada_pelo_formulario()
+    {
+        var chave = Guid.NewGuid();
+
+        var venda = Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 2.50m)], chave), Hoje).Valor;
+
+        venda.ChaveDeRegistro.Should().Be(chave);
+    }
+
+    [Fact]
+    public void Chave_vazia_vale_como_venda_sem_chave()
+    {
+        var venda = Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 2.50m)], Guid.Empty), Hoje).Valor;
+
+        venda.ChaveDeRegistro.Should().BeNull();
+    }
+
+    [Fact]
     public void Aceita_data_passada()
     {
         var resultado = Venda.Registrar(new DadosVenda(Hoje.AddDays(-30), Maria, [new DadosItemVenda(Caneta, 1, 2.50m)]), Hoje);
