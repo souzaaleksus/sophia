@@ -212,6 +212,52 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         (await new VendaRepositorio(leitura).ListarAsync()).Should().ContainSingle();
     }
 
+    [Fact]
+    public async Task Totaliza_por_dia_no_banco_so_os_dias_do_periodo_que_tem_venda()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var caderno = await CadastrarProdutoAsync("Caderno 96 folhas", 18.90m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], data: new DateOnly(2026, 11, 6));
+        await RegistrarVendaAsync(maria, [new(caneta, 2, 2.50m)], data: new DateOnly(2026, 11, 7));
+        await RegistrarVendaAsync(maria, [new(caderno, 1, 18.90m)], data: new DateOnly(2026, 11, 7));
+        await RegistrarVendaAsync(maria, [new(caneta, 10, 2.50m), new(caderno, 2, 18.90m)], data: Hoje);
+
+        await using var contexto = banco.NovoContexto();
+        var totais = await new VendaRepositorio(contexto).TotaisPorDiaAsync(new DateOnly(2026, 11, 7), Hoje);
+
+        totais.Should().Equal(
+            new TotalDoDia(new DateOnly(2026, 11, 7), 23.90m, 2),
+            new TotalDoDia(Hoje, 62.80m, 1));
+    }
+
+    [Fact]
+    public async Task Agrupa_os_mais_vendidos_no_banco_por_quantidade_total_e_nome()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var caderno = await CadastrarProdutoAsync("Caderno 96 folhas", 18.90m);
+        var lapis = await CadastrarProdutoAsync("Lápis", 1.50m);
+        var borracha = await CadastrarProdutoAsync("Borracha", 1.50m);
+        var regua = await CadastrarProdutoAsync("Régua", 4m);
+        await RegistrarVendaAsync(maria, [new(regua, 90, 4m)], data: new DateOnly(2026, 10, 31));
+        await RegistrarVendaAsync(maria, [new(caneta, 6, 2.50m), new(lapis, 3, 1.50m)], data: new DateOnly(2026, 11, 2));
+        await RegistrarVendaAsync(maria, [new(caneta, 4, 2.40m), new(caderno, 3, 18.90m)], data: new DateOnly(2026, 11, 5));
+        await RegistrarVendaAsync(maria, [new(borracha, 3, 1.50m), new(regua, 1, 4m)], data: Hoje);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+        var doMes = await repositorio.MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 4);
+
+        doMes.Should().Equal(
+            new ProdutoMaisVendido(caneta, "Caneta azul", 10, 24.60m),
+            new ProdutoMaisVendido(caderno, "Caderno 96 folhas", 3, 56.70m),
+            new ProdutoMaisVendido(borracha, "Borracha", 3, 4.50m),
+            new ProdutoMaisVendido(lapis, "Lápis", 3, 4.50m));
+        (await repositorio.MaisVendidosAsync(new DateOnly(2026, 12, 1), new DateOnly(2026, 12, 31), 5))
+            .Should().BeEmpty();
+    }
+
     private async Task<int> CadastrarClienteAsync(string cpf, string nome, string? telefone = null)
     {
         await using var contexto = banco.NovoContexto();
@@ -230,10 +276,14 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         return produto.Id;
     }
 
-    private async Task<int> RegistrarVendaAsync(int clienteId, IReadOnlyList<DadosItemVenda> itens, Guid? chave = null)
+    private async Task<int> RegistrarVendaAsync(
+        int clienteId,
+        IReadOnlyList<DadosItemVenda> itens,
+        Guid? chave = null,
+        DateOnly? data = null)
     {
         await using var contexto = banco.NovoContexto();
-        var venda = Venda.Registrar(new DadosVenda(Hoje, clienteId, itens, chave), Hoje).Valor;
+        var venda = Venda.Registrar(new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje).Valor;
         new VendaRepositorio(contexto).Adicionar(venda);
         await new UnidadeDeTrabalho(contexto).SalvarAsync();
         return venda.Id;

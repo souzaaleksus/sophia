@@ -45,12 +45,53 @@ internal sealed class VendaRepositorioEmMemoria(BancoEmMemoria banco) : IVendaRe
 
     public Task<ResumoDoPeriodo> ResumirAsync(DateOnly inicio, DateOnly fim, CancellationToken cancelamento = default)
     {
-        var doPeriodo = banco.TabelaDeVendas.Gravados.Where(v => v.Data >= inicio && v.Data <= fim).ToList();
+        var doPeriodo = DoPeriodo(inicio, fim).ToList();
         return Task.FromResult(new ResumoDoPeriodo(doPeriodo.Count, doPeriodo.Sum(v => v.Total)));
+    }
+
+    public Task<IReadOnlyList<TotalDoDia>> TotaisPorDiaAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        CancellationToken cancelamento = default)
+    {
+        IReadOnlyList<TotalDoDia> totais = DoPeriodo(inicio, fim)
+            .GroupBy(v => v.Data)
+            .OrderBy(dia => dia.Key)
+            .Select(dia => new TotalDoDia(dia.Key, dia.Sum(v => v.Total), dia.Count()))
+            .ToList();
+
+        return Task.FromResult(totais);
+    }
+
+    public Task<IReadOnlyList<ProdutoMaisVendido>> MaisVendidosAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        int limite,
+        CancellationToken cancelamento = default)
+    {
+        var produtos = banco.TabelaDeProdutos.Gravados.ToDictionary(p => p.Id);
+        IReadOnlyList<ProdutoMaisVendido> maisVendidos = DoPeriodo(inicio, fim)
+            .SelectMany(v => v.Itens)
+            .GroupBy(i => i.ProdutoId)
+            .Select(itens => new ProdutoMaisVendido(
+                itens.Key,
+                produtos[itens.Key].Nome,
+                itens.Sum(i => i.Quantidade),
+                itens.Sum(i => i.Subtotal)))
+            .OrderByDescending(p => p.Quantidade)
+            .ThenByDescending(p => p.Total)
+            .ThenBy(p => p.Nome, StringComparer.CurrentCulture)
+            .Take(limite)
+            .ToList();
+
+        return Task.FromResult(maisVendidos);
     }
 
     public Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default) =>
         Task.FromResult(banco.TabelaDeVendas.Gravados.FirstOrDefault(v => v.ChaveDeRegistro == chave)?.Id);
 
     public void Adicionar(Venda venda) => banco.TabelaDeVendas.Adicionar(venda);
+
+    private IEnumerable<Venda> DoPeriodo(DateOnly inicio, DateOnly fim) =>
+        banco.TabelaDeVendas.Gravados.Where(v => v.Data >= inicio && v.Data <= fim);
 }
