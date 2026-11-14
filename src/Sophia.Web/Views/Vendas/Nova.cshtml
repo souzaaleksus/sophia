@@ -84,6 +84,7 @@
       data-texto-cliente-nao-encontrado="@T["clientes.nenhum"]"
       data-texto-cadastrar-cliente="@T["caixa.cadastrar-cliente"]"
       data-texto-produto-nao-encontrado="@T["produtos.nenhum"]"
+      data-texto-produto-somado="@T["caixa.produto-somado"]"
       data-texto-item="@T["venda.itens-singular"]"
       data-texto-itens="@T["venda.itens-plural"]"
       data-texto-unidade="@T["vendas.unidades-singular"]"
@@ -158,6 +159,8 @@
                 LinhaDoItem(indice, Model.Itens[indice], comErros: true);
             }
         </div>
+
+        <p class="caixa-anuncio" data-anuncio role="status"></p>
 
         <div class="caixa-desfazer" data-desfazer role="status" hidden>
             <span>@T["caixa.produto-removido"]</span>

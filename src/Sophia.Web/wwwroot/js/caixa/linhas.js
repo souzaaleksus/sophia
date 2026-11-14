@@ -20,8 +20,9 @@ class Linhas {
     #movimentoReduzido;
     #aoMudar;
     #aoRemover;
+    #aoSomar;
 
-    constructor({ area, modelo, configuracao, textosDaBusca, movimentoReduzido, aoMudar, aoRemover }) {
+    constructor({ area, modelo, configuracao, textosDaBusca, movimentoReduzido, aoMudar, aoRemover, aoSomar }) {
         this.#area = area;
         this.#modelo = modelo;
         this.#configuracao = configuracao;
@@ -29,6 +30,7 @@ class Linhas {
         this.#movimentoReduzido = movimentoReduzido;
         this.#aoMudar = aoMudar;
         this.#aoRemover = aoRemover;
+        this.#aoSomar = aoSomar;
         this.todas().forEach(item => this.#preparar(item));
         this.renumerar();
     }
@@ -40,7 +42,7 @@ class Linhas {
     adicionar() {
         const item = this.#modelo.content.firstElementChild.cloneNode(true);
         this.#area.append(item);
-        this.#destacarChegada(item);
+        this.#destacar(item);
         this.#preparar(item);
         this.renumerar();
         this.#aoMudar();
@@ -100,17 +102,22 @@ class Linhas {
         }
     }
 
-    #destacarChegada(item) {
-        if (!this.#movimentoReduzido.matches) {
+    #destacar(item) {
+        if (this.#movimentoReduzido.matches) {
+            return;
+        }
+
+        item.classList.remove('caixa-item-novo');
+        requestAnimationFrame(() => {
             item.classList.add('caixa-item-novo');
             item.addEventListener('animationend', () => item.classList.remove('caixa-item-novo'), { once: true });
-        }
+        });
     }
 
     #escolherProduto(item, produto) {
         const jaLancado = this.todas().find(outro => outro !== item && campoDe(outro, 'ProdutoId').value === String(produto.id));
         if (jaLancado) {
-            this.#somarNaLinhaExistente(item, jaLancado);
+            this.#somarNaLinhaExistente(item, jaLancado, produto);
             return;
         }
 
@@ -131,7 +138,7 @@ class Linhas {
         this.#aoMudar();
     }
 
-    #somarNaLinhaExistente(item, existente) {
+    #somarNaLinhaExistente(item, existente, produto) {
         const quantidade = campoDe(existente, 'Quantidade');
         quantidade.value = (lerInteiro(quantidade.value) ?? 0) + 1;
         camposDaLinha.forEach(nome => {
@@ -140,6 +147,8 @@ class Linhas {
         });
         selecionar(quantidade);
         this.#corrigido(existente, ['Quantidade']);
+        this.#destacar(existente);
+        this.#aoSomar(produto, this.todas().indexOf(existente) + 1);
     }
 
     #mudarQuantidade(item, passo, peloTeclado = false) {

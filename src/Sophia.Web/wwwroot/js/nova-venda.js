@@ -1,3 +1,4 @@
+import { criarAnuncio } from './caixa/anuncio.js';
 import { ligarAtalhos } from './caixa/atalhos.js';
 import { criarEscolhaDeCliente } from './caixa/cliente.js';
 import { criarDesfazer } from './caixa/desfazer.js';
@@ -9,6 +10,7 @@ const configuracao = formulario.dataset;
 const textosDaBusca = { buscando: configuracao.textoBuscando, falha: configuracao.textoFalhaNaBusca };
 const movimentoReduzido = window.matchMedia('(prefers-reduced-motion: reduce)');
 const visor = criarVisor(formulario, configuracao, movimentoReduzido);
+const anunciar = criarAnuncio(formulario.querySelector('[data-anuncio]'));
 const desfazer = criarDesfazer(formulario.querySelector('[data-desfazer]'), (item, posicao) => linhas.reinserir(item, posicao));
 const linhas = criarLinhas({
     area: formulario.querySelector('[data-itens]'),
@@ -18,6 +20,7 @@ const linhas = criarLinhas({
     movimentoReduzido,
     aoMudar: () => recalcularTotais(),
     aoRemover: (item, posicao) => desfazer.oferecer(item, posicao),
+    aoSomar: (produto, linha) => anunciar(configuracao.textoProdutoSomado.replace('{produto}', produto.nome).replace('{linha}', linha)),
 });
 const cliente = criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, () => linhas.focarLivre());
 

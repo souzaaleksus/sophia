@@ -193,6 +193,54 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-describedby", new Regex("erro-"));
     }
 
+    [Fact]
+    public async Task Lancar_de_novo_um_produto_ja_lancado_avisa_a_soma_e_realca_a_linha()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await _caixa.LancarAsync(1, "Cader", "Caderno 96 folhas", "1");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
+
+        await _caixa.ProdutoDaLinha(2).FillAsync("Caneta");
+        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Caneta azul" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status).Filter(new() { HasText = "já estava" }))
+            .ToHaveTextAsync("Caneta azul já estava na venda: quantidade somada na linha 1.");
+        await Expect(_caixa.Linha(0)).ToHaveClassAsync(new Regex("caixa-item-novo"));
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("2");
+    }
+
+    [Fact]
+    public async Task Esc_na_busca_aberta_pelo_F2_devolve_o_cliente_escolhido()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _pagina.Keyboard.PressAsync("F2");
+        await Expect(_caixa.ComboboxDeCliente).ToBeFocusedAsync();
+
+        await _caixa.ComboboxDeCliente.PressAsync("Escape");
+
+        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToBeVisibleAsync();
+        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync("Maria Santos");
+        await Expect(_pagina.Locator("input[name=ClienteId]")).Not.ToHaveValueAsync(string.Empty);
+        await Expect(_pagina.GetByRole(AriaRole.Button, new() { Name = "Trocar cliente" })).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    public async Task Sair_da_busca_aberta_pelo_F2_sem_escolher_outro_devolve_o_cliente_escolhido()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _pagina.Keyboard.PressAsync("F2");
+        await _caixa.ComboboxDeCliente.FillAsync("Cader");
+
+        await _pagina.GetByLabel("Data da venda").ClickAsync();
+
+        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync("Maria Santos");
+        await Expect(_pagina.Locator("input[name=ClienteId]")).Not.ToHaveValueAsync(string.Empty);
+        await Expect(_pagina.GetByLabel("Data da venda")).ToBeFocusedAsync();
+    }
+
     private ILocator BotaoDaLinha(int linha, string nome) =>
         _caixa.Linha(linha).GetByRole(AriaRole.Button, new() { Name = nome, Exact = true });
 
