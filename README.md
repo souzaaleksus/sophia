@@ -370,11 +370,11 @@ dotnet test
 
 | Projeto | Tipo | Testes | O que cobre | Precisa de |
 |---|---|---|---|---|
-| `Sophia.Domain.Tests` | unidade | 94 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
-| `Sophia.Application.Tests` | aplicação | 160 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
-| `Sophia.Specs` | BDD (Gherkin) | 74 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 47 | script do banco, carga de demonstração, mapeamento do EF, índices, consultas, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
-| `Sophia.E2E` | tela | 174 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
+| `Sophia.Domain.Tests` | unidade | 102 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
+| `Sophia.Application.Tests` | aplicação | 171 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
+| `Sophia.Specs` | BDD (Gherkin) | 81 | os cenários da especificação, em português, sobre o banco real | SQL Server |
+| `Sophia.Integration.Tests` | integração | 107 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
+| `Sophia.E2E` | tela | 228 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
 
 Os testes da aplicação, os cenários BDD, os de integração e os de tela criam um banco
 temporário a partir de `database/create-database.sql` e o apagam ao final; nenhum deles usa
