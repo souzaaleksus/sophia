@@ -229,6 +229,27 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Restricao_que_o_mapeamento_nao_conhece_nao_vira_conflito_mesmo_com_nome_de_chave_estrangeira()
+    {
+        await banco.ExecutarAsync(
+            "ALTER TABLE dbo.Produtos ADD CONSTRAINT FK_Produtos_ForaDoMapeamento CHECK (ValorUnitario < 1000);");
+        try
+        {
+            await using var contexto = banco.NovoContexto();
+            new ProdutoRepositorio(contexto).Adicionar(Produto.Criar(new DadosProduto("Notebook", 5000m)).Valor);
+
+            var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
+
+            (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
+                .WithInnerException<SqlException>().Which.Message.Should().Contain("FK_Produtos_ForaDoMapeamento");
+        }
+        finally
+        {
+            await banco.ExecutarAsync("ALTER TABLE dbo.Produtos DROP CONSTRAINT FK_Produtos_ForaDoMapeamento;");
+        }
+    }
+
+    [Fact]
     public async Task O_indice_unico_da_chave_de_registro_barra_a_segunda_gravacao()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");

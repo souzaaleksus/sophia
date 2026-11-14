@@ -16,9 +16,16 @@ internal static class GravacaoDeCadastro
             await unidadeDeTrabalho.SalvarAsync(cancelamento);
             return Resultado.Ok();
         }
-        catch (ConflitoAoSalvarException conflito)
+        catch (ConflitoAoSalvarException conflito) when (ErroDoCadastro(conflito.Tipo, seDuplicado, seEmUso) is { } erro)
         {
-            return Resultado.Falha(conflito.Tipo == TipoDeConflito.ValorDuplicado ? seDuplicado : seEmUso);
+            return Resultado.Falha(erro);
         }
     }
+
+    private static Erro? ErroDoCadastro(TipoDeConflito tipo, Erro seDuplicado, Erro seEmUso) => tipo switch
+    {
+        TipoDeConflito.ValorDuplicado => seDuplicado,
+        TipoDeConflito.RegistroEmUso => seEmUso,
+        _ => null,
+    };
 }

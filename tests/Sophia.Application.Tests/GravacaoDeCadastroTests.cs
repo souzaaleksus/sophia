@@ -26,6 +26,16 @@ public sealed class GravacaoDeCadastroTests
         resultado.Erros.Should().ContainSingle().Which.Mensagem.Should().Be(mensagem);
     }
 
+    [Fact]
+    public async Task Conflito_que_o_cadastro_nao_espera_e_relancado()
+    {
+        var conflito = new ConflitoAoSalvarException(TipoDeConflito.ReferenciaInexistente);
+
+        var salvar = () => new Unidade(conflito).SalvarCadastroAsync(Duplicado, EmUso);
+
+        (await salvar.Should().ThrowAsync<ConflitoAoSalvarException>()).Which.Should().BeSameAs(conflito);
+    }
+
     private sealed class Unidade(ConflitoAoSalvarException? conflito) : IUnidadeDeTrabalho
     {
         public Task SalvarAsync(CancellationToken cancelamento = default) =>

@@ -32,7 +32,7 @@ public sealed record Cpf
         return Resultado.Ok(new Cpf(digitos));
     }
 
-    public static Cpf DoBanco(string digitos) => new(digitos);
+    internal static Cpf DoBanco(string digitos) => new(digitos);
 
     public static string SomenteDigitos(string? texto) => Texto.SomenteDigitos(texto);
 

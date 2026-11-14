@@ -1,3 +1,4 @@
+using System.Reflection;
 using Sophia.Domain.Clientes;
 
 namespace Sophia.Domain.Tests.Clientes;
@@ -75,6 +76,15 @@ public sealed class CpfTests
     public void O_cpf_reconstituido_do_banco_e_igual_ao_criado_com_os_mesmos_digitos()
     {
         Cpf.DoBanco("52998224725").Should().Be(Cpf.Criar("529.982.247-25").Valor);
+    }
+
+    [Fact]
+    public void Reconstituir_sem_conferir_os_digitos_nao_faz_parte_do_contrato_publico()
+    {
+        var doBanco = typeof(Cpf).GetMethod(nameof(Cpf.DoBanco), BindingFlags.Static | BindingFlags.NonPublic);
+
+        doBanco.Should().NotBeNull();
+        doBanco!.IsAssembly.Should().BeTrue();
     }
 
     [Theory]
