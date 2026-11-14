@@ -51,12 +51,44 @@ BEGIN
     CREATE TABLE dbo.Produtos
     (
         Id            INT            IDENTITY(1, 1) NOT NULL,
-        Nome          NVARCHAR(150)                 NOT NULL,
+        Nome          NVARCHAR(150)  COLLATE Latin1_General_CI_AI NOT NULL,
         ValorUnitario DECIMAL(18, 2)                NOT NULL,
         CONSTRAINT PK_Produtos PRIMARY KEY CLUSTERED (Id),
         CONSTRAINT UQ_Produtos_Nome UNIQUE (Nome),
         CONSTRAINT CK_Produtos_ValorUnitario_Positivo CHECK (ValorUnitario > 0)
     );
+END';
+
+EXEC @noBanco N'
+IF EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N''dbo.Produtos'') AND name = N''Nome''
+      AND collation_name <> N''Latin1_General_CI_AI'')
+BEGIN
+    DECLARE @colidentes NVARCHAR(MAX) = (
+        SELECT STRING_AGG(CONVERT(NVARCHAR(MAX), p.Nome), N'' | '') WITHIN GROUP (ORDER BY p.Nome, p.Id)
+        FROM dbo.Produtos p
+        WHERE EXISTS (
+            SELECT 1 FROM dbo.Produtos o
+            WHERE o.Id <> p.Id AND o.Nome COLLATE Latin1_General_CI_AI = p.Nome COLLATE Latin1_General_CI_AI));
+
+    IF @colidentes IS NOT NULL
+        PRINT CONCAT(
+            N''Aviso: a coluna Produtos.Nome continua diferenciando acentos, porque estes nomes ficariam repetidos sem eles: '',
+            @colidentes,
+            N''. Renomeie esses produtos e rode o script de novo.'');
+    ELSE
+    BEGIN
+        BEGIN TRANSACTION;
+
+        IF OBJECT_ID(N''dbo.UQ_Produtos_Nome'', N''UQ'') IS NOT NULL
+            ALTER TABLE dbo.Produtos DROP CONSTRAINT UQ_Produtos_Nome;
+
+        ALTER TABLE dbo.Produtos ALTER COLUMN Nome NVARCHAR(150) COLLATE Latin1_General_CI_AI NOT NULL;
+        ALTER TABLE dbo.Produtos ADD CONSTRAINT UQ_Produtos_Nome UNIQUE (Nome);
+
+        COMMIT TRANSACTION;
+    END
 END';
 
 EXEC @noBanco N'

@@ -131,6 +131,19 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task O_nome_do_produto_e_unico_sem_diferenciar_acentos()
+    {
+        await CadastrarProdutoAsync("Café Torrado", 32m);
+
+        await using var contexto = banco.NovoContexto();
+        (await new ProdutoRepositorio(contexto).ExisteComNomeAsync("Cafe Torrado", excetoId: null)).Should().BeTrue();
+        var gravarDeNovo = () => CadastrarProdutoAsync("CAFE TORRADO", 30m);
+
+        (await gravarDeNovo.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.ValorDuplicado);
+    }
+
+    [Fact]
     public async Task Grava_a_venda_com_itens_e_le_resumo_e_detalhe()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");

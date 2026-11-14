@@ -9,6 +9,24 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
 {
     private const string Tabelas = "SELECT name FROM sys.tables ORDER BY name";
 
+    private const string NomeDoProdutoComoNaVersaoAnterior = """
+        ALTER TABLE dbo.Produtos DROP CONSTRAINT UQ_Produtos_Nome;
+        ALTER TABLE dbo.Produtos ALTER COLUMN Nome NVARCHAR(150) COLLATE Latin1_General_CI_AS NOT NULL;
+        ALTER TABLE dbo.Produtos ADD CONSTRAINT UQ_Produtos_Nome UNIQUE (Nome);
+        """;
+
+    private const string AgrupamentoDoNomeDoProduto = """
+        SELECT collation_name FROM sys.columns
+        WHERE object_id = OBJECT_ID(N'dbo.Produtos') AND name = N'Nome'
+        """;
+
+    private const string IndiceUnicoDoNome = """
+        SELECT i.name FROM sys.indexes i
+        JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+        JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+        WHERE i.object_id = OBJECT_ID(N'dbo.Produtos') AND i.is_unique = 1 AND c.name = N'Nome'
+        """;
+
     private const string UmaVendaSemItens = """
         INSERT INTO dbo.Clientes (Cpf, Nome) VALUES ('52998224725', N'Maria Santos');
         INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Caneta azul', 2.50), (N'Caderno', 18.90);
@@ -188,6 +206,67 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         avisos.Should().Contain(aviso => aviso.Contains("CK_VendaItens_QuantidadeMaxima", StringComparison.Ordinal));
         (await RestricaoDoTetoAsync(antigo.ConsultarAsync)).Should().BeEmpty();
         (await antigo.ConsultarAsync("SELECT CAST(Quantidade AS VARCHAR(10)) FROM dbo.VendaItens")).Should().Equal("2000000");
+    }
+
+    [Fact]
+    public async Task O_indice_do_nome_do_produto_recusa_nome_que_so_difere_no_acento()
+    {
+        await banco.LimparAsync();
+        await banco.ExecutarAsync("INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Café Torrado', 32);");
+
+        var semAcento = () => banco.ExecutarAsync("INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Cafe Torrado', 30);");
+
+        (await semAcento.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("UQ_Produtos_Nome");
+        await banco.LimparAsync();
+    }
+
+    [Fact]
+    public async Task Atualiza_banco_antigo_passando_o_nome_do_produto_a_ignorar_acentos()
+    {
+        await using var antigo = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Antiga");
+        await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        await antigo.ConsultarAsync($"""
+            {NomeDoProdutoComoNaVersaoAnterior}
+            INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Café Torrado', 32), (N'Chá Mate', 9);
+            SELECT N'pronto';
+            """);
+
+        await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+
+        (await antigo.ConsultarAsync(AgrupamentoDoNomeDoProduto)).Should().Equal("Latin1_General_CI_AI");
+        (await antigo.ConsultarAsync(IndiceUnicoDoNome)).Should().Equal("UQ_Produtos_Nome");
+        (await antigo.ConsultarAsync("SELECT Nome FROM dbo.Produtos ORDER BY Nome")).Should().Equal("Café Torrado", "Chá Mate");
+    }
+
+    [Fact]
+    public async Task Banco_antigo_com_nomes_que_colidiriam_sem_acento_so_avisa_e_nao_altera_a_coluna()
+    {
+        await using var antigo = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Antiga");
+        await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        await antigo.ConsultarAsync($"""
+            {NomeDoProdutoComoNaVersaoAnterior}
+            INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Café Torrado', 32), (N'Cafe Torrado', 30);
+            SELECT N'pronto';
+            """);
+
+        var avisos = await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        var deNovo = await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+
+        avisos.Should().Contain(aviso => aviso.Contains("Café Torrado", StringComparison.Ordinal)
+            && aviso.Contains("Cafe Torrado", StringComparison.Ordinal));
+        deNovo.Should().Contain(aviso => aviso.Contains("Produtos.Nome", StringComparison.Ordinal));
+        (await antigo.ConsultarAsync(AgrupamentoDoNomeDoProduto)).Should().Equal("Latin1_General_CI_AS");
+        (await antigo.ConsultarAsync(IndiceUnicoDoNome)).Should().Equal("UQ_Produtos_Nome");
+        (await antigo.ConsultarAsync("SELECT Nome FROM dbo.Produtos ORDER BY Id")).Should().Equal("Café Torrado", "Cafe Torrado");
+    }
+
+    [Fact]
+    public async Task Rodar_o_script_de_novo_mantem_o_nome_do_produto_sem_acento_e_seu_indice()
+    {
+        await banco.ExecutarScriptAsync();
+
+        (await banco.ConsultarAsync(AgrupamentoDoNomeDoProduto)).Should().Equal("Latin1_General_CI_AI");
+        (await banco.ConsultarAsync(IndiceUnicoDoNome)).Should().Equal("UQ_Produtos_Nome");
     }
 
     private Task<List<string>> ColunaDaChaveAsync() =>
