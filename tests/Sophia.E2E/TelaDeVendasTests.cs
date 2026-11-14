@@ -53,7 +53,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await EscolherClienteAsync("529.982", "Maria Santos");
         await LancarAsync(0, "Caneta", "Caneta azul", "10");
         await Expect(Linha(0).GetByTestId("subtotal")).ToHaveTextAsync("R$ 25,00");
-        await Linha(0).GetByLabel("Quantidade").PressAsync("Enter");
+        await Linha(0).GetByLabel("Quantidade", new() { Exact = true }).PressAsync("Enter");
         await LancarAsync(1, "Cader", "Caderno 96 folhas", "2");
 
         await Expect(Linha(1).GetByTestId("subtotal")).ToHaveTextAsync("R$ 37,80");
@@ -248,7 +248,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
 
         await ProdutoDaLinha(linha).FillAsync(termo);
         await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto }).ClickAsync();
-        await Linha(linha).GetByLabel("Quantidade").FillAsync(quantidade);
+        await Linha(linha).GetByLabel("Quantidade", new() { Exact = true }).FillAsync(quantidade);
     }
 
     private async Task PrepararCadastrosAsync()

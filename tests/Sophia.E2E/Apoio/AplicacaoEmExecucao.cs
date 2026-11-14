@@ -55,14 +55,22 @@ public sealed class AplicacaoEmExecucao : IAsyncLifetime
         await _banco.DisposeAsync();
     }
 
-    public async Task<IPage> NovaPaginaAsync()
-    {
-        var contexto = await Navegador.NewContextAsync(new BrowserNewContextOptions
+    public Task<IPage> NovaPaginaAsync() => AbrirPaginaAsync(new BrowserNewContextOptions());
+
+    public Task<IPage> NovaPaginaAsync(int largura, int altura, bool toque = false) =>
+        AbrirPaginaAsync(new BrowserNewContextOptions
         {
-            BaseURL = Endereco,
-            Locale = "pt-BR",
-            TimezoneId = "America/Sao_Paulo",
+            ViewportSize = new ViewportSize { Width = largura, Height = altura },
+            HasTouch = toque,
+            IsMobile = toque,
         });
+
+    private async Task<IPage> AbrirPaginaAsync(BrowserNewContextOptions opcoes)
+    {
+        opcoes.BaseURL = Endereco;
+        opcoes.Locale = "pt-BR";
+        opcoes.TimezoneId = "America/Sao_Paulo";
+        var contexto = await Navegador.NewContextAsync(opcoes);
         return await contexto.NewPageAsync();
     }
 
