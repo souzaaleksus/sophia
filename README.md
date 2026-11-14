@@ -123,6 +123,7 @@ ticket médio do mês corrente e as cinco vendas mais recentes, com atalho para 
 | RN25 | Venda enviada duas vezes é registrada uma vez só: o segundo envio devolve a venda já gravada | — | Vendas › Enviar a mesma venda duas vezes registra uma só |
 | RN26 | O painel mostra o total de cada um dos últimos 7 dias, até hoje, inclusive os dias sem venda | — | Painel › Total de cada um dos últimos 7 dias, inclusive os dias sem venda |
 | RN27 | O painel mostra os 5 produtos mais vendidos do mês por quantidade; no empate, vem o de maior total e depois a ordem alfabética | — | Painel › Os 5 produtos mais vendidos do mês, por quantidade |
+| RN28 | A lista de vendas mostra 25 vendas por página, das mais recentes para as mais antigas; página pedida antes da primeira mostra a primeira, e depois da última mostra a última | — | Consulta de vendas › A lista de vendas mostra 25 por página, das mais recentes para as mais antigas |
 
 ### 6. Requisitos não funcionais
 
@@ -200,6 +201,7 @@ de novo acrescenta a coluna e o índice sem apagar nada.
 | RN25 | `RegistroDeVendas.feature` › Enviar a mesma venda duas vezes registra uma só | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` (VendaServico, inclusive a corrida entre dois envios) | `Sophia.Integration.Tests` (índice único filtrado, corrida no SQL Server, atualização do banco pelo script) |
 | RN26 | `PainelDeVendas.feature` › Total de cada um dos últimos 7 dias | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (totais por dia agregados no SQL Server) |
 | RN27 | `PainelDeVendas.feature` › Os 5 produtos mais vendidos do mês | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (mais vendidos agregados no SQL Server) |
+| RN28 | `ConsultaDeVendas.feature` | `Sophia.Application.Tests` (Pagina, VendaServico: tamanho, ordem e limites de página) | `Sophia.Integration.Tests` (contagem e recorte com `OFFSET`/`FETCH` no SQL Server) |
 
 ---
 
