@@ -1,7 +1,7 @@
 const esperaAntesDeBuscar = 200;
 const esperaAntesDeAvisarBusca = 150;
 
-export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoDigitar, vazio = 'Nada encontrado.', cadastro }) {
+export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoDigitar, textos, cadastro }) {
     const lista = entrada.parentElement.querySelector('[role=listbox]');
     const aviso = document.createElement('div');
     aviso.className = 'opcoes opcoes-aviso';
@@ -54,7 +54,7 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
         const ehAtual = () => numeroDaBusca === ultimaBusca && document.activeElement === entrada;
         const avisoDeBusca = setTimeout(() => {
             if (ehAtual()) {
-                avisar('Buscando…', 'status');
+                avisar(textos.buscando, 'status');
                 entrada.setAttribute('aria-busy', 'true');
             }
         }, esperaAntesDeAvisarBusca);
@@ -65,7 +65,7 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
         } catch {
             clearTimeout(avisoDeBusca);
             if (ehAtual()) {
-                avisar('Não foi possível buscar. Tente de novo.', 'alert');
+                avisar(textos.falha, 'alert');
             }
 
             return;
@@ -81,7 +81,7 @@ export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoD
 
     function mostrar(itens) {
         if (itens.length === 0) {
-            avisar(vazio, 'status', cadastro);
+            avisar(textos.vazio, 'status', cadastro);
             return;
         }
 

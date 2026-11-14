@@ -2,6 +2,11 @@ import { buscarJson, criarAutocompletar } from './autocompletar.js';
 import { emCentavos, formatarContagem, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from './formato.js';
 
 const formulario = document.getElementById('nova-venda');
+const configuracao = formulario.dataset;
+const textosDaBusca = {
+    buscando: configuracao.textoBuscando,
+    falha: configuracao.textoFalhaNaBusca,
+};
 const areaDosItens = formulario.querySelector('[data-itens]');
 const modeloDeItem = document.getElementById('modelo-de-item');
 const totalDaVenda = formulario.querySelector('[data-testid=total-da-venda]');
@@ -11,6 +16,7 @@ const unidadesDaVenda = formulario.querySelector('[data-testid=unidades-da-venda
 const movimentoReduzido = window.matchMedia('(prefers-reduced-motion: reduce)');
 const camposDoItem = ['ProdutoId', 'ProdutoNome', 'ValorUnitario', 'Quantidade'];
 const botaoFinalizar = formulario.querySelector('[type=submit]');
+const textoDoBotaoFinalizar = botaoFinalizar.textContent.trim();
 let enviando = false;
 
 const cliente = prepararCliente();
@@ -45,7 +51,7 @@ formulario.addEventListener('submit', evento => {
     renumerarItens();
     botaoFinalizar.disabled = true;
     botaoFinalizar.setAttribute('aria-busy', 'true');
-    botaoFinalizar.textContent = 'Registrando…';
+    botaoFinalizar.textContent = configuracao.textoRegistrando;
 });
 
 window.addEventListener('pageshow', evento => {
@@ -65,7 +71,7 @@ function liberarEnvio() {
     enviando = false;
     botaoFinalizar.disabled = false;
     botaoFinalizar.removeAttribute('aria-busy');
-    botaoFinalizar.textContent = 'Finalizar venda';
+    botaoFinalizar.textContent = textoDoBotaoFinalizar;
 }
 
 function temProdutoLancado() {
@@ -95,10 +101,10 @@ function prepararCliente() {
     const entrada = busca.querySelector('input');
 
     criarAutocompletar(entrada, {
-        buscar: termo => buscarJson('/Clientes/Buscar', termo),
+        buscar: termo => buscarJson(configuracao.enderecoBuscaDeClientes, termo),
         descrever: encontrado => ({ principal: encontrado.nome, secundario: encontrado.cpf }),
-        vazio: 'Nenhum cliente encontrado.',
-        cadastro: { texto: 'Cadastrar novo cliente', endereco: '/Clientes/Novo' },
+        textos: { ...textosDaBusca, vazio: configuracao.textoClienteNaoEncontrado },
+        cadastro: { texto: configuracao.textoCadastrarCliente, endereco: configuracao.enderecoNovoCliente },
         aoEscolher: encontrado => {
             campo('id').value = encontrado.id;
             campo('nome').value = encontrado.nome;
@@ -154,8 +160,8 @@ function prepararItem(item) {
     const campo = nome => item.querySelector(`[data-campo=${nome}]`);
 
     criarAutocompletar(campo('ProdutoNome'), {
-        buscar: termo => buscarJson('/Produtos/Buscar', termo),
-        vazio: 'Nenhum produto encontrado.',
+        buscar: termo => buscarJson(configuracao.enderecoBuscaDeProdutos, termo),
+        textos: { ...textosDaBusca, vazio: configuracao.textoProdutoNaoEncontrado },
         descrever: produto => ({ principal: produto.nome, secundario: formatarMoeda(produto.valorUnitario) }),
         aoDigitar: () => {
             campo('ProdutoId').value = '';
@@ -285,8 +291,8 @@ function recalcularTotais() {
     });
 
     mostrarNoVisor(formatarDecimal(totalEmCentavos / 100));
-    itensDaVenda.textContent = formatarContagem(itens, 'item', 'itens');
-    unidadesDaVenda.textContent = formatarContagem(unidades, 'unidade', 'unidades');
+    itensDaVenda.textContent = formatarContagem(itens, configuracao.textoItem, configuracao.textoItens);
+    unidadesDaVenda.textContent = formatarContagem(unidades, configuracao.textoUnidade, configuracao.textoUnidades);
 }
 
 function mostrarNoVisor(valor) {

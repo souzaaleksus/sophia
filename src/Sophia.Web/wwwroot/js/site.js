@@ -35,9 +35,9 @@
 (() => {
     const chaveDoTema = 'sophia-tema';
     const temas = {
-        claro: { nome: 'claro', icone: '#icone-sol' },
-        escuro: { nome: 'escuro', icone: '#icone-lua' },
-        automatico: { nome: 'automático', icone: '#icone-automatico' },
+        claro: { icone: '#icone-sol' },
+        escuro: { icone: '#icone-lua' },
+        automatico: { icone: '#icone-automatico' },
     };
     const sistemaEscuro = window.matchMedia('(prefers-color-scheme: dark)');
     const botao = document.querySelector('[data-tema=botao]');
@@ -69,7 +69,8 @@
         pintar(preferencia === 'escuro' || (preferencia === 'automatico' && sistemaEscuro.matches));
 
         const tema = temas[preferencia];
-        botao?.setAttribute('aria-label', `Escolher o tema (atual: ${tema.nome})`);
+        const nomeDoTema = document.querySelector(`[data-tema-opcao=${preferencia}]`)?.dataset.temaNome ?? preferencia;
+        botao?.setAttribute('aria-label', botao.dataset.rotulo.replace('{tema}', nomeDoTema));
         icone?.setAttribute('href', tema.icone);
         opcoes.forEach(opcao => {
             const escolhida = opcao.dataset.temaOpcao === preferencia;

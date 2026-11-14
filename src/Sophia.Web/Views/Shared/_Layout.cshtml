@@ -50,24 +50,24 @@
 
                 <div class="dropdown">
                     <button type="button" class="btn botao-do-tema" data-bs-toggle="dropdown" aria-expanded="false"
-                            aria-label="Escolher o tema (atual: automático)" data-tema="botao">
+                            aria-label="Escolher o tema (atual: automático)" data-rotulo="Escolher o tema (atual: {tema})" data-tema="botao">
                         <svg class="icone" aria-hidden="true"><use href="#icone-automatico" data-tema="icone" /></svg>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end menu-do-tema">
                         <li>
-                            <button type="button" class="dropdown-item" data-tema-opcao="claro" aria-pressed="false">
+                            <button type="button" class="dropdown-item" data-tema-opcao="claro" data-tema-nome="claro" aria-pressed="false">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-sol" /></svg>
                                 Claro
                             </button>
                         </li>
                         <li>
-                            <button type="button" class="dropdown-item" data-tema-opcao="escuro" aria-pressed="false">
+                            <button type="button" class="dropdown-item" data-tema-opcao="escuro" data-tema-nome="escuro" aria-pressed="false">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-lua" /></svg>
                                 Escuro
                             </button>
                         </li>
                         <li>
-                            <button type="button" class="dropdown-item" data-tema-opcao="automatico" aria-pressed="true">
+                            <button type="button" class="dropdown-item" data-tema-opcao="automatico" data-tema-nome="automático" aria-pressed="true">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-automatico" /></svg>
                                 Automático
                             </button>

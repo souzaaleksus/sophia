@@ -67,7 +67,20 @@
 
 <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
 
-<form method="post" asp-action="Nova" id="nova-venda" class="caixa" novalidate>
+<form method="post" asp-action="Nova" id="nova-venda" class="caixa" novalidate
+      data-endereco-busca-de-clientes="@Url.Action("Buscar", "Clientes")"
+      data-endereco-busca-de-produtos="@Url.Action("Buscar", "Produtos")"
+      data-endereco-novo-cliente="@Url.Action("Novo", "Clientes")"
+      data-texto-registrando="Registrando…"
+      data-texto-buscando="Buscando…"
+      data-texto-falha-na-busca="Não foi possível buscar. Tente de novo."
+      data-texto-cliente-nao-encontrado="Nenhum cliente encontrado."
+      data-texto-cadastrar-cliente="Cadastrar novo cliente"
+      data-texto-produto-nao-encontrado="Nenhum produto encontrado."
+      data-texto-item="item"
+      data-texto-itens="itens"
+      data-texto-unidade="unidade"
+      data-texto-unidades="unidades">
 
     <section class="cartao caixa-cliente" aria-labelledby="titulo-cliente">
         <div class="caixa-cabecalho-do-cartao">
