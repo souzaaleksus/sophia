@@ -69,6 +69,8 @@ public sealed partial class CarregamentoDosScriptsTests(AplicacaoEmExecucao apli
     [InlineData("/lib/jquery/dist/jquery.js")]
     [InlineData("/lib/jquery-validation/dist/additional-methods.js")]
     [InlineData("/lib/jquery-validation/dist/additional-methods.min.js")]
+    [InlineData("/lib/jquery-validation/dist/jquery.validate.js")]
+    [InlineData("/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js")]
     public async Task Biblioteca_sem_uso_nao_e_publicada(string caminho)
     {
         using var http = new HttpClient();

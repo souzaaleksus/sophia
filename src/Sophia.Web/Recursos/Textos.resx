@@ -367,7 +367,7 @@
     <value>Resumo das vendas</value>
   </data>
   <data name="painel.tabela-dos-dias" xml:space="preserve">
-    <value>Total vendido em cada um dos últimos 7 dias</value>
+    <value>Total vendido em cada um dos últimos {0} dias</value>
   </data>
   <data name="painel.ticket-medio" xml:space="preserve">
     <value>Ticket médio em {0}</value>
@@ -379,7 +379,7 @@
     <value>Últimas vendas</value>
   </data>
   <data name="painel.ultimos-dias" xml:space="preserve">
-    <value>Últimos 7 dias</value>
+    <value>Últimos {0} dias</value>
   </data>
   <data name="painel.vendido-hoje" xml:space="preserve">
     <value>Vendido hoje</value>

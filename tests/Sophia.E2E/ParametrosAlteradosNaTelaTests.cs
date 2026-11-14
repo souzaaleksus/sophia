@@ -6,8 +6,8 @@ using static Microsoft.Playwright.Assertions;
 
 namespace Sophia.E2E;
 
-[Collection(ColecaoDaAplicacaoComAtalhoDe15Dias.Nome)]
-public sealed class AtalhoDePeriodoConfiguradoTests(AplicacaoComAtalhoDe15Dias aplicacao) : IAsyncLifetime
+[Collection(ColecaoDaAplicacaoComParametrosAlterados.Nome)]
+public sealed class ParametrosAlteradosNaTelaTests(AplicacaoComParametrosAlterados aplicacao) : IAsyncLifetime
 {
     private IPage _pagina = null!;
     private Cadastro _cadastro = null!;
@@ -20,6 +20,17 @@ public sealed class AtalhoDePeriodoConfiguradoTests(AplicacaoComAtalhoDe15Dias a
     }
 
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
+
+    [Fact]
+    public async Task O_grafico_do_painel_diz_quantos_dias_mostra()
+    {
+        await _pagina.GotoAsync("/");
+
+        var grafico = _pagina.GetByTestId("grafico-ultimos-dias");
+        await Expect(grafico.GetByRole(AriaRole.Heading, new() { Level = 2 })).ToHaveTextAsync("Últimos 5 dias");
+        await Expect(grafico.Locator("caption")).ToHaveTextAsync("Total vendido em cada um dos últimos 5 dias");
+        await Expect(grafico.Locator("[data-dia]")).ToHaveCountAsync(5);
+    }
 
     [Fact]
     public async Task O_atalho_segue_os_dias_configurados_no_rotulo_e_no_periodo()

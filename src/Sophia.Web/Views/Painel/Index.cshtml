@@ -40,7 +40,7 @@
 <div class="graficos">
     <section class="cartao grafico" aria-labelledby="titulo-ultimos-dias" data-testid="grafico-ultimos-dias">
         <div class="cabecalho-do-grafico">
-            <h2 id="titulo-ultimos-dias">@T["painel.ultimos-dias"]</h2>
+            <h2 id="titulo-ultimos-dias">@T["painel.ultimos-dias", Model.UltimosDias.Count]</h2>
             <p class="grafico-resumo numero">@Formato.Moeda(totalDaSemana)</p>
         </div>
         <ol class="barras" aria-hidden="true">
@@ -57,7 +57,7 @@
         </ol>
         <div class="visually-hidden">
             <table>
-                <caption>@T["painel.tabela-dos-dias"]</caption>
+                <caption>@T["painel.tabela-dos-dias", Model.UltimosDias.Count]</caption>
                 <thead>
                     <tr><th scope="col">@T["painel.dia"]</th><th scope="col">@T["campo.total"]</th><th scope="col">@T["menu.vendas"]</th></tr>
                 </thead>
