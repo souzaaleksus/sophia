@@ -21,6 +21,7 @@ public static class Composicao
         builder.Services.AddAplicacao();
         builder.Services.AddInfraestrutura(textoDeConexao, configuracao["Sophia:FusoHorario"] ?? FusoHorarioPadrao);
         AdicionarMvc(builder.Services);
+        builder.Services.AdicionarNumerosDoBrasil();
     }
 
     private static void AdicionarMvc(IServiceCollection servicos)

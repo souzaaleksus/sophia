@@ -58,6 +58,36 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
             .ToContainTextAsync("R$ 2,75");
     }
 
+    [Theory]
+    [InlineData("12.50", "R$ 12,50")]
+    [InlineData("1.250", "R$ 1.250,00")]
+    [InlineData("1.250,75", "R$ 1.250,75")]
+    public async Task Valor_com_ponto_segue_a_mesma_regra_do_caixa(string digitado, string esperado)
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync(digitado);
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Produto cadastrado.");
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" })).ToContainTextAsync(esperado);
+    }
+
+    [Theory]
+    [InlineData("12.5055")]
+    [InlineData("1.2.3")]
+    [InlineData("1.25,0")]
+    public async Task Valor_em_forma_ambigua_e_recusado_no_campo(string digitado)
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync(digitado);
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("Informe um número em Valor unitário.");
+        (await new Cadastro(aplicacao.Banco).QuantidadeDeProdutosAsync()).Should().Be(0);
+    }
+
     private async Task CadastrarAsync(string nome, string valor)
     {
         await _pagina.GotoAsync("/Produtos/Novo");

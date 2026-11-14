@@ -14,13 +14,32 @@ export function formatarContagem(quantidade, singular, plural) {
     return `${inteiro.format(quantidade)} ${quantidade === 1 ? singular : plural}`;
 }
 
+const comVirgula = /^(\d{1,3}(\.\d{3})+|\d+),\d+$/;
+const comMilhar = /^\d{1,3}(\.\d{3})+$/;
+const comPontoDecimal = /^\d+\.\d{1,2}$/;
+const soDigitos = /^\d+$/;
+
+function normalizarDecimal(numero) {
+    if (comVirgula.test(numero)) {
+        return numero.replace(/\./g, '').replace(',', '.');
+    }
+
+    if (comMilhar.test(numero)) {
+        return numero.replace(/\./g, '');
+    }
+
+    return comPontoDecimal.test(numero) || soDigitos.test(numero) ? numero : null;
+}
+
 export function lerDecimal(texto) {
-    const limpo = String(texto ?? '').trim().replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
-    if (limpo === '' || !/^-?\d+(\.\d+)?$/.test(limpo)) {
+    const limpo = String(texto ?? '').replace(/\s/g, '');
+    const negativo = limpo.startsWith('-');
+    const numero = normalizarDecimal(negativo ? limpo.slice(1) : limpo);
+    if (numero === null) {
         return null;
     }
 
-    return Number(limpo);
+    return negativo ? -Number(numero) : Number(numero);
 }
 
 export function lerInteiro(texto) {

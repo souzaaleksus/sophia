@@ -121,6 +121,37 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(cartao.GetByRole(AriaRole.Button, new() { Name = "Trocar cliente" })).ToBeVisibleAsync();
     }
 
+    [Fact]
+    public async Task Valor_com_ponto_decimal_e_lido_como_centavos_ao_sair_do_campo()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+
+        await valor.FillAsync("12.50");
+        await valor.BlurAsync();
+
+        await Expect(valor).ToHaveValueAsync("12,50");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 12,50");
+    }
+
+    [Fact]
+    public async Task Valor_com_ponto_decimal_enviado_direto_grava_a_venda_com_centavos()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "2");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+        await valor.FillAsync("12.50");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 25,00");
+
+        await valor.PressAsync("Control+Enter");
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Venda registrada.");
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" })).ToContainTextAsync("R$ 12,50");
+        await Expect(_pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 25,00");
+    }
+
     private ILocator BotaoDaLinha(int linha, string nome) =>
         _caixa.Linha(linha).GetByRole(AriaRole.Button, new() { Name = nome, Exact = true });
 

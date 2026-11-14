@@ -63,6 +63,12 @@ public sealed class Cadastro(BancoDeTestes banco)
         return int.Parse(linhas.Single(), CultureInfo.InvariantCulture);
     }
 
+    public async Task<int> QuantidadeDeProdutosAsync()
+    {
+        var linhas = await banco.ConsultarAsync("SELECT CAST(COUNT(*) AS nvarchar(10)) FROM dbo.Produtos");
+        return int.Parse(linhas.Single(), CultureInfo.InvariantCulture);
+    }
+
     public async Task<IReadOnlyList<int>> ClientesAsync(int quantidade)
     {
         var ids = new List<int>();
