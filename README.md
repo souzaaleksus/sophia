@@ -189,12 +189,12 @@ Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
 |---|---|---|---|
 | Clientes | Id | int identity | PK |
 | | Cpf | char(11) | obrigatório, único (`UQ_Clientes_Cpf`) |
-| | Nome | nvarchar(150) | obrigatório, indexado (`IX_Clientes_Nome`) |
+| | Nome | nvarchar(150), `Latin1_General_CI_AI` | obrigatório, indexado (`IX_Clientes_Nome`); compara sem acento nem maiúscula |
 | | DataNascimento | date | opcional |
 | | Email | nvarchar(254) | opcional |
 | | Telefone | varchar(11) | opcional, só dígitos |
 | Produtos | Id | int identity | PK |
-| | Nome | nvarchar(150) | obrigatório, único (`UQ_Produtos_Nome`) |
+| | Nome | nvarchar(150), `Latin1_General_CI_AI` | obrigatório, único sem diferenciar acento nem maiúscula (`UQ_Produtos_Nome`) |
 | | ValorUnitario | decimal(18,2) | obrigatório, `> 0` |
 | Vendas | Id | int identity | PK — é o número da venda |
 | | Data | date | obrigatório, indexado |
@@ -203,7 +203,7 @@ Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
 | VendaItens | Id | int identity | PK |
 | | VendaId | int | FK → Vendas, exclusão em cascata |
 | | ProdutoId | int | FK → Produtos, sem exclusão em cascata |
-| | Quantidade | int | obrigatório, `> 0` |
+| | Quantidade | int | obrigatório, `> 0` e `<= 999.999` (`CK_VendaItens_QuantidadeMaxima`, o maior teto que a RN31 aceita) |
 | | ValorUnitario | decimal(18,2) | obrigatório, `> 0` |
 | | | | único por (`VendaId`, `ProdutoId`) |
 
@@ -298,7 +298,7 @@ Pré-requisitos:
 1. Crie o banco com o script entregue:
 
    ```powershell
-   sqlcmd -S .\SQLEXPRESS -E -C -i database/create-database.sql
+   sqlcmd -S .\SQLEXPRESS -E -C -d master -i database/create-database.sql
    ```
 
    No SSMS, abra `database/create-database.sql` e execute (F5) com o `master` selecionado. O
@@ -386,11 +386,15 @@ dotnet test
 
 | Projeto | Tipo | Testes | O que cobre | Precisa de |
 |---|---|---|---|---|
-| `Sophia.Domain.Tests` | unidade | 102 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
-| `Sophia.Application.Tests` | aplicação | 171 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
-| `Sophia.Specs` | BDD (Gherkin) | 81 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 107 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
-| `Sophia.E2E` | tela | 228 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
+| `Sophia.Domain.Tests` | unidade | 86 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
+| `Sophia.Application.Tests` | aplicação | 172 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
+| `Sophia.Specs` | BDD (Gherkin) | 85 | os cenários da especificação, em português, sobre o banco real | SQL Server |
+| `Sophia.Integration.Tests` | integração | 159 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
+| `Sophia.E2E` | tela | 277 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
+
+São 779 casos executados, vindos de 480 testes distintos (métodos e cenários): as teorias
+repetem o mesmo teste para cada borda de uma regra, como os formatos de número aceitos e
+recusados, e cada caso é contado uma vez.
 
 Os testes da aplicação, os cenários BDD, os de integração e os de tela criam um banco
 temporário a partir de `database/create-database.sql` e o apagam ao final; nenhum deles usa
@@ -472,8 +476,8 @@ Caminho de uma venda:
   entende o termo: com letras, procura no nome; só com números, pelo começo do CPF; só com
   pontuação, procura esse trecho no nome ("-" acha os nomes com hífen) em vez de listar todos.
   Espaços repetidos no termo contam como um só. A busca por nome, de cliente e de produto,
-  ignora acentos e maiúsculas ("joao" acha "João") sem mudar o agrupamento do banco: a consulta
-  compara com `Latin1_General_CI_AI`. Um CPF gravado direto no banco fora do dígito verificador é
+  ignora acentos e maiúsculas ("joao" acha "João") porque as duas colunas de nome usam o
+  agrupamento `Latin1_General_CI_AI`, e a consulta continua usando o índice. Um CPF gravado direto no banco fora do dígito verificador é
   lido como está, para as telas não caírem; ao alterar esse cliente, o cadastro exige um CPF
   válido.
 - **A data de hoje vem de um relógio injetável no fuso de Brasília**, e não do relógio do
@@ -533,7 +537,10 @@ Caminho de uma venda:
   do banco escolhido por `sp_executesql`, e por isso as aspas aparecem dobradas no texto: o
   `USE [Sophia]` escrito direto falha ao compilar quando o banco ainda não existe, mesmo dentro
   de um `IF` falso. O script continua idempotente, roda no SSMS com F5 sem modo SQLCMD e não usa
-  variáveis do `sqlcmd`.
+  variáveis do `sqlcmd`. Ele recusa um banco que já tenha tabelas de outro sistema, e uma
+  atualização que não pode ser aplicada (nomes de produto que ficariam repetidos sem acento,
+  item acima do teto de quantidade) para o script com erro e diz o que corrigir, em vez de seguir
+  calado com o banco diferente do que o EF espera.
 - **A quantidade por item tem teto (RN31).** 99.999 por padrão, configurável, com um CHECK no
   banco no maior valor aceito; as somas de unidades usam inteiro de 64 bits, então nem vários
   itens no máximo estouram a tela.

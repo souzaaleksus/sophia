@@ -229,6 +229,9 @@ Valem na tela de venda:
 | Quantidade aceita no máximo 2.147.483.647. | número grande demais, em geral zeros a mais | confira a quantidade |
 | A quantidade aceita no máximo 99.999 por item. | quantidade acima do máximo por item | confira a quantidade |
 | Valor inválido. Use 12,50 ou 1.250,00. | o valor não está num formato de número | escreva com vírgula nos centavos |
+| O valor unitário aceita no máximo duas casas decimais. | o valor tem três casas ou mais depois da vírgula | arredonde para os centavos |
+| … já está na linha … com a quantidade máxima por item; nada foi somado. | o produto foi lançado de novo, mas a linha dele já está no máximo | confira a quantidade da linha |
+| Não foi possível conferir o envio do formulário. Recarregue a página e tente de novo. | o formulário ficou aberto muito tempo ou o sistema foi reiniciado | recarregue a página e preencha de novo |
 | Quantidade deve ser maior que zero. | número negativo grande demais | confira a quantidade |
 | Valor unitário está acima do permitido. | valor com dígitos demais, em geral zeros a mais | confira o valor |
 | A data da venda não pode estar no futuro. | data depois de hoje | corrija a data |
