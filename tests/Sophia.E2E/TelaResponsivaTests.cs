@@ -69,6 +69,25 @@ public sealed class TelaResponsivaTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         problema.Should().BeEmpty($"{endereco} em {largura}x{altura} não pode rolar para o lado");
     }
 
+    [Theory]
+    [InlineData("/Clientes")]
+    [InlineData("/Produtos")]
+    [InlineData("/Vendas")]
+    public async Task Com_mais_de_uma_pagina_a_lista_cabe_no_menor_celular_com_o_paginador(string endereco)
+    {
+        var cadastro = new Cadastro(aplicacao.Banco);
+        await cadastro.ClientesAsync(30);
+        await cadastro.ProdutosAsync(30);
+        await cadastro.VendasAsync(30);
+        _pagina = await aplicacao.NovaPaginaAsync(320, 640, toque: true);
+
+        await _pagina.GotoAsync(endereco);
+
+        await Expect(_pagina.GetByRole(AriaRole.Navigation, new() { Name = "Páginas" })).ToBeVisibleAsync();
+        var problema = await Medidas.RolagemLateralAsync(_pagina);
+        problema.Should().BeEmpty($"{endereco} com paginador em 320 px não pode rolar para o lado");
+    }
+
     [Fact]
     public async Task No_celular_o_total_do_detalhe_aparece_inteiro_sem_corte()
     {

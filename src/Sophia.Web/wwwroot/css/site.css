@@ -1610,6 +1610,20 @@ a:hover {
         justify-content: center;
         width: 100%;
     }
+
+    .paginador-controles {
+        flex-wrap: wrap;
+    }
+
+    .paginador-controles .btn {
+        flex: 1 1 0;
+    }
+
+    .paginador-posicao {
+        flex-basis: 100%;
+        order: -1;
+        text-align: center;
+    }
 }
 
 .seletor-de-tema {
