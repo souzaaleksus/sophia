@@ -120,6 +120,9 @@ ticket médio do mês corrente e as cinco vendas mais recentes, com atalho para 
 | RN22 | Subtotal e total são sempre calculados pelo sistema, nunca aceitos prontos da tela | — | Vendas › Registrar uma venda com vários produtos |
 | RN23 | O mês do painel vai do dia 1º até hoje | — | Painel › Totais do dia e do mês |
 | RN24 | Ticket médio = total do mês ÷ número de vendas do mês, arredondado aos centavos; sem vendas, é zero | — | Painel › Totais do dia e do mês |
+| RN25 | Venda enviada duas vezes é registrada uma vez só: o segundo envio devolve a venda já gravada | — | Vendas › Enviar a mesma venda duas vezes registra uma só |
+| RN26 | O painel mostra o total de cada um dos últimos 7 dias, até hoje, inclusive os dias sem venda | — | Painel › Total de cada um dos últimos 7 dias, inclusive os dias sem venda |
+| RN27 | O painel mostra os 5 produtos mais vendidos do mês por quantidade; no empate, vem o de maior total e depois a ordem alfabética | — | Painel › Os 5 produtos mais vendidos do mês, por quantidade |
 
 ### 6. Requisitos não funcionais
 
@@ -170,6 +173,7 @@ Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
 | Vendas | Id | int identity | PK — é o número da venda |
 | | Data | date | obrigatório, indexado |
 | | ClienteId | int | FK → Clientes, sem exclusão em cascata, indexado |
+| | ChaveDeRegistro | uniqueidentifier | opcional; única entre as vendas que a têm (`UQ_Vendas_ChaveDeRegistro`, índice filtrado `WHERE ChaveDeRegistro IS NOT NULL`) |
 | VendaItens | Id | int identity | PK |
 | | VendaId | int | FK → Vendas, exclusão em cascata |
 | | ProdutoId | int | FK → Produtos, sem exclusão em cascata |
@@ -180,6 +184,11 @@ Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
 Subtotal e total não são gravados: são derivados dos itens. Guardar o valor calculado
 criaria duas fontes para o mesmo dado.
 
+A `ChaveDeRegistro` é gerada quando a tela de nova venda abre e volta com o formulário. Se o
+mesmo formulário chega duas vezes, o índice único impede a segunda gravação e o sistema
+devolve a venda já registrada. Em banco criado por versão anterior do script, rodar o script
+de novo acrescenta a coluna e o índice sem apagar nada.
+
 ### 9. Rastreabilidade
 
 | Requisito | Especificação executável | Testes unitários | Integração / tela |
@@ -188,6 +197,9 @@ criaria duas fontes para o mesmo dado.
 | RF02 | `CadastroDeProdutos.feature` | `Sophia.Domain.Tests` (Produto), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF03 | `RegistroDeVendas.feature` | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` | `Sophia.Integration.Tests`, `Sophia.E2E` |
 | RF04 | `PainelDeVendas.feature` | `Sophia.Application.Tests` (PainelServico, ResumoDoPeriodo) | `Sophia.Integration.Tests`, `Sophia.E2E` |
+| RN25 | `RegistroDeVendas.feature` › Enviar a mesma venda duas vezes registra uma só | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` (VendaServico, inclusive a corrida entre dois envios) | `Sophia.Integration.Tests` (índice único filtrado, corrida no SQL Server, atualização do banco pelo script) |
+| RN26 | `PainelDeVendas.feature` › Total de cada um dos últimos 7 dias | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (totais por dia agregados no SQL Server) |
+| RN27 | `PainelDeVendas.feature` › Os 5 produtos mais vendidos do mês | `Sophia.Application.Tests` (PainelServico) | `Sophia.Integration.Tests` (mais vendidos agregados no SQL Server) |
 
 ---
 
