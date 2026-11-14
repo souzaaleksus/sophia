@@ -1,6 +1,19 @@
 @model int
+@using Microsoft.AspNetCore.Diagnostics
 @{
     var naoEncontrado = Model == StatusCodes.Status404NotFound;
+    var consultaInvalida = Model == StatusCodes.Status400BadRequest
+        && (HttpMethods.IsGet(Context.Request.Method) || HttpMethods.IsHead(Context.Request.Method));
+    var caminho = Context.Features.Get<IStatusCodeReExecuteFeature>()?.OriginalPath
+        ?? Context.Features.Get<IExceptionHandlerPathFeature>()?.Path
+        ?? Context.Request.Path.Value;
+    var (destino, rotuloDoDestino) = AreaDoEndereco.De(caminho) switch
+    {
+        AreaDoEndereco.Clientes => (AreaDoEndereco.Clientes, T["erro.ir-para-os-clientes"]),
+        AreaDoEndereco.Produtos => (AreaDoEndereco.Produtos, T["erro.ir-para-os-produtos"]),
+        AreaDoEndereco.Vendas => (AreaDoEndereco.Vendas, T["erro.ir-para-as-vendas"]),
+        _ => (AreaDoEndereco.Painel, T["erro.ir-para-o-painel"]),
+    };
     ViewData["Title"] = naoEncontrado ? T["erro.nao-encontrada"].Value : T["erro.algo-deu-errado"].Value;
 }
 
@@ -11,9 +24,13 @@
     {
         <p>@T["erro.nao-existe"]</p>
     }
+    else if (consultaInvalida)
+    {
+        <p>@T["erro.endereco-invalido"]</p>
+    }
     else
     {
         <p>@T["erro.tente-de-novo"]</p>
     }
-    <a class="btn btn-primary" asp-controller="Vendas" asp-action="Index">@T["erro.ir-para-as-vendas"]</a>
+    <a class="btn btn-primary" asp-controller="@destino" asp-action="Index">@rotuloDoDestino</a>
 </div>

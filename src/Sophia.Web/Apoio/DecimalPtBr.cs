@@ -63,7 +63,7 @@ public static partial class DecimalPtBr
             var (numero, negativo) = Separar(texto);
             if (numero is null)
             {
-                recusa = ValorInvalido(contexto, texto);
+                recusa = EscritaInvalida(contexto);
                 return null;
             }
 
@@ -75,6 +75,12 @@ public static partial class DecimalPtBr
 
             recusa = null;
             return negativo ? -valor : valor;
+        }
+
+        private static string EscritaInvalida(ModelBindingContext contexto)
+        {
+            var textos = TextosDe(contexto);
+            return textos["validacao.valor-invalido"];
         }
 
         private static string AcimaDoPermitido(ModelBindingContext contexto)

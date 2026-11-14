@@ -5,6 +5,7 @@ public sealed class AplicacaoComParametrosAlterados()
     {
         ["Sophia__DiasDoAtalhoDePeriodo"] = "15",
         ["Sophia__DiasNoGrafico"] = "5",
+        ["Sophia__QuantidadeMaximaPorItem"] = "500",
     });
 
 [CollectionDefinition(Nome)]

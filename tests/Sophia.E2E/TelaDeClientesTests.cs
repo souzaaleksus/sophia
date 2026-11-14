@@ -52,6 +52,63 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task O_aviso_de_cpf_repetido_some_quando_o_cpf_e_alterado()
+    {
+        await CadastrarAsync("529.982.247-25", "Maria Santos");
+        await _pagina.GotoAsync("/Clientes/Novo");
+        await _pagina.GetByLabel("CPF").FillAsync("529.982.247-25");
+        await _pagina.GetByLabel("Nome").FillAsync("Outra Maria");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+        var aviso = _pagina.Locator("[data-valmsg-for=Cpf]");
+        await Expect(aviso).ToHaveTextAsync("Já existe um cliente com este CPF.");
+        await Expect(_pagina.GetByLabel("CPF")).ToHaveAttributeAsync("aria-invalid", "true");
+
+        await _pagina.GetByLabel("CPF").FillAsync("111.444.777-35");
+
+        await Expect(aviso).ToBeEmptyAsync();
+        await Expect(_pagina.GetByLabel("CPF")).Not.ToHaveAttributeAsync("aria-invalid", "true");
+    }
+
+    [Theory]
+    [InlineData("Telefone", "1234", "Informe o telefone com DDD.")]
+    [InlineData("Telefone", "(11) 9876-543", "Informe o telefone com DDD.")]
+    [InlineData("E-mail", "fulano@dominio", "E-mail inválido.")]
+    [InlineData("E-mail", "fulano @dominio.com", "E-mail inválido.")]
+    public async Task O_navegador_recusa_ao_sair_do_campo_o_que_o_servidor_recusaria(string rotulo, string digitado, string aviso)
+    {
+        await _pagina.GotoAsync("/Clientes/Novo");
+        await _pagina.GetByLabel("CPF").FillAsync("529.982.247-25");
+        await _pagina.GetByLabel("Nome").FillAsync("Maria Santos");
+        var campo = _pagina.GetByLabel(rotulo, new() { Exact = true });
+
+        await campo.FillAsync(digitado);
+        await campo.BlurAsync();
+
+        await Expect(campo).ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(campo).ToHaveAccessibleDescriptionAsync(aviso);
+        await _pagina.EvaluateAsync("() => window.__semRecarregar = true");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+        (await _pagina.EvaluateAsync<bool>("() => window.__semRecarregar === true")).Should().BeTrue("o navegador segura o envio, sem ida ao servidor");
+        (await new Cadastro(aplicacao.Banco).QuantidadeDeClientesAsync()).Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("(11) 3456-7890", "maria@exemplo.com.br")]
+    [InlineData("11987654321", "m@e.co")]
+    public async Task Telefone_com_ddd_e_e_mail_completo_passam_no_navegador_e_no_servidor(string telefone, string email)
+    {
+        await _pagina.GotoAsync("/Clientes/Novo");
+        await _pagina.GetByLabel("CPF").FillAsync("529.982.247-25");
+        await _pagina.GetByLabel("Nome").FillAsync("Maria Santos");
+        await _pagina.GetByLabel("Telefone").FillAsync(telefone);
+        await _pagina.GetByLabel("E-mail").FillAsync(email);
+
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Cliente cadastrado.");
+    }
+
+    [Fact]
     public async Task Avisa_no_campo_quando_o_cpf_e_invalido()
     {
         await _pagina.GotoAsync("/Clientes/Novo");

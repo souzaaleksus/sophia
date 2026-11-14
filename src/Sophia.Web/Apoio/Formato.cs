@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.Html;
 
 namespace Sophia.Web.Apoio;
 
@@ -11,6 +13,9 @@ public static class Formato
     public static string Moeda(decimal valor) => valor.ToString("C", PortuguesDoBrasil);
 
     public static string Numero(decimal? valor) => valor?.ToString("N2", PortuguesDoBrasil) ?? string.Empty;
+
+    public static IHtmlContent QuebrarNoMilhar(string numero) =>
+        new HtmlString(string.Join(".<wbr>", numero.Split('.').Select(parte => HtmlEncoder.Default.Encode(parte))));
 
     public static string Inteiro(int? valor) => valor?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
 

@@ -1,8 +1,12 @@
-const campoDoErro = erro => {
+import { ligarMensagem, limparMensagem } from './erros.js';
+
+const campoNomeado = erro => {
     const nome = erro.dataset.valmsgFor;
-    const direto = nome ? document.querySelector(`[name="${CSS.escape(nome)}"]:not([type=hidden])`) : null;
-    return direto ?? erro.closest('.campo, section')?.querySelector('input:not([type=hidden]), select, textarea');
+    return nome ? document.querySelector(`[name="${CSS.escape(nome)}"]:not([type=hidden])`) : null;
 };
+
+const campoDoErro = erro =>
+    campoNomeado(erro) ?? erro.closest('.campo, section')?.querySelector('input:not([type=hidden]), select, textarea');
 
 let primeiro = null;
 document.querySelectorAll('[data-valmsg-for]').forEach((erro, posicao) => {
@@ -16,10 +20,8 @@ document.querySelectorAll('[data-valmsg-for]').forEach((erro, posicao) => {
     }
 
     erro.id ||= `erro-${posicao}`;
-    const descricoes = new Set((campo.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean));
-    descricoes.add(erro.id);
-    campo.setAttribute('aria-describedby', [...descricoes].join(' '));
-    campo.setAttribute('aria-invalid', 'true');
+    ligarMensagem(campo, erro);
+    campoNomeado(erro)?.addEventListener('input', () => limparMensagem(erro), { once: true });
     primeiro ??= campo;
 });
 

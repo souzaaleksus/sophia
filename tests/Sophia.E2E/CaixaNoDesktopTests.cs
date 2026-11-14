@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Sophia.E2E.Apoio;
@@ -23,6 +24,20 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
+
+    [Fact]
+    public async Task O_caixa_nasce_ocupado_para_o_leitor_de_tela_e_fica_livre_quando_os_eventos_estao_ligados()
+    {
+        using var http = new HttpClient();
+        var html = await http.GetStringAsync(new Uri($"{aplicacao.Endereco}/Vendas/Nova"));
+        html.Should().MatchRegex(@"<form[^>]*id=""nova-venda""[^>]*aria-busy=""true""");
+
+        await _pagina.GotoAsync("/Vendas/Nova");
+
+        var formulario = _pagina.Locator("#nova-venda");
+        await Expect(formulario).Not.ToHaveAttributeAsync("aria-busy", "true");
+        (await formulario.GetAttributeAsync("data-pronto")).Should().BeNull("o sinal de pronto serve ao leitor de tela, não só ao teste");
+    }
 
     [Fact]
     public async Task Trocar_o_produto_de_uma_linha_por_um_ja_lancado_soma_na_existente_e_libera_a_linha()
@@ -136,6 +151,61 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(_caixa.Total).ToHaveTextAsync("R$ 12,50");
     }
 
+    [Theory]
+    [InlineData("1.2.3")]
+    [InlineData("10,")]
+    [InlineData("1,234.56")]
+    public async Task Valor_invalido_avisa_ao_sair_do_campo_e_o_aviso_some_ao_corrigir(string digitado)
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+        var aviso = _caixa.Linha(0).Locator("[data-erro=ValorUnitario]");
+
+        await valor.FillAsync(digitado);
+        await valor.BlurAsync();
+
+        await Expect(aviso).ToHaveTextAsync("Valor inválido. Use 12,50 ou 1.250,00.");
+        await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(valor).ToHaveAccessibleDescriptionAsync("Valor inválido. Use 12,50 ou 1.250,00.");
+        await Expect(valor).ToHaveValueAsync(digitado);
+
+        await valor.FillAsync("12,50");
+
+        await Expect(aviso).ToBeEmptyAsync();
+        await Expect(valor).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 12,50");
+    }
+
+    [Fact]
+    public async Task Valor_acima_do_aceito_avisa_ao_sair_do_campo()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+
+        await valor.FillAsync("99999999999999999");
+        await valor.BlurAsync();
+
+        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("Valor unitário está acima do permitido.");
+        await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
+    }
+
+    [Fact]
+    public async Task Valor_lido_como_milhar_e_reescrito_ao_sair_do_campo()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+
+        await valor.FillAsync("12.505");
+        await valor.BlurAsync();
+
+        await Expect(valor).ToHaveValueAsync("12.505,00");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 12.505,00");
+        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToBeEmptyAsync();
+    }
+
     [Fact]
     public async Task Valor_com_ponto_decimal_enviado_direto_grava_a_venda_com_centavos()
     {
@@ -191,6 +261,24 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(erroDaQuantidade).ToBeEmptyAsync();
         await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-invalid", "true");
         await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-describedby", new Regex("erro-"));
+    }
+
+    [Fact]
+    public async Task Corrigir_a_data_da_venda_tira_o_erro_sem_novo_envio()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        var data = _pagina.GetByLabel("Data da venda");
+        await data.FillAsync(Cadastro.Hoje.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        await _caixa.Finalizar.ClickAsync();
+        var erro = _pagina.Locator("[data-valmsg-for=Data]");
+        await Expect(erro).ToHaveTextAsync("A data da venda não pode estar no futuro.");
+        await _caixa.ProntoAsync();
+
+        await data.FillAsync(Cadastro.Hoje.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+        await Expect(erro).ToBeEmptyAsync();
+        await Expect(data).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(_pagina.Locator("[data-valmsg-for=ClienteId]")).ToHaveTextAsync("Selecione o cliente.");
     }
 
     [Fact]
@@ -348,13 +436,27 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _pagina.GotoAsync("/Vendas/Nova");
         await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
         await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "3000000000");
-        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("max", "2147483647");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("max", "99999");
 
         await _caixa.Finalizar.ClickAsync();
 
         await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("Quantidade aceita no máximo 2.147.483.647.");
         await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("3000000000");
         (await new Cadastro(aplicacao.Banco).QuantidadeDeVendasAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task O_botao_de_aumentar_nao_passa_da_quantidade_maxima_por_item()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "99998");
+        var aumentar = BotaoDaLinha(0, "Aumentar a quantidade");
+
+        await aumentar.ClickAsync();
+        await aumentar.ClickAsync();
+
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("99999");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 249.997,50");
     }
 
     [Fact]
@@ -367,7 +469,7 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _caixa.Finalizar.ClickAsync();
 
-        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("O valor \"2,5x\" não é válido para Valor unitário.");
+        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("Valor inválido. Use 12,50 ou 1.250,00.");
         await Expect(_caixa.Linha(0).GetByLabel("Valor unitário")).ToHaveValueAsync("2,5x");
     }
 

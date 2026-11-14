@@ -78,8 +78,59 @@ public static class Medidas
         }
         """;
 
+    private const string Transbordando = $$"""
+        seletor => {
+            const descrever = {{Descrever}};
+            return [...document.querySelectorAll(seletor)]
+                .filter(e => e.getBoundingClientRect().width > 1 && e.closest('[hidden]') === null)
+                .flatMap(e => {
+                    const caixa = e.getBoundingClientRect();
+                    const moldura = e.parentElement.closest('.cartao, .visor, .caixa-fechamento, .caixa-item')?.getBoundingClientRect();
+                    const problemas = [];
+                    if (e.scrollWidth > e.clientWidth + 1) {
+                        problemas.push(`${descrever(e)} tem ${e.scrollWidth - e.clientWidth} px de conteúdo cortado`);
+                    }
+
+                    if (moldura && (caixa.left < moldura.left - 0.5 || caixa.right > moldura.right + 0.5)) {
+                        problemas.push(`${descrever(e)} sai do cartão (${Math.round(moldura.left)} a ${Math.round(moldura.right)})`);
+                    }
+
+                    return problemas;
+                });
+        }
+        """;
+
+    private const string Sobrepostos = $$"""
+        seletor => {
+            const descrever = {{Descrever}};
+            const cruzam = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+            return [...document.querySelectorAll(seletor)].flatMap(grupo => {
+                const partes = [...grupo.children].filter(e => {
+                    const r = e.getBoundingClientRect();
+                    return r.width > 1 && r.height > 1 && getComputedStyle(e).position !== 'absolute';
+                });
+                return partes.flatMap((a, i) => partes.slice(i + 1)
+                    .filter(b => cruzam(a.getBoundingClientRect(), b.getBoundingClientRect()))
+                    .map(b => `${descrever(a)} cobre ${descrever(b)}`));
+            });
+        }
+        """;
+
+    public static Task<string[]> RoladoresLateraisAsync(IPage pagina) =>
+        pagina.EvaluateAsync<string[]>("""
+            () => [...document.querySelectorAll('*')]
+                .filter(e => /auto|scroll/.test(getComputedStyle(e).overflowX) && e.scrollWidth > e.clientWidth + 1)
+                .map(e => `${e.tagName.toLowerCase()}.${e.className} rola ${e.scrollWidth - e.clientWidth} px para o lado`)
+            """);
+
     public static Task<string> RolagemLateralAsync(IPage pagina) =>
         pagina.EvaluateAsync<string>(RolagemLateral);
+
+    public static Task<string[]> TransbordamentosAsync(IPage pagina, string seletor) =>
+        pagina.EvaluateAsync<string[]>(Transbordando, seletor);
+
+    public static Task<string[]> SobreposicoesAsync(IPage pagina, string seletorDoGrupo) =>
+        pagina.EvaluateAsync<string[]>(Sobrepostos, seletorDoGrupo);
 
     public static Task<string[]> AlvosMenoresQueAsync(IPage pagina, string seletor, int minimo) =>
         pagina.EvaluateAsync<string[]>(AlvosPequenos, new object[] { seletor, minimo });

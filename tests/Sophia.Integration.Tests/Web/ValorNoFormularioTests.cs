@@ -68,7 +68,7 @@ public sealed class ValorNoFormularioTests
         CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
         try
         {
-            using var servicos = new ServiceCollection().AddLogging().AddControllersWithViews(opcoes => opcoes.UsarDecimaisPtBr()).Services.BuildServiceProvider();
+            using var servicos = new ServiceCollection().AddLogging().AdicionarMvc().AdicionarNumerosDoBrasil().BuildServiceProvider();
             var metadados = servicos.GetRequiredService<IModelMetadataProvider>().GetMetadataForType(typeof(decimal?));
             var ligador = servicos.GetRequiredService<IModelBinderFactory>().CreateBinder(new ModelBinderFactoryContext
             {

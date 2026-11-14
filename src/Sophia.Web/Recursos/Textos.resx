@@ -258,8 +258,20 @@
   <data name="erro.algo-deu-errado" xml:space="preserve">
     <value>Algo deu errado</value>
   </data>
+  <data name="erro.endereco-invalido" xml:space="preserve">
+    <value>O endereço tem um valor que não foi entendido. Volte à lista e tente de novo.</value>
+  </data>
   <data name="erro.ir-para-as-vendas" xml:space="preserve">
     <value>Ir para as vendas</value>
+  </data>
+  <data name="erro.ir-para-o-painel" xml:space="preserve">
+    <value>Ir para o painel</value>
+  </data>
+  <data name="erro.ir-para-os-clientes" xml:space="preserve">
+    <value>Ir para os clientes</value>
+  </data>
+  <data name="erro.ir-para-os-produtos" xml:space="preserve">
+    <value>Ir para os produtos</value>
   </data>
   <data name="erro.nao-encontrada" xml:space="preserve">
     <value>Página não encontrada</value>
@@ -509,6 +521,12 @@
   </data>
   <data name="validacao.nome-tamanho" xml:space="preserve">
     <value>O nome deve ter no máximo {1} caracteres.</value>
+  </data>
+  <data name="validacao.telefone-sem-ddd" xml:space="preserve">
+    <value>Informe o telefone com DDD.</value>
+  </data>
+  <data name="validacao.valor-invalido" xml:space="preserve">
+    <value>Valor inválido. Use 12,50 ou 1.250,00.</value>
   </data>
   <data name="validacao.valor-obrigatorio" xml:space="preserve">
     <value>Informe o valor unitário.</value>

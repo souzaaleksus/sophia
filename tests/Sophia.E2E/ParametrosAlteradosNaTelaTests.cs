@@ -55,6 +55,20 @@ public sealed class ParametrosAlteradosNaTelaTests(AplicacaoComParametrosAlterad
         await Expect(LinhaDe("Ana Souza")).ToHaveCountAsync(0);
     }
 
+    [Fact]
+    public async Task A_quantidade_do_caixa_para_no_maximo_configurado()
+    {
+        await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
+        var caixa = new Caixa(_pagina);
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await caixa.LancarAsync(0, "Caneta", "Caneta azul", "500");
+
+        await caixa.Linha(0).GetByRole(AriaRole.Button, new() { Name = "Aumentar a quantidade", Exact = true }).ClickAsync();
+
+        await Expect(caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("max", "500");
+        await Expect(caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("500");
+    }
+
     private static string DataDoCampo(DateOnly data) => data.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private ILocator Atalho(string nome) => _pagina.GetByRole(AriaRole.Link, new() { Name = nome, Exact = true });
