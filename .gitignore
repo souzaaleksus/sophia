@@ -9,3 +9,6 @@ TestResults/
 test-results/
 playwright-report/
 *.log
+Teste-pratico-aspnet-mvc.pdf
+.playwright-mcp/
+*.feature.cs

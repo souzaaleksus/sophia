@@ -1,0 +1,28 @@
+@model ClienteDto
+@{
+    ViewData["Title"] = "Excluir cliente";
+}
+
+<div class="cabecalho-da-pagina">
+    <div>
+        <h1>Excluir cliente?</h1>
+        <p class="subtitulo">A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.</p>
+    </div>
+</div>
+
+<form class="cartao formulario" method="post" asp-action="Excluir" asp-route-id="@Model.Id">
+    <dl class="resumo-de-registro">
+        <dt>Nome</dt>
+        <dd>@Model.Nome</dd>
+        <dt>CPF</dt>
+        <dd>@Model.Cpf</dd>
+    </dl>
+
+    <div class="rodape-do-formulario">
+        <a class="btn btn-link" asp-action="Index">Cancelar</a>
+        <button type="submit" class="btn btn-danger">
+            <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
+            Excluir
+        </button>
+    </div>
+</form>

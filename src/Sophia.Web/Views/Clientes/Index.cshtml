@@ -1,0 +1,86 @@
+@model IReadOnlyList<ClienteDto>
+@{
+    ViewData["Title"] = "Clientes";
+    var busca = ViewData["Busca"] as string;
+}
+
+<div class="cabecalho-da-pagina">
+    <div>
+        <h1>Clientes</h1>
+        <p class="subtitulo">Quem compra da loja.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Novo">
+        <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
+        Novo cliente
+    </a>
+</div>
+
+<form class="busca" method="get" asp-action="Index" role="search">
+    <div class="campo-de-busca">
+        <svg class="icone" aria-hidden="true"><use href="#icone-busca" /></svg>
+        <input type="search" name="busca" value="@busca" class="form-control"
+               placeholder="Buscar por CPF ou nome" aria-label="Buscar clientes por CPF ou nome" />
+    </div>
+    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+</form>
+
+@if (Model.Count == 0)
+{
+    <div class="vazio">
+        <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-clientes" /></svg></span>
+        <p class="vazio-titulo">Nenhum cliente encontrado.</p>
+        @if (string.IsNullOrWhiteSpace(busca))
+        {
+            <p>Cadastre quem compra da loja para registrar as vendas.</p>
+            <a class="btn btn-primary" asp-action="Novo">
+                <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
+                Cadastrar o primeiro cliente
+            </a>
+        }
+        else
+        {
+            <p>Confira o CPF ou o nome digitado, ou volte para a lista completa.</p>
+            <a class="btn btn-outline-secondary" asp-action="Index">Limpar a busca</a>
+        }
+    </div>
+}
+else
+{
+    <div class="cartao tabela-rolavel">
+        <table class="tabela">
+            <thead>
+                <tr>
+                    <th scope="col">Nome</th>
+                    <th scope="col">CPF</th>
+                    <th scope="col" class="coluna-opcional">Nascimento</th>
+                    <th scope="col" class="coluna-opcional">Contato</th>
+                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cliente in Model)
+                {
+                    <tr>
+                        <td class="destaque">@cliente.Nome</td>
+                        <td class="numero">@cliente.Cpf</td>
+                        <td class="numero coluna-opcional">@Formato.Data(cliente.DataNascimento)</td>
+                        <td class="coluna-opcional">
+                            <div>@cliente.Email</div>
+                            <div class="secundario numero">@cliente.Telefone</div>
+                        </td>
+                        <td class="acoes">
+                            <a class="acao" asp-action="Editar" asp-route-id="@cliente.Id" aria-label="Editar @cliente.Nome">
+                                <svg class="icone" aria-hidden="true"><use href="#icone-editar" /></svg>
+                                <span class="acao-texto">Editar</span>
+                            </a>
+                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@cliente.Id" aria-label="Excluir @cliente.Nome">
+                                <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
+                                <span class="acao-texto">Excluir</span>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,45 @@
+name: sophia
+
+services:
+  banco:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${SOPHIA_SENHA_DO_BANCO:-Sophia#Vendas2026}
+    ports:
+      - "127.0.0.1:14333:1433"
+    volumes:
+      - dados-do-banco:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -Q \"SELECT 1\" > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+  criar-banco:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${SOPHIA_SENHA_DO_BANCO:-Sophia#Vendas2026}
+    volumes:
+      - ./database:/scripts:ro
+    entrypoint: ["/bin/bash", "-c", "/opt/mssql-tools18/bin/sqlcmd -S banco -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -i /scripts/create-database.sql"]
+    restart: "no"
+
+  web:
+    build: .
+    depends_on:
+      criar-banco:
+        condition: service_completed_successfully
+    environment:
+      ConnectionStrings__Sophia: "Server=banco;Database=Sophia;User Id=sa;Password=${SOPHIA_SENHA_DO_BANCO:-Sophia#Vendas2026};TrustServerCertificate=true"
+      Sophia__FusoHorario: America/Sao_Paulo
+    ports:
+      - "8080:8080"
+
+volumes:
+  dados-do-banco:

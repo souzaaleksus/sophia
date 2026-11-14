@@ -1,0 +1,60 @@
+@model ClienteFormulario
+@{
+    ViewData["Title"] = Model.EhNovo ? "Novo cliente" : "Editar cliente";
+    var acao = Model.EhNovo ? "Novo" : "Editar";
+}
+
+<div class="cabecalho-da-pagina">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p class="subtitulo">CPF e nome são obrigatórios.</p>
+    </div>
+</div>
+
+<form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate>
+    <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
+
+    <div class="grade-de-campos">
+        <div class="campo">
+            <label asp-for="Cpf" class="form-label"></label>
+            <input asp-for="Cpf" class="form-control" inputmode="numeric" autocomplete="off"
+                   placeholder="000.000.000-00" data-mascara="cpf" />
+            <span asp-validation-for="Cpf" class="erro"></span>
+        </div>
+
+        <div class="campo campo-largo">
+            <label asp-for="Nome" class="form-label"></label>
+            <input asp-for="Nome" class="form-control" autocomplete="off" />
+            <span asp-validation-for="Nome" class="erro"></span>
+        </div>
+
+        <div class="campo">
+            <label asp-for="DataNascimento" class="form-label"></label>
+            <input id="DataNascimento" name="DataNascimento" type="date" class="form-control"
+                   value="@Formato.DataParaCampo(Model.DataNascimento)" />
+            <span asp-validation-for="DataNascimento" class="erro"></span>
+        </div>
+
+        <div class="campo">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" type="email" class="form-control" placeholder="nome@exemplo.com.br" />
+            <span asp-validation-for="Email" class="erro"></span>
+        </div>
+
+        <div class="campo">
+            <label asp-for="Telefone" class="form-label"></label>
+            <input asp-for="Telefone" type="tel" class="form-control" inputmode="tel"
+                   placeholder="(11) 98765-4321" data-mascara="telefone" />
+            <span asp-validation-for="Telefone" class="erro"></span>
+        </div>
+    </div>
+
+    <div class="rodape-do-formulario">
+        <a class="btn btn-link" asp-action="Index">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

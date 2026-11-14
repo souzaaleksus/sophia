@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Sophia.Application\Sophia.Application.csproj" />
+  </ItemGroup>
+
+</Project>

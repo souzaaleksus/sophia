@@ -1,0 +1,57 @@
+name: Testes
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_PID: Express
+          MSSQL_SA_PASSWORD: Sophia#Testes2026
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Sophia#Testes2026' -C -b -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DOTNET_NOLOGO: "1"
+      SOPHIA_TESTES_SQLSERVER: "Server=localhost,1433;User Id=sa;Password=Sophia#Testes2026;TrustServerCertificate=true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restaurar
+        run: dotnet restore Sophia.sln
+
+      - name: Compilar
+        run: dotnet build Sophia.sln --no-restore -c Release
+
+      - name: Instalar o navegador dos testes de tela
+        run: pwsh tests/Sophia.E2E/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+
+      - name: Testes de unidade e BDD
+        run: |
+          dotnet test tests/Sophia.Domain.Tests --no-build -c Release
+          dotnet test tests/Sophia.Application.Tests --no-build -c Release
+          dotnet test tests/Sophia.Specs --no-build -c Release
+
+      - name: Testes de integração
+        run: dotnet test tests/Sophia.Integration.Tests --no-build -c Release
+
+      - name: Testes de tela
+        run: dotnet test tests/Sophia.E2E --no-build -c Release
