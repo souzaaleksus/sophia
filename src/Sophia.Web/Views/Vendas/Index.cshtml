@@ -24,7 +24,7 @@
 }
 else
 {
-    <p class="contagem" data-testid="contagem">@Formato.Quantidade(Model.Count, "venda", "vendas")</p>
+    <p class="contagem" data-testid="contagem">@Formato.Quantidade(Model.TotalDeItens, "venda", "vendas")</p>
 
     <div class="cartao tabela-rolavel">
         <table class="tabela">
@@ -59,4 +59,6 @@ else
             </tbody>
         </table>
     </div>
+
+    <partial name="_Paginador" model="Paginacao.De(Model)" />
 }

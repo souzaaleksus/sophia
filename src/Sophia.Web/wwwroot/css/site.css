@@ -1505,3 +1505,45 @@ a:hover {
         transition: none;
     }
 }
+
+.paginador {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.paginador-resumo {
+    color: var(--cor-texto-suave);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.paginador-controles {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.paginador-controles .btn {
+    align-items: center;
+    display: inline-flex;
+    gap: 0.35rem;
+}
+
+.paginador-posicao {
+    color: var(--cor-texto-suave);
+    font-size: 0.9rem;
+    padding-inline: 0.5rem;
+    white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+    .paginador,
+    .paginador-controles {
+        justify-content: center;
+        width: 100%;
+    }
+}

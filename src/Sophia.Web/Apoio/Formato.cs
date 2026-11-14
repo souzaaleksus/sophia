@@ -6,6 +6,8 @@ public static class Formato
 {
     private static readonly CultureInfo PortuguesDoBrasil = CultureInfo.GetCultureInfo("pt-BR");
 
+    public static CultureInfo Cultura => PortuguesDoBrasil;
+
     public static string Moeda(decimal valor) => valor.ToString("C", PortuguesDoBrasil);
 
     public static string Numero(decimal? valor) => valor?.ToString("N2", PortuguesDoBrasil) ?? string.Empty;
