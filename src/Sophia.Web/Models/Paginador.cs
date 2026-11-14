@@ -2,7 +2,7 @@ using Sophia.Application;
 
 namespace Sophia.Web.Models;
 
-public sealed record Paginacao(
+public sealed record Paginador(
     int Numero,
     int TotalDePaginas,
     int PrimeiroItem,
@@ -14,7 +14,7 @@ public sealed record Paginacao(
 
     public bool TemProxima => Numero < TotalDePaginas;
 
-    public static Paginacao De<T>(Pagina<T> pagina, IReadOnlyDictionary<string, string>? filtros = null) =>
+    public static Paginador De<T>(Pagina<T> pagina, IReadOnlyDictionary<string, string>? filtros = null) =>
         new(
             pagina.Numero,
             pagina.TotalDePaginas,

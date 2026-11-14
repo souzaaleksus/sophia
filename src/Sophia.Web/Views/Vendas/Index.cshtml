@@ -1,16 +1,67 @@
 @model Sophia.Application.Pagina<VendaResumoDto>
+@inject Sophia.Application.Abstracoes.IRelogio Relogio
 @{
     ViewData["Title"] = "Vendas";
+    var ordem = ViewData["Ordem"] as string ?? "-data";
+    var de = ViewData["De"] as DateOnly?;
+    var ate = ViewData["Ate"] as DateOnly?;
+    var filtros = FiltrosDaLista.De(ViewData);
+    var hoje = Relogio.Hoje;
+    var comPeriodo = de is not null || ate is not null;
+    var atalhos = new[]
+    {
+        (Rotulo: "Hoje", De: hoje, Ate: hoje),
+        (Rotulo: "7 dias", De: hoje.AddDays(-6), Ate: hoje),
+        (Rotulo: "Mês", De: new DateOnly(hoje.Year, hoje.Month, 1), Ate: hoje),
+    };
+    var colunaData = new ColunaOrdenavel("Data", "data", ordem, filtros, "coluna-opcional");
+    var colunaTotal = new ColunaOrdenavel("Total", "total", ordem, filtros, "valor");
 }
 
 <div class="cabecalho-da-pagina">
     <div>
         <h1>Vendas</h1>
-        <p class="subtitulo">As mais recentes primeiro.</p>
+        <p class="subtitulo">Tudo o que a loja vendeu, com filtro por período.</p>
     </div>
 </div>
 
-@if (Model.TotalDeItens == 0)
+<form class="periodo" method="get" asp-action="Index" aria-label="Período das vendas">
+    <div class="periodo-campos">
+        <div class="campo">
+            <label class="form-label" for="periodo-de">De</label>
+            <input class="form-control" type="date" id="periodo-de" name="de" value="@FiltrosDaLista.DataDaConsulta(de)" max="@FiltrosDaLista.DataDaConsulta(hoje)" />
+        </div>
+        <div class="campo">
+            <label class="form-label" for="periodo-ate">Até</label>
+            <input class="form-control" type="date" id="periodo-ate" name="ate" value="@FiltrosDaLista.DataDaConsulta(ate)" max="@FiltrosDaLista.DataDaConsulta(hoje)" />
+        </div>
+        <input type="hidden" name="ordem" value="@ordem" />
+        <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+    </div>
+    <nav class="periodo-atalhos" aria-label="Atalhos de período">
+        @foreach (var atalho in atalhos)
+        {
+            var ativo = de == atalho.De && ate == atalho.Ate;
+            <a class="atalho-de-periodo@(ativo ? " ativo" : string.Empty)" aria-current="@(ativo ? "true" : null)"
+               asp-route-de="@FiltrosDaLista.DataDaConsulta(atalho.De)" asp-route-ate="@FiltrosDaLista.DataDaConsulta(atalho.Ate)" asp-route-ordem="@ordem">@atalho.Rotulo</a>
+        }
+        @if (comPeriodo)
+        {
+            <a class="atalho-de-periodo" asp-route-ordem="@ordem">Todas</a>
+        }
+    </nav>
+</form>
+
+@if (Model.TotalDeItens == 0 && comPeriodo)
+{
+    <div class="vazio">
+        <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-busca" /></svg>
+        <p class="vazio-titulo">Nenhuma venda neste período.</p>
+        <p>Escolha outras datas ou veja todas as vendas.</p>
+        <a class="btn btn-outline-secondary" asp-action="Index">Ver todas as vendas</a>
+    </div>
+}
+else if (Model.TotalDeItens == 0)
 {
     <div class="vazio">
         <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-vendas" /></svg>
@@ -24,17 +75,17 @@
 }
 else
 {
-    <p class="contagem" data-testid="contagem">@Formato.Quantidade(Model.TotalDeItens, "venda", "vendas")</p>
+    <p class="contagem" data-testid="contagem" aria-live="polite">@Formato.Quantidade(Model.TotalDeItens, "venda", "vendas")</p>
 
     <div class="cartao tabela-rolavel">
         <table class="tabela">
             <thead>
                 <tr>
                     <th scope="col" class="coluna-opcional">Nº</th>
-                    <th scope="col" class="coluna-opcional">Data</th>
+                    <partial name="_ColunaOrdenavel" model="colunaData" />
                     <th scope="col">Cliente</th>
                     <th scope="col" class="valor coluna-opcional">Itens</th>
-                    <th scope="col" class="valor">Total</th>
+                    <partial name="_ColunaOrdenavel" model="colunaTotal" />
                     <th scope="col"><span class="visually-hidden">Ações</span></th>
                 </tr>
             </thead>
@@ -60,5 +111,5 @@ else
         </table>
     </div>
 
-    <partial name="_Paginador" model="Paginacao.De(Model)" />
+    <partial name="_Paginador" model="Paginador.De(Model, filtros)" />
 }

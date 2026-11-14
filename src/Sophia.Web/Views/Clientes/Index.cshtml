@@ -2,6 +2,11 @@
 @{
     ViewData["Title"] = "Clientes";
     var busca = ViewData["Busca"] as string;
+    var ordem = ViewData["Ordem"] as string ?? "nome";
+    var filtros = FiltrosDaLista.De(ViewData);
+    var buscaDaLista = new BuscaDaLista("Buscar clientes por CPF ou nome", "Buscar por CPF ou nome", busca, ordem);
+    var colunaNome = new ColunaOrdenavel("Nome", "nome", ordem, filtros);
+    var colunaCpf = new ColunaOrdenavel("CPF", "cpf", ordem, filtros, "coluna-opcional");
 }
 
 <div class="cabecalho-da-pagina">
@@ -15,15 +20,9 @@
     </a>
 </div>
 
-<form class="busca" method="get" asp-action="Index" role="search">
-    <div class="campo-de-busca">
-        <svg class="icone" aria-hidden="true"><use href="#icone-busca" /></svg>
-        <input type="search" name="busca" value="@busca" class="form-control"
-               placeholder="Buscar por CPF ou nome" aria-label="Buscar clientes por CPF ou nome" />
-    </div>
-    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
-</form>
+<partial name="_BuscaDaLista" model="buscaDaLista" />
 
+<div data-resultados>
 @if (Model.TotalDeItens == 0)
 {
     <div class="vazio">
@@ -46,7 +45,7 @@
 }
 else
 {
-    <p class="contagem" data-testid="contagem">
+    <p class="contagem" data-testid="contagem" aria-live="polite">
         @(string.IsNullOrWhiteSpace(busca)
             ? Formato.Quantidade(Model.TotalDeItens, "cliente", "clientes")
             : Formato.Quantidade(Model.TotalDeItens, "cliente encontrado", "clientes encontrados"))
@@ -56,8 +55,8 @@ else
         <table class="tabela">
             <thead>
                 <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col" class="coluna-opcional">CPF</th>
+                    <partial name="_ColunaOrdenavel" model="colunaNome" />
+                    <partial name="_ColunaOrdenavel" model="colunaCpf" />
                     <th scope="col" class="coluna-larga">Nascimento</th>
                     <th scope="col" class="coluna-opcional">Contato</th>
                     <th scope="col"><span class="visually-hidden">Ações</span></th>
@@ -100,6 +99,9 @@ else
             </tbody>
         </table>
     </div>
+
+    <partial name="_Paginador" model="Paginador.De(Model, filtros)" />
 }
+</div>
 
 <partial name="_ConfirmarExclusao" />
