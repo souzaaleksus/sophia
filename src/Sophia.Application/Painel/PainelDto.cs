@@ -6,4 +6,6 @@ public sealed record PainelDto(
     DateOnly Hoje,
     ResumoDoPeriodo Dia,
     ResumoDoPeriodo Mes,
-    IReadOnlyList<VendaResumoDto> UltimasVendas);
+    IReadOnlyList<VendaResumoDto> UltimasVendas,
+    IReadOnlyList<TotalDoDia> UltimosDias,
+    IReadOnlyList<ProdutoMaisVendido> MaisVendidos);

@@ -84,6 +84,56 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         return new ResumoDoPeriodo(quantidade, total ?? 0m);
     }
 
+    public async Task<IReadOnlyList<TotalDoDia>> TotaisPorDiaAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        CancellationToken cancelamento = default)
+    {
+        var totais = await (
+                from item in contexto.VendaItens
+                join venda in contexto.Vendas on item.VendaId equals venda.Id
+                where venda.Data >= inicio && venda.Data <= fim
+                group new { item.VendaId, Subtotal = item.Quantidade * item.ValorUnitario } by venda.Data into dia
+                orderby dia.Key
+                select new
+                {
+                    Dia = dia.Key,
+                    Total = dia.Sum(i => i.Subtotal),
+                    QuantidadeDeVendas = dia.Select(i => i.VendaId).Distinct().Count(),
+                })
+            .ToListAsync(cancelamento);
+
+        return totais.Select(t => new TotalDoDia(t.Dia, t.Total, t.QuantidadeDeVendas)).ToList();
+    }
+
+    public async Task<IReadOnlyList<ProdutoMaisVendido>> MaisVendidosAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        int limite,
+        CancellationToken cancelamento = default)
+    {
+        var maisVendidos = await (
+                from item in contexto.VendaItens
+                join venda in contexto.Vendas on item.VendaId equals venda.Id
+                join produto in contexto.Produtos on item.ProdutoId equals produto.Id
+                where venda.Data >= inicio && venda.Data <= fim
+                group new { item.Quantidade, Subtotal = item.Quantidade * item.ValorUnitario }
+                    by new { produto.Id, produto.Nome } into vendido
+                select new
+                {
+                    vendido.Key.Id,
+                    vendido.Key.Nome,
+                    Quantidade = vendido.Sum(i => i.Quantidade),
+                    Total = vendido.Sum(i => i.Subtotal),
+                } into total
+                orderby total.Quantidade descending, total.Total descending, total.Nome
+                select total)
+            .Take(limite)
+            .ToListAsync(cancelamento);
+
+        return maisVendidos.Select(p => new ProdutoMaisVendido(p.Id, p.Nome, p.Quantidade, p.Total)).ToList();
+    }
+
     public Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default) =>
         contexto.Vendas
             .Where(v => v.ChaveDeRegistro == chave)

@@ -11,6 +11,17 @@ public interface IVendaRepositorio
 
     Task<ResumoDoPeriodo> ResumirAsync(DateOnly inicio, DateOnly fim, CancellationToken cancelamento = default);
 
+    Task<IReadOnlyList<TotalDoDia>> TotaisPorDiaAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        CancellationToken cancelamento = default);
+
+    Task<IReadOnlyList<ProdutoMaisVendido>> MaisVendidosAsync(
+        DateOnly inicio,
+        DateOnly fim,
+        int limite,
+        CancellationToken cancelamento = default);
+
     Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default);
 
     void Adicionar(Venda venda);
