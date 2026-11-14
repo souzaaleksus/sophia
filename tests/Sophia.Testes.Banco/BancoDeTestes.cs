@@ -2,13 +2,16 @@ using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Sophia.Infrastructure.Persistencia;
+using Xunit;
 
-namespace Sophia.Integration.Tests.Apoio;
+namespace Sophia.Testes.Banco;
 
 public sealed partial class BancoDeTestes : IAsyncLifetime
 {
     private const string ServidorPadrao =
         @"Server=.\SQLEXPRESS;Integrated Security=true;TrustServerCertificate=true";
+
+    private static readonly string[] TabelasNaOrdemDasChaves = ["VendaItens", "Vendas", "Produtos", "Clientes"];
 
     private readonly string _nome = $"Sophia_Testes_{Guid.NewGuid():N}";
 
@@ -21,6 +24,12 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await ExecutarScriptAsync();
+        TextoDeConexao = new SqlConnectionStringBuilder(Servidor) { InitialCatalog = _nome }.ConnectionString;
+    }
+
+    public async Task ExecutarScriptAsync()
+    {
         var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "create-database.sql"));
         script = script.Replace("[Sophia]", $"[{_nome}]", StringComparison.Ordinal)
             .Replace("N'Sophia'", $"N'{_nome}'", StringComparison.Ordinal);
@@ -32,8 +41,33 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
             await using var comando = new SqlCommand(lote, conexao);
             await comando.ExecuteNonQueryAsync();
         }
+    }
 
-        TextoDeConexao = new SqlConnectionStringBuilder(Servidor) { InitialCatalog = _nome }.ConnectionString;
+    public async Task ExecutarComoOSqlcmdAsync(string arquivo)
+    {
+        var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, arquivo));
+        script = script.Replace("N'Sophia'", $"N'{_nome}'", StringComparison.Ordinal);
+
+        await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(TextoDeConexao) { Pooling = false }.ConnectionString);
+        await conexao.OpenAsync();
+        await using (var padraoDoSqlcmd = new SqlCommand("SET QUOTED_IDENTIFIER OFF;", conexao))
+        {
+            await padraoDoSqlcmd.ExecuteNonQueryAsync();
+        }
+
+        foreach (var lote in SeparadorDeLotes().Split(script).Where(l => !string.IsNullOrWhiteSpace(l)))
+        {
+            await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 120 };
+            await comando.ExecuteNonQueryAsync();
+        }
+    }
+
+    public async Task ExecutarAsync(string sql)
+    {
+        await using var conexao = new SqlConnection(TextoDeConexao);
+        await conexao.OpenAsync();
+        await using var comando = new SqlCommand(sql, conexao);
+        await comando.ExecuteNonQueryAsync();
     }
 
     public async Task DisposeAsync()
@@ -49,19 +83,21 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
     public SophiaDbContext NovoContexto() =>
         new(new DbContextOptionsBuilder<SophiaDbContext>().UseSqlServer(TextoDeConexao).Options);
 
-    public async Task LimparAsync()
-    {
-        await using var conexao = new SqlConnection(TextoDeConexao);
-        await conexao.OpenAsync();
-        const string limpar = """
-            DELETE FROM dbo.VendaItens;
-            DELETE FROM dbo.Vendas;
-            DELETE FROM dbo.Produtos;
-            DELETE FROM dbo.Clientes;
-            """;
-        await using var comando = new SqlCommand(limpar, conexao);
-        await comando.ExecuteNonQueryAsync();
-    }
+    public SophiaDbContext NovoContexto(Action<string> registrarSql) =>
+        new(new DbContextOptionsBuilder<SophiaDbContext>()
+            .UseSqlServer(TextoDeConexao)
+            .LogTo(registrarSql, [DbLoggerCategory.Database.Command.Name])
+            .Options);
+
+    public Task LimparAsync() =>
+        ExecutarAsync(string.Concat(TabelasNaOrdemDasChaves.Select(tabela => $"""
+            DELETE FROM dbo.{tabela};
+            IF EXISTS (
+                SELECT 1 FROM sys.identity_columns
+                WHERE object_id = OBJECT_ID(N'dbo.{tabela}') AND last_value IS NOT NULL)
+                DBCC CHECKIDENT (N'dbo.{tabela}', RESEED, 0) WITH NO_INFOMSGS;
+
+            """)));
 
     public async Task<List<string>> ConsultarAsync(string sql)
     {
@@ -80,10 +116,4 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
 
     [GeneratedRegex(@"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
     private static partial Regex SeparadorDeLotes();
-}
-
-[CollectionDefinition(Nome)]
-public sealed class ColecaoDoBanco : ICollectionFixture<BancoDeTestes>
-{
-    public const string Nome = "Banco SQL Server";
 }

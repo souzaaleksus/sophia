@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Sophia.Application.Clientes;
 using Sophia.Domain.Clientes;
+using Sophia.Web.Apoio;
 
 namespace Sophia.Web.Models;
 
@@ -8,24 +9,25 @@ public sealed class ClienteFormulario
 {
     public int? Id { get; set; }
 
-    [Display(Name = "CPF")]
-    [Required(ErrorMessage = "Informe o CPF.")]
+    [Display(Name = "campo.cpf")]
+    [Required(ErrorMessage = "validacao.cpf-obrigatorio")]
     public string? Cpf { get; set; }
 
-    [Display(Name = "Nome")]
-    [Required(ErrorMessage = "Informe o nome.")]
-    [StringLength(Cliente.TamanhoMaximoNome, ErrorMessage = "O nome deve ter no máximo {1} caracteres.")]
+    [Display(Name = "campo.nome")]
+    [Required(ErrorMessage = "validacao.nome-obrigatorio")]
+    [StringLength(Cliente.TamanhoMaximoNome, ErrorMessage = "validacao.nome-tamanho")]
     public string? Nome { get; set; }
 
-    [Display(Name = "Data de nascimento")]
-    public DateOnly? DataNascimento { get; set; }
+    [Display(Name = "campo.data-de-nascimento")]
+    [DataBrasileira(ErrorMessage = "validacao.nascimento-invalido")]
+    public string? DataNascimento { get; set; }
 
-    [Display(Name = "E-mail")]
-    [EmailAddress(ErrorMessage = "E-mail inválido.")]
-    [StringLength(Cliente.TamanhoMaximoEmail, ErrorMessage = "E-mail inválido.")]
+    [Display(Name = "campo.email")]
+    [EmailAddress(ErrorMessage = "validacao.email-invalido")]
+    [StringLength(Cliente.TamanhoMaximoEmail, ErrorMessage = "validacao.email-invalido")]
     public string? Email { get; set; }
 
-    [Display(Name = "Telefone")]
+    [Display(Name = "campo.telefone")]
     public string? Telefone { get; set; }
 
     public bool EhNovo => Id is null;
@@ -35,10 +37,10 @@ public sealed class ClienteFormulario
         Id = cliente.Id,
         Cpf = cliente.Cpf,
         Nome = cliente.Nome,
-        DataNascimento = cliente.DataNascimento,
+        DataNascimento = Formato.Data(cliente.DataNascimento),
         Email = cliente.Email,
         Telefone = cliente.Telefone,
     };
 
-    public DadosCliente ParaDados() => new(Cpf, Nome, DataNascimento, Email, Telefone);
+    public DadosCliente ParaDados() => new(Cpf, Nome, DataBrasileiraAttribute.Ler(DataNascimento), Email, Telefone);
 }

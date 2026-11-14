@@ -1,126 +1,222 @@
 const esperaAntesDeBuscar = 200;
+const esperaAntesDeAvisarBusca = 150;
+const esperaAntesDeFecharAoSair = 150;
 
-export function criarAutocompletar(entrada, { buscar, descrever, aoEscolher, aoDigitar }) {
-    const lista = entrada.parentElement.querySelector('[role=listbox]');
-    let encontrados = [];
-    let ativo = -1;
-    let temporizador;
-    let ultimaBusca = 0;
+export function criarAutocompletar(entrada, opcoes) {
+    return new Autocompletar(entrada, opcoes);
+}
 
-    entrada.addEventListener('input', () => {
-        aoDigitar?.();
-        clearTimeout(temporizador);
-        const termo = entrada.value.trim();
+class Autocompletar {
+    #entrada;
+    #lista;
+    #aviso;
+    #opcoes;
+    #encontrados = [];
+    #ativo = -1;
+    #temporizador;
+    #ultimaBusca = 0;
+
+    constructor(entrada, opcoes) {
+        this.#entrada = entrada;
+        this.#opcoes = opcoes;
+        this.#lista = entrada.parentElement.querySelector('[role=listbox]');
+        this.#aviso = criarAreaDeAviso(this.#lista);
+        entrada.addEventListener('input', () => this.#aoDigitar());
+        entrada.addEventListener('keydown', evento => this.#aoTeclar(evento));
+        entrada.addEventListener('blur', evento => this.#aoSair(evento));
+        this.#aviso.addEventListener('focusout', evento => this.#aoSair(evento));
+    }
+
+    #aoSair(evento) {
+        if (!this.#contemOFoco(evento.relatedTarget)) {
+            setTimeout(() => this.#fecharSeOFocoSaiu(), esperaAntesDeFecharAoSair);
+        }
+    }
+
+    #fecharSeOFocoSaiu() {
+        if (!this.#contemOFoco(document.activeElement)) {
+            this.#fechar();
+        }
+    }
+
+    #contemOFoco(elemento) {
+        return elemento === this.#entrada || this.#aviso.contains(elemento);
+    }
+
+    #aoDigitar() {
+        this.#opcoes.aoDigitar?.();
+        clearTimeout(this.#temporizador);
+        const termo = this.#entrada.value.trim();
         if (termo === '') {
-            fechar();
+            this.#fechar();
             return;
         }
 
-        temporizador = setTimeout(() => pesquisar(termo), esperaAntesDeBuscar);
-    });
+        this.#temporizador = setTimeout(() => this.#pesquisar(termo), esperaAntesDeBuscar);
+    }
 
-    entrada.addEventListener('keydown', evento => {
-        if (lista.hidden) {
-            return;
+    #aoTeclar(evento) {
+        if (evento.key === 'Escape') {
+            this.#fechar();
+        } else if (!this.#lista.hidden) {
+            this.#navegar(evento);
         }
+    }
 
-        if (evento.key === 'ArrowDown') {
+    #navegar(evento) {
+        const passos = { ArrowDown: 1, ArrowUp: -1 };
+        if (evento.key in passos) {
             evento.preventDefault();
-            destacar(Math.min(ativo + 1, encontrados.length - 1));
-        } else if (evento.key === 'ArrowUp') {
-            evento.preventDefault();
-            destacar(Math.max(ativo - 1, 0));
-        } else if (evento.key === 'Enter' && !evento.ctrlKey && !evento.metaKey && ativo >= 0) {
+            const proximo = this.#ativo + passos[evento.key];
+            this.#destacar(Math.min(Math.max(proximo, 0), this.#encontrados.length - 1));
+        } else if (evento.key === 'Enter' && !evento.ctrlKey && !evento.metaKey && this.#ativo >= 0) {
             evento.preventDefault();
             evento.stopPropagation();
-            escolher(ativo);
-        } else if (evento.key === 'Escape') {
-            fechar();
+            this.#escolher(this.#ativo);
         }
-    });
+    }
 
-    entrada.addEventListener('blur', () => setTimeout(fechar, 150));
-
-    async function pesquisar(termo) {
-        const numeroDaBusca = ++ultimaBusca;
-        let itens = [];
+    async #pesquisar(termo) {
+        const numeroDaBusca = ++this.#ultimaBusca;
+        const ehAtual = () => numeroDaBusca === this.#ultimaBusca && document.activeElement === this.#entrada;
+        const avisoDeBusca = setTimeout(() => this.#avisarQueEstaBuscando(ehAtual), esperaAntesDeAvisarBusca);
         try {
-            itens = await buscar(termo);
+            const itens = await this.#opcoes.buscar(termo);
+            if (ehAtual()) {
+                this.#mostrar(itens);
+            }
         } catch {
-            itens = [];
-        }
-
-        if (numeroDaBusca === ultimaBusca && document.activeElement === entrada) {
-            mostrar(itens);
+            if (ehAtual()) {
+                this.#avisar(this.#opcoes.textos.falha, 'alert');
+            }
+        } finally {
+            clearTimeout(avisoDeBusca);
+            this.#entrada.removeAttribute('aria-busy');
         }
     }
 
-    function mostrar(itens) {
-        encontrados = itens;
-        lista.replaceChildren(...(itens.length > 0 ? itens.map(criarOpcao) : [criarAvisoDeVazio()]));
-        lista.hidden = false;
-        entrada.setAttribute('aria-expanded', 'true');
-        destacar(itens.length > 0 ? 0 : -1);
+    #avisarQueEstaBuscando(ehAtual) {
+        if (ehAtual()) {
+            this.#avisar(this.#opcoes.textos.buscando, 'status');
+            this.#entrada.setAttribute('aria-busy', 'true');
+        }
     }
 
-    function criarOpcao(item, indice) {
-        const { principal, secundario } = descrever(item);
+    #mostrar(itens) {
+        if (itens.length === 0) {
+            this.#avisar(this.#opcoes.textos.vazio, 'status', this.#opcoes.cadastro);
+            return;
+        }
+
+        this.#esconderAviso();
+        this.#encontrados = itens;
+        this.#lista.replaceChildren(...itens.map((item, indice) => this.#criarOpcao(item, indice)));
+        this.#lista.hidden = false;
+        this.#entrada.setAttribute('aria-expanded', 'true');
+        this.#destacar(0);
+    }
+
+    #avisar(texto, papel, atalho) {
+        this.#fecharLista();
+        this.#aviso.replaceChildren(criarMensagem(texto), ...(atalho ? [criarAtalho(atalho)] : []));
+        this.#aviso.setAttribute('role', papel);
+        this.#aviso.hidden = false;
+    }
+
+    #esconderAviso() {
+        this.#aviso.hidden = true;
+        this.#aviso.replaceChildren();
+    }
+
+    #criarOpcao(item, indice) {
+        const { principal, secundario } = this.#opcoes.descrever(item);
         const opcao = document.createElement('li');
-        opcao.id = `${lista.id}-${indice}`;
+        opcao.id = `${this.#lista.id}-${indice}`;
         opcao.setAttribute('role', 'option');
         opcao.className = 'opcao';
-
-        const textoPrincipal = document.createElement('span');
-        textoPrincipal.textContent = principal;
-        const textoSecundario = document.createElement('span');
-        textoSecundario.className = 'secundario';
-        textoSecundario.textContent = secundario;
-        opcao.append(textoPrincipal, textoSecundario);
-
+        opcao.append(criarTexto(principal), criarTexto(secundario, 'secundario'));
         opcao.addEventListener('mousedown', evento => {
             evento.preventDefault();
-            escolher(indice);
+            this.#escolher(indice);
         });
         return opcao;
     }
 
-    function criarAvisoDeVazio() {
-        const aviso = document.createElement('li');
-        aviso.className = 'opcao vazia';
-        aviso.textContent = 'Nada encontrado.';
-        return aviso;
-    }
-
-    function destacar(indice) {
-        ativo = indice;
-        lista.querySelectorAll('[role=option]').forEach((opcao, posicao) => {
+    #destacar(indice) {
+        this.#ativo = indice;
+        this.#lista.querySelectorAll('[role=option]').forEach((opcao, posicao) => {
             opcao.setAttribute('aria-selected', String(posicao === indice));
         });
 
-        if (indice >= 0) {
-            entrada.setAttribute('aria-activedescendant', `${lista.id}-${indice}`);
-            document.getElementById(`${lista.id}-${indice}`)?.scrollIntoView({ block: 'nearest' });
-        } else {
-            entrada.removeAttribute('aria-activedescendant');
+        if (indice < 0) {
+            this.#entrada.removeAttribute('aria-activedescendant');
+            return;
         }
+
+        const id = `${this.#lista.id}-${indice}`;
+        this.#entrada.setAttribute('aria-activedescendant', id);
+        document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
     }
 
-    function escolher(indice) {
-        const item = encontrados[indice];
-        fechar();
+    #escolher(indice) {
+        const item = this.#encontrados[indice];
+        this.#fechar();
         if (item) {
-            aoEscolher(item);
+            this.#opcoes.aoEscolher(item);
         }
     }
 
-    function fechar() {
-        lista.hidden = true;
-        lista.replaceChildren();
-        entrada.setAttribute('aria-expanded', 'false');
-        entrada.removeAttribute('aria-activedescendant');
-        encontrados = [];
-        ativo = -1;
+    #fechar() {
+        clearTimeout(this.#temporizador);
+        this.#ultimaBusca += 1;
+        this.#esconderAviso();
+        this.#fecharLista();
     }
+
+    #fecharLista() {
+        this.#lista.hidden = true;
+        this.#lista.replaceChildren();
+        this.#entrada.setAttribute('aria-expanded', 'false');
+        this.#entrada.removeAttribute('aria-activedescendant');
+        this.#encontrados = [];
+        this.#ativo = -1;
+    }
+}
+
+function criarAreaDeAviso(lista) {
+    const aviso = document.createElement('div');
+    aviso.className = 'opcoes opcoes-aviso';
+    aviso.hidden = true;
+    lista.after(aviso);
+    return aviso;
+}
+
+function criarMensagem(texto) {
+    const mensagem = document.createElement('p');
+    mensagem.className = 'opcoes-mensagem';
+    mensagem.textContent = texto;
+    return mensagem;
+}
+
+function criarAtalho({ endereco, texto }) {
+    const link = document.createElement('a');
+    link.className = 'opcoes-atalho';
+    link.href = endereco;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = texto;
+    link.addEventListener('mousedown', evento => evento.preventDefault());
+    return link;
+}
+
+function criarTexto(texto, classe) {
+    const elemento = document.createElement('span');
+    elemento.textContent = texto;
+    if (classe) {
+        elemento.className = classe;
+    }
+
+    return elemento;
 }
 
 export async function buscarJson(endereco, termo) {

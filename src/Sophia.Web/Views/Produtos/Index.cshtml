@@ -1,74 +1,85 @@
-@model IReadOnlyList<ProdutoDto>
+@model Sophia.Application.Pagina<ProdutoDto>
 @{
-    ViewData["Title"] = "Produtos";
+    ViewData["Title"] = T["produtos.titulo"].Value;
     var busca = ViewData["Busca"] as string;
+    var ordem = ViewData["Ordem"] as string ?? "nome";
+    var filtros = FiltrosDaLista.De(ViewData);
+    var buscaDaLista = new BuscaDaLista(T["produtos.buscar-rotulo"], T["produtos.buscar-dica"], busca, ordem);
+    var colunaNome = new ColunaOrdenavel(T["campo.nome"], "nome", ordem, filtros);
+    var colunaValor = new ColunaOrdenavel(T["campo.valor-unitario"], "valor", ordem, filtros, "valor coluna-opcional");
 }
 
 <div class="cabecalho-da-pagina">
     <div>
-        <h1>Produtos</h1>
-        <p class="subtitulo">O que a loja vende e por quanto.</p>
+        <h1>@T["produtos.titulo"]</h1>
+        <p class="subtitulo">@T["produtos.subtitulo"]</p>
     </div>
     <a class="btn btn-primary" asp-action="Novo">
         <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-        Novo produto
+        @T["produtos.novo"]
     </a>
 </div>
 
-<form class="busca" method="get" asp-action="Index" role="search">
-    <div class="campo-de-busca">
-        <svg class="icone" aria-hidden="true"><use href="#icone-busca" /></svg>
-        <input type="search" name="busca" value="@busca" class="form-control"
-               placeholder="Buscar pelo nome" aria-label="Buscar produtos pelo nome" />
-    </div>
-    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
-</form>
+<partial name="_BuscaDaLista" model="buscaDaLista" />
 
-@if (Model.Count == 0)
+<div data-resultados>
+@if (Model.TotalDeItens == 0)
 {
     <div class="vazio">
-        <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-produtos" /></svg></span>
-        <p class="vazio-titulo">Nenhum produto encontrado.</p>
+        <svg class="ilustracao" aria-hidden="true"><use href="@(string.IsNullOrWhiteSpace(busca) ? "#ilustracao-produtos" : "#ilustracao-busca")" /></svg>
+        <p class="vazio-titulo" data-anuncio>@T["produtos.nenhum"]</p>
         @if (string.IsNullOrWhiteSpace(busca))
         {
-            <p>Cadastre o que a loja vende para lançar nas vendas.</p>
+            <p>@T["produtos.vazio-convite"]</p>
             <a class="btn btn-primary" asp-action="Novo">
                 <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-                Cadastrar o primeiro produto
+                @T["produtos.cadastrar-primeiro"]
             </a>
         }
         else
         {
-            <p>Confira o nome digitado, ou volte para a lista completa.</p>
-            <a class="btn btn-outline-secondary" asp-action="Index">Limpar a busca</a>
+            <p>@T["produtos.busca-sem-resultado"]</p>
+            <a class="btn btn-outline-secondary" asp-action="Index">@T["lista.limpar-busca"]</a>
         }
     </div>
 }
 else
 {
+    <p class="contagem" data-testid="contagem" data-anuncio>
+        @(string.IsNullOrWhiteSpace(busca)
+            ? Formato.Quantidade(Model.TotalDeItens, T["produtos.contagem-singular"], T["produtos.contagem-plural"])
+            : Formato.Quantidade(Model.TotalDeItens, T["produtos.encontrados-singular"], T["produtos.encontrados-plural"]))
+    </p>
+
     <div class="cartao tabela-rolavel">
         <table class="tabela">
             <thead>
                 <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col" class="valor">Valor unitário</th>
-                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                    <partial name="_ColunaOrdenavel" model="colunaNome" />
+                    <partial name="_ColunaOrdenavel" model="colunaValor" />
+                    <th scope="col"><span class="visually-hidden">@T["lista.acoes"]</span></th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var produto in Model)
+                @foreach (var produto in Model.Itens)
                 {
                     <tr>
-                        <td class="destaque">@produto.Nome</td>
-                        <td class="valor">@Formato.Moeda(produto.ValorUnitario)</td>
+                        <td>
+                            <div class="destaque">@produto.Nome</div>
+                            <div class="secundario numero apenas-no-celular">@Formato.Moeda(produto.ValorUnitario)</div>
+                        </td>
+                        <td class="valor coluna-opcional">@Formato.Moeda(produto.ValorUnitario)</td>
                         <td class="acoes">
-                            <a class="acao" asp-action="Editar" asp-route-id="@produto.Id" aria-label="Editar @produto.Nome">
+                            <a class="acao" asp-action="Editar" asp-route-id="@produto.Id" aria-label="@T["acao.editar-registro", produto.Nome]">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-editar" /></svg>
-                                <span class="acao-texto">Editar</span>
+                                <span class="acao-texto">@T["acao.editar"]</span>
                             </a>
-                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@produto.Id" aria-label="Excluir @produto.Nome">
+                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@produto.Id" aria-label="@T["acao.excluir-registro", produto.Nome]"
+                               data-confirmar data-confirmar-titulo="@T["produtos.excluir-titulo"]" data-confirmar-nome="@produto.Nome"
+                               data-confirmar-detalhe="@Formato.Moeda(produto.ValorUnitario)"
+                               data-confirmar-aviso="@T["produtos.excluir-aviso"]">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
-                                <span class="acao-texto">Excluir</span>
+                                <span class="acao-texto">@T["acao.excluir"]</span>
                             </a>
                         </td>
                     </tr>
@@ -76,4 +87,9 @@ else
             </tbody>
         </table>
     </div>
+
+    <partial name="_Paginador" model="Paginador.De(Model, filtros)" />
 }
+</div>
+
+<partial name="_ConfirmarExclusao" />

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Sophia.Domain.Recursos;
 
 namespace Sophia.Domain.Clientes;
 
@@ -15,7 +16,7 @@ public sealed partial class Cliente
         Nome = null!;
     }
 
-    public int Id { get; private set; }
+    public int Id { get; }
 
     public Cpf Cpf { get; private set; }
 
@@ -37,36 +38,46 @@ public sealed partial class Cliente
     public Resultado Alterar(DadosCliente dados, DateOnly hoje)
     {
         var erros = new List<Erro>();
-
-        var cpf = Cpf.Criar(dados.Cpf);
-        erros.AddRange(cpf.Erros);
-        var nome = RegrasComuns.ValidarNome(dados.Nome, TamanhoMaximoNome, erros);
-        var dataNascimento = ValidarDataNascimento(dados.DataNascimento, hoje, erros);
-        var email = ValidarEmail(dados.Email, erros);
-        var telefone = ValidarTelefone(dados.Telefone, erros);
-
+        var validos = Validar(dados, hoje, erros);
         if (erros.Count > 0)
         {
             return Resultado.Falha(erros);
         }
 
-        Cpf = cpf.Valor;
-        Nome = nome!;
-        DataNascimento = dataNascimento;
-        Email = email;
-        Telefone = telefone;
+        Aplicar(validos);
         return Resultado.Ok();
+    }
+
+    private static DadosValidos Validar(DadosCliente dados, DateOnly hoje, List<Erro> erros)
+    {
+        var cpf = Cpf.Criar(dados.Cpf);
+        erros.AddRange(cpf.Erros);
+        return new DadosValidos(
+            cpf.Sucesso ? cpf.Valor : null,
+            RegrasComuns.ValidarNome(dados.Nome, TamanhoMaximoNome, erros),
+            ValidarDataNascimento(dados.DataNascimento, hoje, erros),
+            ValidarEmail(dados.Email, erros),
+            ValidarTelefone(dados.Telefone, erros));
+    }
+
+    private void Aplicar(DadosValidos validos)
+    {
+        Cpf = validos.Cpf!;
+        Nome = validos.Nome!;
+        DataNascimento = validos.DataNascimento;
+        Email = validos.Email;
+        Telefone = validos.Telefone;
     }
 
     private static DateOnly? ValidarDataNascimento(DateOnly? data, DateOnly hoje, List<Erro> erros)
     {
         if (data > hoje)
         {
-            erros.Add(new Erro("DataNascimento", "A data de nascimento não pode estar no futuro."));
+            erros.Add(new Erro("DataNascimento", Mensagens.DataDeNascimentoNoFuturo));
         }
         else if (data < DataNascimentoMinima)
         {
-            erros.Add(new Erro("DataNascimento", "Informe uma data de nascimento válida."));
+            erros.Add(new Erro("DataNascimento", Mensagens.DataDeNascimentoInvalida));
         }
 
         return data;
@@ -77,7 +88,7 @@ public sealed partial class Cliente
         var aparado = Texto.Aparar(email);
         if (aparado is not null && (aparado.Length > TamanhoMaximoEmail || !FormatoDeEmail().IsMatch(aparado)))
         {
-            erros.Add(new Erro("Email", "E-mail inválido."));
+            erros.Add(new Erro("Email", Mensagens.EmailInvalido));
         }
 
         return aparado;
@@ -93,7 +104,7 @@ public sealed partial class Cliente
         var digitos = Texto.SomenteDigitos(aparado);
         if (!FormatoDeTelefone().IsMatch(aparado) || digitos.Length is not (10 or 11))
         {
-            erros.Add(new Erro("Telefone", "Informe o telefone com DDD."));
+            erros.Add(new Erro("Telefone", Mensagens.TelefoneSemDdd));
         }
 
         return digitos;
@@ -104,4 +115,6 @@ public sealed partial class Cliente
 
     [GeneratedRegex(@"^[\d\s()\-]+$")]
     private static partial Regex FormatoDeTelefone();
+
+    private sealed record DadosValidos(Cpf? Cpf, string? Nome, DateOnly? DataNascimento, string? Email, string? Telefone);
 }

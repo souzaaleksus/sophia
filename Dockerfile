@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /codigo
 
-COPY global.json Directory.Build.props .editorconfig ./
+COPY global.json Directory.Build.props .editorconfig CodeMetricsConfig.txt ./
 COPY src/Sophia.Domain/Sophia.Domain.csproj src/Sophia.Domain/
 COPY src/Sophia.Application/Sophia.Application.csproj src/Sophia.Application/
 COPY src/Sophia.Infrastructure/Sophia.Infrastructure.csproj src/Sophia.Infrastructure/

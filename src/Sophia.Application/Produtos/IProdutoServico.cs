@@ -5,7 +5,9 @@ namespace Sophia.Application.Produtos;
 
 public interface IProdutoServico
 {
-    Task<IReadOnlyList<ProdutoDto>> ListarAsync(string? trechoDoNome, int? limite = null, CancellationToken cancelamento = default);
+    Task<Lista<ProdutoDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default);
+
+    Task<IReadOnlyList<ProdutoDto>> BuscarAsync(string? trechoDoNome, int limite, CancellationToken cancelamento = default);
 
     Task<ProdutoDto?> ObterAsync(int id, CancellationToken cancelamento = default);
 

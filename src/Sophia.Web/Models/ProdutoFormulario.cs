@@ -8,13 +8,13 @@ public sealed class ProdutoFormulario
 {
     public int? Id { get; set; }
 
-    [Display(Name = "Nome")]
-    [Required(ErrorMessage = "Informe o nome.")]
-    [StringLength(Produto.TamanhoMaximoNome, ErrorMessage = "O nome deve ter no máximo {1} caracteres.")]
+    [Display(Name = "campo.nome")]
+    [Required(ErrorMessage = "validacao.nome-obrigatorio")]
+    [StringLength(Produto.TamanhoMaximoNome, ErrorMessage = "validacao.nome-tamanho")]
     public string? Nome { get; set; }
 
-    [Display(Name = "Valor unitário")]
-    [Required(ErrorMessage = "Informe o valor unitário.")]
+    [Display(Name = "campo.valor-unitario")]
+    [Required(ErrorMessage = "validacao.valor-obrigatorio")]
     public decimal? ValorUnitario { get; set; }
 
     public bool EhNovo => Id is null;

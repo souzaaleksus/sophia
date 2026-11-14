@@ -54,6 +54,41 @@ public sealed class PassosDoPainel(Cenario cenario)
         _painel!.UltimasVendas.Should().BeEmpty();
     }
 
+    [Then("os últimos {int} dias aparecem zerados")]
+    public void EntaoOsUltimosDiasAparecemZerados(int dias)
+    {
+        _painel!.UltimosDias.Should().HaveCount(dias)
+            .And.OnlyContain(d => d.Total == 0m && d.QuantidadeDeVendas == 0);
+    }
+
+    [Then("os últimos {int} dias mostram")]
+    public void EntaoOsUltimosDiasMostram(int dias, DataTable esperados)
+    {
+        var totais = esperados.Rows.Select(linha => new TotalDoDia(
+            Cenario.Data(linha["Dia"])!.Value,
+            Cenario.Valor(linha["Total"])!.Value,
+            int.Parse(linha["Vendas"], Cenario.PtBr)));
+
+        _painel!.UltimosDias.Should().HaveCount(dias).And.Equal(totais);
+    }
+
+    [Then("não há produtos mais vendidos no mês")]
+    public void EntaoNaoHaProdutosMaisVendidos()
+    {
+        _painel!.MaisVendidos.Should().BeEmpty();
+    }
+
+    [Then("os mais vendidos do mês são")]
+    public void EntaoOsMaisVendidosDoMesSao(DataTable esperados)
+    {
+        var produtos = esperados.Rows.Select(linha => (
+            linha["Produto"],
+            long.Parse(linha["Quantidade"], Cenario.PtBr),
+            Cenario.Valor(linha["Total"])!.Value));
+
+        _painel!.MaisVendidos.Select(p => (p.Nome, p.Quantidade, p.Total)).Should().Equal(produtos);
+    }
+
     [Then(@"^as últimas vendas começam pela mais recente, de (\d{2}/\d{2}/\d{4})$")]
     public void EntaoAsUltimasVendasComecamPelaMaisRecente(string data)
     {

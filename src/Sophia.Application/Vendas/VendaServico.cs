@@ -1,6 +1,7 @@
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
 using Sophia.Application.Produtos;
+using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Vendas;
 
@@ -11,12 +12,28 @@ public sealed class VendaServico(
     IClienteRepositorio clientes,
     IProdutoRepositorio produtos,
     IUnidadeDeTrabalho unidadeDeTrabalho,
-    IRelogio relogio) : IVendaServico
+    IRelogio relogio,
+    ParametrosDoSophia parametros) : IVendaServico
 {
+    private static readonly Ordenacao<ColunaDeVendas> OrdemPadrao = new(ColunaDeVendas.Data, Decrescente: true);
+
     public DateOnly DataSugerida() => relogio.Hoje;
 
-    public Task<IReadOnlyList<VendaResumoDto>> ListarAsync(CancellationToken cancelamento = default) =>
-        vendas.ListarAsync(cancelamento: cancelamento);
+    public async Task<Lista<VendaResumoDto>> ListarAsync(ConsultaDeVendas consulta, CancellationToken cancelamento = default)
+    {
+        var ordem = Ordenacao.Interpretar(consulta.Ordem, OrdemPadrao);
+        var pagina = await Paginacao.RecortarAsync(
+            consulta.Pagina,
+            numero => vendas.ListarPaginaAsync(
+                consulta.Inicio,
+                consulta.Fim,
+                ordem,
+                numero,
+                parametros.TamanhoDaPagina,
+                cancelamento));
+
+        return new Lista<VendaResumoDto>(pagina, ordem.Texto);
+    }
 
     public Task<VendaDetalheDto?> ObterAsync(int id, CancellationToken cancelamento = default) =>
         vendas.ObterDetalheAsync(id, cancelamento);
@@ -30,23 +47,51 @@ public sealed class VendaServico(
         }
 
         var venda = registro.Valor;
-        var erros = await VerificarCadastrosAsync(venda, cancelamento);
-        if (erros.Count > 0)
+        if (await RegistradaPelaMesmaChaveAsync(venda, cancelamento) is { } existente)
         {
-            return Resultado.Falha<int>(erros);
+            return ConferirReenvio(venda, existente);
         }
 
-        vendas.Adicionar(venda);
-        await unidadeDeTrabalho.SalvarAsync(cancelamento);
-        return Resultado.Ok(venda.Id);
+        var erros = await VerificarCadastrosAsync(venda, cancelamento);
+        return erros.Count > 0
+            ? Resultado.Falha<int>(erros)
+            : await GravarAsync(venda, cancelamento);
     }
+
+    private static Resultado<int> ConferirReenvio(Venda enviada, Venda registrada) =>
+        registrada.TemOMesmoConteudoQue(enviada)
+            ? Resultado.Ok(registrada.Id)
+            : Resultado.Falha<int>(new Erro(nameof(DadosVenda.Chave), Mensagens.FormularioJaUsado(registrada.Id)));
+
+    private async Task<Resultado<int>> GravarAsync(Venda venda, CancellationToken cancelamento)
+    {
+        vendas.Adicionar(venda);
+        try
+        {
+            await unidadeDeTrabalho.SalvarAsync(cancelamento);
+            return Resultado.Ok(venda.Id);
+        }
+        catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.ValorDuplicado)
+        {
+            var vencedora = await RegistradaPelaMesmaChaveAsync(venda, cancelamento);
+            if (vencedora is null)
+            {
+                throw;
+            }
+
+            return ConferirReenvio(venda, vencedora);
+        }
+    }
+
+    private async Task<Venda?> RegistradaPelaMesmaChaveAsync(Venda venda, CancellationToken cancelamento) =>
+        venda.ChaveDeRegistro is { } chave ? await vendas.ObterPelaChaveAsync(chave, cancelamento) : null;
 
     private async Task<List<Erro>> VerificarCadastrosAsync(Venda venda, CancellationToken cancelamento)
     {
         var erros = new List<Erro>();
         if (!await clientes.ExisteAsync(venda.ClienteId, cancelamento))
         {
-            erros.Add(new Erro("ClienteId", "Cliente não encontrado."));
+            erros.Add(new Erro("ClienteId", Mensagens.ClienteNaoEncontrado));
         }
 
         var itens = venda.Itens.ToList();
@@ -55,7 +100,7 @@ public sealed class VendaServico(
         {
             if (!existentes.Contains(itens[linha].ProdutoId))
             {
-                erros.Add(new Erro($"Itens[{linha}].ProdutoId", "Produto não encontrado."));
+                erros.Add(new Erro($"Itens[{linha}].ProdutoId", Mensagens.ProdutoNaoEncontrado));
             }
         }
 

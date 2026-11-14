@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Playwright;
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
@@ -32,7 +33,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await _pagina.GetByRole(AriaRole.Link, new() { Name = "Nova venda", Exact = true }).ClickAsync();
 
         var hoje = new RelogioDoSistema(TimeProvider.System, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo")).Hoje;
-        await Expect(_pagina.GetByLabel("Data da venda")).ToHaveValueAsync(hoje.ToString("yyyy-MM-dd"));
+        await Expect(_pagina.GetByLabel("Data da venda")).ToHaveValueAsync(hoje.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
     }
 
     [Theory]
@@ -53,7 +54,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await EscolherClienteAsync("529.982", "Maria Santos");
         await LancarAsync(0, "Caneta", "Caneta azul", "10");
         await Expect(Linha(0).GetByTestId("subtotal")).ToHaveTextAsync("R$ 25,00");
-        await Linha(0).GetByLabel("Quantidade").PressAsync("Enter");
+        await Linha(0).GetByLabel("Quantidade", new() { Exact = true }).PressAsync("Enter");
         await LancarAsync(1, "Cader", "Caderno 96 folhas", "2");
 
         await Expect(Linha(1).GetByTestId("subtotal")).ToHaveTextAsync("R$ 37,80");
@@ -226,7 +227,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await Expect(_pagina.GetByTestId("unidades-da-venda")).ToHaveTextAsync("12 unidades");
     }
 
-    private ILocator Linha(int indice) =>_pagina.GetByTestId("item-da-venda").Nth(indice);
+    private ILocator Linha(int indice) => _pagina.GetByTestId("item-da-venda").Nth(indice);
 
     private ILocator ComboboxDeCliente() => _pagina.GetByRole(AriaRole.Combobox, new() { Name = "Cliente", Exact = true });
 
@@ -248,7 +249,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
 
         await ProdutoDaLinha(linha).FillAsync(termo);
         await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto }).ClickAsync();
-        await Linha(linha).GetByLabel("Quantidade").FillAsync(quantidade);
+        await Linha(linha).GetByLabel("Quantidade", new() { Exact = true }).FillAsync(quantidade);
     }
 
     private async Task PrepararCadastrosAsync()
@@ -256,8 +257,8 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await using var contexto = aplicacao.Banco.NovoContexto();
         var unidade = new UnidadeDeTrabalho(contexto);
         IRelogio relogio = new RelogioDoSistema(TimeProvider.System, TimeZoneInfo.Utc);
-        var clientes = new ClienteServico(new ClienteRepositorio(contexto), unidade, relogio);
-        var produtos = new ProdutoServico(new ProdutoRepositorio(contexto), unidade);
+        var clientes = new ClienteServico(new ClienteRepositorio(contexto), unidade, relogio, new Sophia.Application.ParametrosDoSophia());
+        var produtos = new ProdutoServico(new ProdutoRepositorio(contexto), unidade, new Sophia.Application.ParametrosDoSophia());
 
         await clientes.CadastrarAsync(new DadosCliente("529.982.247-25", "Maria Santos", null, null, null));
         await clientes.CadastrarAsync(new DadosCliente("111.444.777-35", "João Lima", null, null, null));

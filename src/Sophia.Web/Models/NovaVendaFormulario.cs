@@ -5,7 +5,9 @@ namespace Sophia.Web.Models;
 
 public sealed class NovaVendaFormulario
 {
-    [Display(Name = "Data da venda")]
+    public Guid? Chave { get; set; }
+
+    [Display(Name = "campo.data-da-venda")]
     public DateOnly? Data { get; set; }
 
     public int? ClienteId { get; set; }
@@ -19,7 +21,8 @@ public sealed class NovaVendaFormulario
     public DadosVenda ParaDados() => new(
         Data,
         ClienteId,
-        Itens.Select(i => new DadosItemVenda(i.ProdutoId, i.Quantidade, i.ValorUnitario)).ToList());
+        Itens.Select(i => new DadosItemVenda(i.ProdutoId, i.Quantidade, i.ValorUnitario)).ToList(),
+        Chave);
 }
 
 public sealed class ItemDaVendaFormulario

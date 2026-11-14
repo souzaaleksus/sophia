@@ -13,9 +13,9 @@ public sealed class ItemVenda
         ValorUnitario = valorUnitario;
     }
 
-    public int Id { get; private set; }
+    public int Id { get; }
 
-    public int VendaId { get; private set; }
+    public int VendaId { get; }
 
     public int ProdutoId { get; private set; }
 

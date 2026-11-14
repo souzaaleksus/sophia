@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sophia.Integration.Tests\Sophia.Integration.Tests.csproj" />
+    <ProjectReference Include="..\Sophia.Testes.Banco\Sophia.Testes.Banco.csproj" />
     <ProjectReference Include="..\..\src\Sophia.Web\Sophia.Web.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

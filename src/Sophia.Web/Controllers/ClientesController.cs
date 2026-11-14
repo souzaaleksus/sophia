@@ -1,19 +1,26 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using Sophia.Application;
 using Sophia.Application.Clientes;
 using Sophia.Web.Apoio;
 using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class ClientesController(IClienteServico clientes) : Controller
+public sealed class ClientesController(IClienteServico clientes, ParametrosDoSophia parametros, IStringLocalizer<Textos> textos) : Controller
 {
-    private const int SugestoesNaBusca = 8;
-
     [HttpGet]
-    public async Task<IActionResult> Index(string? busca, CancellationToken cancelamento)
+    public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
     {
-        ViewData["Busca"] = busca;
-        return View(await clientes.ListarAsync(busca, cancelamento: cancelamento));
+        if (!ModelState.IsValid)
+        {
+            return BadRequest();
+        }
+
+        var lista = await clientes.ListarAsync(consulta, cancelamento);
+        ViewData["Busca"] = consulta.Busca;
+        ViewData["Ordem"] = lista.Ordem;
+        return View(lista.Pagina);
     }
 
     [HttpGet]
@@ -24,7 +31,7 @@ public sealed class ClientesController(IClienteServico clientes) : Controller
             return Json(Array.Empty<object>());
         }
 
-        var encontrados = await clientes.ListarAsync(termo, SugestoesNaBusca, cancelamento);
+        var encontrados = await clientes.BuscarAsync(termo, parametros.SugestoesNaBusca, cancelamento);
         return Json(encontrados.Select(c => new { c.Id, c.Cpf, c.Nome }));
     }
 
@@ -46,13 +53,18 @@ public sealed class ClientesController(IClienteServico clientes) : Controller
             return View("Formulario", formulario);
         }
 
-        TempData.Sucesso("Cliente cadastrado.");
+        TempData.Sucesso(textos["clientes.cadastrado"]);
         return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
     public async Task<IActionResult> Editar(int id, CancellationToken cancelamento)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest();
+        }
+
         var cliente = await clientes.ObterAsync(id, cancelamento);
         return cliente is null ? NotFound() : View("Formulario", ClienteFormulario.De(cliente));
     }
@@ -73,13 +85,18 @@ public sealed class ClientesController(IClienteServico clientes) : Controller
             return View("Formulario", formulario);
         }
 
-        TempData.Sucesso("Cliente alterado.");
+        TempData.Sucesso(textos["clientes.alterado"]);
         return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
     public async Task<IActionResult> Excluir(int id, CancellationToken cancelamento)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest();
+        }
+
         var cliente = await clientes.ObterAsync(id, cancelamento);
         return cliente is null ? NotFound() : View(cliente);
     }
@@ -88,10 +105,15 @@ public sealed class ClientesController(IClienteServico clientes) : Controller
     [ActionName(nameof(Excluir))]
     public async Task<IActionResult> ConfirmarExclusao(int id, CancellationToken cancelamento)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest();
+        }
+
         var resultado = await clientes.ExcluirAsync(id, cancelamento);
         if (resultado.Sucesso)
         {
-            TempData.Sucesso("Cliente excluído.");
+            TempData.Sucesso(textos["clientes.excluido"]);
         }
         else
         {

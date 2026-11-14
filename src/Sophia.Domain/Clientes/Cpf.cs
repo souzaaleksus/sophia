@@ -1,3 +1,5 @@
+using Sophia.Domain.Recursos;
+
 namespace Sophia.Domain.Clientes;
 
 public sealed record Cpf
@@ -18,13 +20,13 @@ public sealed record Cpf
     {
         if (string.IsNullOrWhiteSpace(valor))
         {
-            return Resultado.Falha<Cpf>(new Erro(Campo, "Informe o CPF."));
+            return Resultado.Falha<Cpf>(new Erro(Campo, Mensagens.CpfObrigatorio));
         }
 
         var digitos = SomenteDigitos(valor);
         if (!ContemSomenteDigitosEMascara(valor) || !DigitosVerificadoresConferem(digitos))
         {
-            return Resultado.Falha<Cpf>(new Erro(Campo, "CPF inválido."));
+            return Resultado.Falha<Cpf>(new Erro(Campo, Mensagens.CpfInvalido));
         }
 
         return Resultado.Ok(new Cpf(digitos));

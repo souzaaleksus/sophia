@@ -1,57 +1,79 @@
 @model VendaDetalheDto
 @{
-    ViewData["Title"] = $"Venda nº {Model.Id}";
+    ViewData["Title"] = T["venda.titulo", Model.Id].Value;
+    var recemRegistrada = TempData.Peek(Avisos.ChaveDeSucesso) is not null;
+    var unidades = Model.Itens.Sum(item => (long)item.Quantidade);
 }
 
 <div class="cabecalho-da-pagina">
     <div>
-        <h1>Venda nº @Model.Id</h1>
-        <p class="subtitulo">Registrada em @Formato.Data(Model.Data).</p>
+        <h1>@T["venda.titulo", Model.Id]</h1>
+        <p class="subtitulo">@T["venda.registrada-em", Formato.Data(Model.Data)]</p>
     </div>
     <div class="nao-imprimir">
         <button type="button" class="btn btn-outline-secondary" data-acao="imprimir">
             <svg class="icone" aria-hidden="true"><use href="#icone-imprimir" /></svg>
-            Imprimir
+            @T["venda.imprimir"]
         </button>
     </div>
 </div>
 
-<section class="cartao comprovante" aria-label="Comprovante da venda">
+<section class="cupom@(recemRegistrada ? " cupom-recem-emitido" : string.Empty)" aria-label="@T["venda.comprovante"]">
+    <header class="cupom-topo">
+        <img class="cupom-logo" src="~/img/sophia.png" alt="@T["geral.marca"]" width="117" height="32" />
+        <dl class="cupom-identificacao">
+            <div>
+                <dt>@T["venda.venda"]</dt>
+                <dd class="numero">@T["venda.numero", Model.Id]</dd>
+            </div>
+            <div>
+                <dt>@T["campo.data"]</dt>
+                <dd class="numero">@Formato.Data(Model.Data)</dd>
+            </div>
+        </dl>
+    </header>
+
     <div class="cliente-da-venda" data-testid="cliente-da-venda">
-        <span class="rotulo">Cliente</span>
+        <span class="rotulo">@T["campo.cliente"]</span>
         <strong>@Model.ClienteNome</strong>
-        <span class="numero">CPF @Model.ClienteCpf</span>
+        <span class="numero">@T["clientes.detalhe-cpf", Model.ClienteCpf]</span>
     </div>
 
-    <div class="tabela-rolavel">
-        <table class="tabela">
-            <thead>
+    <table class="cupom-itens">
+        <caption class="visually-hidden">@T["venda.produtos-da-venda"]</caption>
+        <thead>
+            <tr>
+                <th scope="col">@T["campo.produto"]</th>
+                <th scope="col" class="valor coluna-opcional">@T["campo.quantidade"]</th>
+                <th scope="col" class="valor coluna-opcional">@T["campo.valor-unitario"]</th>
+                <th scope="col" class="valor">@T["campo.subtotal"]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Itens)
+            {
                 <tr>
-                    <th scope="col">Produto</th>
-                    <th scope="col" class="valor">Quantidade</th>
-                    <th scope="col" class="valor">Valor unitário</th>
-                    <th scope="col" class="valor">Subtotal</th>
+                    <td>
+                        <span class="destaque">@item.Produto</span>
+                        <span class="cupom-conta numero apenas-no-celular">@T["venda.conta", item.Quantidade, Formato.Moeda(item.ValorUnitario)]</span>
+                    </td>
+                    <td class="valor coluna-opcional">@item.Quantidade</td>
+                    <td class="valor coluna-opcional">@Formato.Moeda(item.ValorUnitario)</td>
+                    <td class="valor">@Formato.Moeda(item.Subtotal)</td>
                 </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.Itens)
-                {
-                    <tr>
-                        <td class="destaque">@item.Produto</td>
-                        <td class="valor">@item.Quantidade</td>
-                        <td class="valor">@Formato.Moeda(item.ValorUnitario)</td>
-                        <td class="valor">@Formato.Moeda(item.Subtotal)</td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th scope="row" colspan="3" class="valor">Total da venda</th>
-                    <td class="valor total" data-testid="total-da-venda">@Formato.Moeda(Model.Total)</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
+
+    <footer class="cupom-rodape">
+        <p class="cupom-resumo numero">
+            @T["venda.resumo", Formato.Quantidade(Model.Itens.Count, T["venda.itens-singular"], T["venda.itens-plural"]), Formato.Quantidade(unidades, T["vendas.unidades-singular"], T["vendas.unidades-plural"])]
+        </p>
+        <p class="cupom-total">
+            <span>@T["venda.total"]</span>
+            <strong class="numero" data-testid="total-da-venda">@Formato.Moeda(Model.Total)</strong>
+        </p>
+    </footer>
 </section>
 
-<p class="nao-imprimir voltar"><a asp-action="Index">Voltar para as vendas</a></p>
+<p class="nao-imprimir voltar"><a asp-action="Index">@T["venda.voltar"]</a></p>

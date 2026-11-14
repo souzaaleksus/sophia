@@ -1,0 +1,41 @@
+@model Paginador
+
+@if (Model.TotalDePaginas > 1)
+{
+    <nav class="paginador" aria-label="@T["paginador.paginas"]">
+        <p class="paginador-resumo numero" data-testid="resumo-da-pagina">
+            @T["paginador.resumo", Model.PrimeiroItem.ToString("N0", Formato.Cultura), Model.UltimoItem.ToString("N0", Formato.Cultura), Model.TotalDeItens.ToString("N0", Formato.Cultura)]
+        </p>
+        <div class="paginador-controles">
+            @if (Model.TemAnterior)
+            {
+                <a class="btn btn-outline-secondary" rel="prev" asp-all-route-data="@Model.RotaDaPagina(Model.Numero - 1)">
+                    <svg class="icone" aria-hidden="true"><use href="#icone-anterior" /></svg>
+                    @T["paginador.anterior"]
+                </a>
+            }
+            else
+            {
+                <span class="btn btn-outline-secondary disabled" aria-disabled="true">
+                    <svg class="icone" aria-hidden="true"><use href="#icone-anterior" /></svg>
+                    @T["paginador.anterior"]
+                </span>
+            }
+            <span class="paginador-posicao numero" aria-current="page">@T["paginador.posicao", Model.Numero, Model.TotalDePaginas]</span>
+            @if (Model.TemProxima)
+            {
+                <a class="btn btn-outline-secondary" rel="next" asp-all-route-data="@Model.RotaDaPagina(Model.Numero + 1)">
+                    @T["paginador.proxima"]
+                    <svg class="icone" aria-hidden="true"><use href="#icone-proxima" /></svg>
+                </a>
+            }
+            else
+            {
+                <span class="btn btn-outline-secondary disabled" aria-disabled="true">
+                    @T["paginador.proxima"]
+                    <svg class="icone" aria-hidden="true"><use href="#icone-proxima" /></svg>
+                </span>
+            }
+        </div>
+    </nav>
+}

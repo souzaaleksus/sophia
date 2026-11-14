@@ -1,4 +1,5 @@
 using Sophia.Application.Abstracoes;
+using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Clientes;
 
@@ -7,15 +8,28 @@ namespace Sophia.Application.Clientes;
 public sealed class ClienteServico(
     IClienteRepositorio clientes,
     IUnidadeDeTrabalho unidadeDeTrabalho,
-    IRelogio relogio) : IClienteServico
+    IRelogio relogio,
+    ParametrosDoSophia parametros) : IClienteServico
 {
-    private static readonly Erro CpfDuplicado = new("Cpf", "Já existe um cliente com este CPF.");
-    private static readonly Erro NaoEncontrado = new(string.Empty, "Cliente não encontrado.");
-    private static readonly Erro PossuiVendas = new(string.Empty, "Este cliente possui vendas e não pode ser excluído.");
+    private static readonly Ordenacao<ColunaDeClientes> OrdemPadrao = new(ColunaDeClientes.Nome, Decrescente: false);
+    private static readonly Erro CpfDuplicado = new("Cpf", Mensagens.CpfDuplicado);
+    private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ClienteNaoEncontrado);
+    private static readonly Erro PossuiVendas = new(string.Empty, Mensagens.ClientePossuiVendas);
 
-    public async Task<IReadOnlyList<ClienteDto>> ListarAsync(
+    public async Task<Lista<ClienteDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default)
+    {
+        var busca = BuscaDeCliente.Interpretar(consulta.Busca);
+        var ordem = Ordenacao.Interpretar(consulta.Ordem, OrdemPadrao);
+        var pagina = await Paginacao.RecortarAsync(
+            consulta.Pagina,
+            numero => clientes.ListarPaginaAsync(busca, ordem, numero, parametros.TamanhoDaPagina, cancelamento));
+
+        return new Lista<ClienteDto>(pagina.Converter(ClienteDto.De), ordem.Texto);
+    }
+
+    public async Task<IReadOnlyList<ClienteDto>> BuscarAsync(
         string? termo,
-        int? limite = null,
+        int limite,
         CancellationToken cancelamento = default)
     {
         var encontrados = await clientes.ListarAsync(BuscaDeCliente.Interpretar(termo), limite, cancelamento);

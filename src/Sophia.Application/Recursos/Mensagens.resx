@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="CpfDuplicado" xml:space="preserve">
+    <value>Já existe um cliente com este CPF.</value>
+  </data>
+  <data name="ClienteNaoEncontrado" xml:space="preserve">
+    <value>Cliente não encontrado.</value>
+  </data>
+  <data name="ClientePossuiVendas" xml:space="preserve">
+    <value>Este cliente possui vendas e não pode ser excluído.</value>
+  </data>
+  <data name="NomeDeProdutoDuplicado" xml:space="preserve">
+    <value>Já existe um produto com este nome.</value>
+  </data>
+  <data name="ProdutoNaoEncontrado" xml:space="preserve">
+    <value>Produto não encontrado.</value>
+  </data>
+  <data name="ProdutoJaVendido" xml:space="preserve">
+    <value>Este produto já foi vendido e não pode ser excluído.</value>
+  </data>
+  <data name="FormularioJaUsado" xml:space="preserve">
+    <value>Este formulário já tinha registrado a venda nº {0}. Esta venda ainda não foi gravada: confira os itens e finalize de novo.</value>
+  </data>
+  <data name="GravacaoRecusada" xml:space="preserve">
+    <value>O banco recusou a gravação: {0}.</value>
+  </data>
+</root>

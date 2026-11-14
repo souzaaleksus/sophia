@@ -1,40 +1,43 @@
 @model ProdutoFormulario
 @{
-    ViewData["Title"] = Model.EhNovo ? "Novo produto" : "Editar produto";
+    ViewData["Title"] = Model.EhNovo ? T["produtos.novo"].Value : T["produtos.editar"].Value;
     var acao = Model.EhNovo ? "Novo" : "Editar";
 }
 
 <div class="cabecalho-da-pagina">
     <div>
         <h1>@ViewData["Title"]</h1>
-        <p class="subtitulo">O nome não pode se repetir. O valor é o sugerido na venda.</p>
+        <p class="subtitulo">@T["produtos.subtitulo-formulario"]</p>
     </div>
 </div>
 
-<form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate>
+<form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate
+      data-envio data-texto-enviando="@T["formulario.salvando"]">
     <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
+    <p class="legenda-obrigatorio"><span aria-hidden="true">*</span> @T["formulario.obrigatorio"]</p>
 
     <div class="grade-de-campos">
         <div class="campo campo-largo">
-            <label asp-for="Nome" class="form-label"></label>
-            <input asp-for="Nome" class="form-control" autocomplete="off" />
+            <label asp-for="Nome" class="form-label">@T["campo.nome"] <span class="obrigatorio" aria-hidden="true">*</span></label>
+            <input asp-for="Nome" class="form-control" autocomplete="off" autofocus aria-required="true" />
             <span asp-validation-for="Nome" class="erro"></span>
         </div>
 
         <div class="campo">
-            <label asp-for="ValorUnitario" class="form-label"></label>
+            <label asp-for="ValorUnitario" class="form-label">@T["campo.valor-unitario"] <span class="obrigatorio" aria-hidden="true">*</span></label>
             <div class="input-group">
-                <span class="input-group-text">R$</span>
+                <span class="input-group-text">@T["geral.moeda"]</span>
                 <input asp-for="ValorUnitario" type="text" class="form-control valor" inputmode="decimal"
-                       autocomplete="off" placeholder="0,00" value="@Formato.Numero(Model.ValorUnitario)" />
+                       autocomplete="off" aria-required="true" placeholder="0,00" value="@Formato.Numero(Model.ValorUnitario)" />
             </div>
+            <span class="campo-dica">@T["produtos.dica-valor"]</span>
             <span asp-validation-for="ValorUnitario" class="erro"></span>
         </div>
     </div>
 
     <div class="rodape-do-formulario">
-        <a class="btn btn-link" asp-action="Index">Cancelar</a>
-        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">@T["formulario.cancelar"]</a>
+        <button type="submit" class="btn btn-primary">@T["formulario.salvar"]</button>
     </div>
 </form>
 

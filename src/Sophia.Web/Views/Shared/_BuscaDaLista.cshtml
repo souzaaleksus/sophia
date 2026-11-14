@@ -1,0 +1,16 @@
+@model BuscaDaLista
+
+<form class="busca" method="get" asp-action="Index" role="search" data-busca-ao-vivo>
+    <div class="campo-de-busca">
+        <svg class="icone" aria-hidden="true"><use href="#icone-busca" /></svg>
+        <input type="search" name="busca" value="@Model.Busca" class="form-control"
+               placeholder="@Model.Dica" aria-label="@Model.Rotulo" autocomplete="off" />
+        <button type="button" class="busca-limpar" data-acao="limpar-busca" aria-label="@T["lista.limpar-busca"]" title="@T["lista.limpar-busca"]" hidden>
+            <svg class="icone" aria-hidden="true"><use href="#icone-fechar" /></svg>
+        </button>
+    </div>
+    <input type="hidden" name="ordem" value="@Model.Ordem" />
+    <button type="submit" class="btn btn-outline-secondary">@T["lista.buscar"]</button>
+    <p class="aviso-da-busca" role="alert" data-falha-da-busca hidden>@T["lista.falha-ao-atualizar"]</p>
+    <p class="visually-hidden" aria-live="polite" aria-atomic="true" data-anuncio-da-busca></p>
+</form>

@@ -1,81 +1,97 @@
-@model IReadOnlyList<ClienteDto>
+@model Sophia.Application.Pagina<ClienteDto>
 @{
-    ViewData["Title"] = "Clientes";
+    ViewData["Title"] = T["clientes.titulo"].Value;
     var busca = ViewData["Busca"] as string;
+    var ordem = ViewData["Ordem"] as string ?? "nome";
+    var filtros = FiltrosDaLista.De(ViewData);
+    var buscaDaLista = new BuscaDaLista(T["clientes.buscar-rotulo"], T["clientes.buscar-dica"], busca, ordem);
+    var colunaNome = new ColunaOrdenavel(T["campo.nome"], "nome", ordem, filtros);
+    var colunaCpf = new ColunaOrdenavel(T["campo.cpf"], "cpf", ordem, filtros, "coluna-opcional");
 }
 
 <div class="cabecalho-da-pagina">
     <div>
-        <h1>Clientes</h1>
-        <p class="subtitulo">Quem compra da loja.</p>
+        <h1>@T["clientes.titulo"]</h1>
+        <p class="subtitulo">@T["clientes.subtitulo"]</p>
     </div>
     <a class="btn btn-primary" asp-action="Novo">
         <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-        Novo cliente
+        @T["clientes.novo"]
     </a>
 </div>
 
-<form class="busca" method="get" asp-action="Index" role="search">
-    <div class="campo-de-busca">
-        <svg class="icone" aria-hidden="true"><use href="#icone-busca" /></svg>
-        <input type="search" name="busca" value="@busca" class="form-control"
-               placeholder="Buscar por CPF ou nome" aria-label="Buscar clientes por CPF ou nome" />
-    </div>
-    <button type="submit" class="btn btn-outline-secondary">Buscar</button>
-</form>
+<partial name="_BuscaDaLista" model="buscaDaLista" />
 
-@if (Model.Count == 0)
+<div data-resultados>
+@if (Model.TotalDeItens == 0)
 {
     <div class="vazio">
-        <span class="vazio-icone"><svg class="icone" aria-hidden="true"><use href="#icone-clientes" /></svg></span>
-        <p class="vazio-titulo">Nenhum cliente encontrado.</p>
+        <svg class="ilustracao" aria-hidden="true"><use href="@(string.IsNullOrWhiteSpace(busca) ? "#ilustracao-clientes" : "#ilustracao-busca")" /></svg>
+        <p class="vazio-titulo" data-anuncio>@T["clientes.nenhum"]</p>
         @if (string.IsNullOrWhiteSpace(busca))
         {
-            <p>Cadastre quem compra da loja para registrar as vendas.</p>
+            <p>@T["clientes.vazio-convite"]</p>
             <a class="btn btn-primary" asp-action="Novo">
                 <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-                Cadastrar o primeiro cliente
+                @T["clientes.cadastrar-primeiro"]
             </a>
         }
         else
         {
-            <p>Confira o CPF ou o nome digitado, ou volte para a lista completa.</p>
-            <a class="btn btn-outline-secondary" asp-action="Index">Limpar a busca</a>
+            <p>@T["clientes.busca-sem-resultado"]</p>
+            <a class="btn btn-outline-secondary" asp-action="Index">@T["lista.limpar-busca"]</a>
         }
     </div>
 }
 else
 {
+    <p class="contagem" data-testid="contagem" data-anuncio>
+        @(string.IsNullOrWhiteSpace(busca)
+            ? Formato.Quantidade(Model.TotalDeItens, T["clientes.contagem-singular"], T["clientes.contagem-plural"])
+            : Formato.Quantidade(Model.TotalDeItens, T["clientes.encontrados-singular"], T["clientes.encontrados-plural"]))
+    </p>
+
     <div class="cartao tabela-rolavel">
         <table class="tabela">
             <thead>
                 <tr>
-                    <th scope="col">Nome</th>
-                    <th scope="col">CPF</th>
-                    <th scope="col" class="coluna-opcional">Nascimento</th>
-                    <th scope="col" class="coluna-opcional">Contato</th>
-                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                    <partial name="_ColunaOrdenavel" model="colunaNome" />
+                    <partial name="_ColunaOrdenavel" model="colunaCpf" />
+                    <th scope="col" class="coluna-larga">@T["campo.nascimento"]</th>
+                    <th scope="col" class="coluna-opcional">@T["campo.contato"]</th>
+                    <th scope="col"><span class="visually-hidden">@T["lista.acoes"]</span></th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var cliente in Model)
+                @foreach (var cliente in Model.Itens)
                 {
                     <tr>
-                        <td class="destaque">@cliente.Nome</td>
-                        <td class="numero">@cliente.Cpf</td>
-                        <td class="numero coluna-opcional">@Formato.Data(cliente.DataNascimento)</td>
-                        <td class="coluna-opcional">
+                        <td>
+                            <div class="pessoa">
+                                <span class="avatar avatar-tom-@Formato.TomDoAvatar(cliente.Nome)" aria-hidden="true" data-testid="avatar">@Formato.Iniciais(cliente.Nome)</span>
+                                <div>
+                                    <div class="destaque">@cliente.Nome</div>
+                                    <div class="secundario numero apenas-no-celular">@cliente.Cpf</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="numero coluna-opcional">@cliente.Cpf</td>
+                        <td class="numero coluna-larga">@Formato.Data(cliente.DataNascimento)</td>
+                        <td class="coluna-opcional contato">
                             <div>@cliente.Email</div>
                             <div class="secundario numero">@cliente.Telefone</div>
                         </td>
                         <td class="acoes">
-                            <a class="acao" asp-action="Editar" asp-route-id="@cliente.Id" aria-label="Editar @cliente.Nome">
+                            <a class="acao" asp-action="Editar" asp-route-id="@cliente.Id" aria-label="@T["acao.editar-registro", cliente.Nome]">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-editar" /></svg>
-                                <span class="acao-texto">Editar</span>
+                                <span class="acao-texto">@T["acao.editar"]</span>
                             </a>
-                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@cliente.Id" aria-label="Excluir @cliente.Nome">
+                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@cliente.Id" aria-label="@T["acao.excluir-registro", cliente.Nome]"
+                               data-confirmar data-confirmar-titulo="@T["clientes.excluir-titulo"]" data-confirmar-nome="@cliente.Nome"
+                               data-confirmar-detalhe="@T["clientes.detalhe-cpf", cliente.Cpf]"
+                               data-confirmar-aviso="@T["clientes.excluir-aviso"]">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
-                                <span class="acao-texto">Excluir</span>
+                                <span class="acao-texto">@T["acao.excluir"]</span>
                             </a>
                         </td>
                     </tr>
@@ -83,4 +99,9 @@ else
             </tbody>
         </table>
     </div>
+
+    <partial name="_Paginador" model="Paginador.De(Model, filtros)" />
 }
+</div>
+
+<partial name="_ConfirmarExclusao" />

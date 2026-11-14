@@ -29,6 +29,24 @@ public sealed class VendaTests
     }
 
     [Fact]
+    public void Guarda_a_chave_de_registro_enviada_pelo_formulario()
+    {
+        var chave = Guid.NewGuid();
+
+        var venda = Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 2.50m)], chave), Hoje).Valor;
+
+        venda.ChaveDeRegistro.Should().Be(chave);
+    }
+
+    [Fact]
+    public void Chave_vazia_vale_como_venda_sem_chave()
+    {
+        var venda = Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 2.50m)], Guid.Empty), Hoje).Valor;
+
+        venda.ChaveDeRegistro.Should().BeNull();
+    }
+
+    [Fact]
     public void Aceita_data_passada()
     {
         var resultado = Venda.Registrar(new DadosVenda(Hoje.AddDays(-30), Maria, [new DadosItemVenda(Caneta, 1, 2.50m)]), Hoje);
@@ -138,4 +156,40 @@ public sealed class VendaTests
 
         item.Subtotal.Should().Be(0.30m);
     }
+
+    [Fact]
+    public void Mesmo_cliente_data_e_itens_em_outra_ordem_e_o_mesmo_conteudo()
+    {
+        var primeira = Registrar(Maria, new DadosItemVenda(Caneta, 10, 2.50m), new DadosItemVenda(Caderno, 2, 18.90m));
+        var segunda = Registrar(Maria, new DadosItemVenda(Caderno, 2, 18.90m), new DadosItemVenda(Caneta, 10, 2.50m));
+
+        primeira.TemOMesmoConteudoQue(segunda).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(2, Caneta, 10, 2.50)]
+    [InlineData(Maria, Caderno, 10, 2.50)]
+    [InlineData(Maria, Caneta, 9, 2.50)]
+    [InlineData(Maria, Caneta, 10, 2.40)]
+    public void Outro_cliente_produto_quantidade_ou_valor_nao_e_o_mesmo_conteudo(int cliente, int produto, int quantidade, decimal valor)
+    {
+        var primeira = Registrar(Maria, new DadosItemVenda(Caneta, 10, 2.50m));
+        var segunda = Registrar(cliente, new DadosItemVenda(produto, quantidade, valor));
+
+        primeira.TemOMesmoConteudoQue(segunda).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Outra_data_ou_outro_numero_de_itens_nao_e_o_mesmo_conteudo()
+    {
+        var primeira = Registrar(Maria, new DadosItemVenda(Caneta, 10, 2.50m));
+        var outraData = Venda.Registrar(new DadosVenda(Hoje.AddDays(-1), Maria, [new DadosItemVenda(Caneta, 10, 2.50m)]), Hoje).Valor;
+        var maisItens = Registrar(Maria, new DadosItemVenda(Caneta, 10, 2.50m), new DadosItemVenda(Caderno, 1, 18.90m));
+
+        primeira.TemOMesmoConteudoQue(outraData).Should().BeFalse();
+        primeira.TemOMesmoConteudoQue(maisItens).Should().BeFalse();
+    }
+
+    private static Venda Registrar(int cliente, params DadosItemVenda[] itens) =>
+        Venda.Registrar(new DadosVenda(Hoje, cliente, itens), Hoje).Valor;
 }

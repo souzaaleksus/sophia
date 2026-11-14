@@ -1,3 +1,5 @@
+using Sophia.Application.Recursos;
+
 namespace Sophia.Application.Abstracoes;
 
 public sealed class ConflitoAoSalvarException : Exception
@@ -17,7 +19,7 @@ public sealed class ConflitoAoSalvarException : Exception
     }
 
     public ConflitoAoSalvarException(TipoDeConflito tipo, Exception? causa = null)
-        : base($"O banco recusou a gravação: {tipo}.", causa)
+        : base(Mensagens.GravacaoRecusada(tipo), causa)
     {
         Tipo = tipo;
     }

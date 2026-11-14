@@ -1,25 +1,34 @@
+using Sophia.Domain.Recursos;
+
 namespace Sophia.Domain.Vendas;
 
 public sealed class Venda
 {
-    private const string MensagemProdutoRepetido =
-        "Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior.";
-
     private readonly List<ItemVenda> _itens = [];
 
     private Venda()
     {
     }
 
-    public int Id { get; private set; }
+    public int Id { get; }
 
     public DateOnly Data { get; private set; }
 
     public int ClienteId { get; private set; }
 
+    public Guid? ChaveDeRegistro { get; private set; }
+
     public IReadOnlyCollection<ItemVenda> Itens => _itens.AsReadOnly();
 
     public decimal Total => _itens.Sum(item => item.Subtotal);
+
+    public bool TemOMesmoConteudoQue(Venda outra) =>
+        ClienteId == outra.ClienteId
+        && Data == outra.Data
+        && ConteudoDosItens().SetEquals(outra.ConteudoDosItens());
+
+    private HashSet<(int ProdutoId, int Quantidade, decimal ValorUnitario)> ConteudoDosItens() =>
+        _itens.Select(item => (item.ProdutoId, item.Quantidade, item.ValorUnitario)).ToHashSet();
 
     public static Resultado<Venda> Registrar(DadosVenda dados, DateOnly hoje)
     {
@@ -33,7 +42,12 @@ public sealed class Venda
             return Resultado.Falha<Venda>(erros);
         }
 
-        var venda = new Venda { Data = dados.Data!.Value, ClienteId = dados.ClienteId!.Value };
+        var venda = new Venda
+        {
+            Data = dados.Data!.Value,
+            ClienteId = dados.ClienteId!.Value,
+            ChaveDeRegistro = dados.Chave == Guid.Empty ? null : dados.Chave,
+        };
         venda._itens.AddRange(itens);
         return Resultado.Ok(venda);
     }
@@ -42,11 +56,11 @@ public sealed class Venda
     {
         if (data is null)
         {
-            erros.Add(new Erro("Data", "Informe a data da venda."));
+            erros.Add(new Erro("Data", Mensagens.DataDaVendaObrigatoria));
         }
         else if (data > hoje)
         {
-            erros.Add(new Erro("Data", "A data da venda não pode estar no futuro."));
+            erros.Add(new Erro("Data", Mensagens.DataDaVendaNoFuturo));
         }
     }
 
@@ -54,7 +68,7 @@ public sealed class Venda
     {
         if (clienteId is null or <= 0)
         {
-            erros.Add(new Erro("ClienteId", "Selecione o cliente."));
+            erros.Add(new Erro("ClienteId", Mensagens.ClienteNaoSelecionado));
         }
     }
 
@@ -62,7 +76,7 @@ public sealed class Venda
     {
         if (itens.Count == 0)
         {
-            erros.Add(new Erro("Itens", "Lance ao menos um produto na venda."));
+            erros.Add(new Erro("Itens", Mensagens.VendaSemItens));
             return [];
         }
 
@@ -87,29 +101,36 @@ public sealed class Venda
         List<Erro> erros)
     {
         var errosAntes = erros.Count;
-
-        if (dados.ProdutoId is null or <= 0)
-        {
-            erros.Add(new Erro($"{linha}.ProdutoId", "Selecione o produto."));
-        }
-        else if (!produtosLancados.Add(dados.ProdutoId.Value))
-        {
-            erros.Add(new Erro($"{linha}.ProdutoId", MensagemProdutoRepetido));
-        }
-
-        if (dados.Quantidade is null)
-        {
-            erros.Add(new Erro($"{linha}.Quantidade", "Informe a quantidade."));
-        }
-        else if (dados.Quantidade <= 0)
-        {
-            erros.Add(new Erro($"{linha}.Quantidade", "A quantidade deve ser maior que zero."));
-        }
-
+        ValidarProduto(dados.ProdutoId, linha, produtosLancados, erros);
+        ValidarQuantidade(dados.Quantidade, linha, erros);
         var valorUnitario = RegrasComuns.ValidarValorUnitario(dados.ValorUnitario, $"{linha}.ValorUnitario", erros);
 
         return erros.Count == errosAntes
             ? new ItemVenda(dados.ProdutoId!.Value, dados.Quantidade!.Value, valorUnitario!.Value)
             : null;
+    }
+
+    private static void ValidarProduto(int? produtoId, string linha, HashSet<int> produtosLancados, List<Erro> erros)
+    {
+        if (produtoId is null or <= 0)
+        {
+            erros.Add(new Erro($"{linha}.ProdutoId", Mensagens.ProdutoNaoSelecionado));
+        }
+        else if (!produtosLancados.Add(produtoId.Value))
+        {
+            erros.Add(new Erro($"{linha}.ProdutoId", Mensagens.ProdutoRepetidoNaVenda));
+        }
+    }
+
+    private static void ValidarQuantidade(int? quantidade, string linha, List<Erro> erros)
+    {
+        if (quantidade is null)
+        {
+            erros.Add(new Erro($"{linha}.Quantidade", Mensagens.QuantidadeObrigatoria));
+        }
+        else if (quantidade <= 0)
+        {
+            erros.Add(new Erro($"{linha}.Quantidade", Mensagens.QuantidadeNaoPositiva));
+        }
     }
 }

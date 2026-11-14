@@ -1,3 +1,5 @@
+using Sophia.Domain.Recursos;
+
 namespace Sophia.Domain;
 
 internal static class RegrasComuns
@@ -9,13 +11,13 @@ internal static class RegrasComuns
         var aparado = Texto.Aparar(nome);
         if (aparado is null)
         {
-            erros.Add(new Erro("Nome", "Informe o nome."));
+            erros.Add(new Erro("Nome", Mensagens.NomeObrigatorio));
             return null;
         }
 
         if (aparado.Length > tamanhoMaximo)
         {
-            erros.Add(new Erro("Nome", $"O nome deve ter no máximo {tamanhoMaximo} caracteres."));
+            erros.Add(new Erro("Nome", Mensagens.NomeAcimaDoTamanho(tamanhoMaximo)));
             return null;
         }
 
@@ -26,10 +28,10 @@ internal static class RegrasComuns
     {
         string? problema = valor switch
         {
-            null => "Informe o valor unitário.",
-            <= 0 => "O valor unitário deve ser maior que zero.",
-            > MaiorValorAceito => "O valor unitário está acima do permitido.",
-            _ when decimal.Round(valor.Value, 2) != valor.Value => "O valor unitário aceita no máximo duas casas decimais.",
+            null => Mensagens.ValorUnitarioObrigatorio,
+            <= 0 => Mensagens.ValorUnitarioNaoPositivo,
+            > MaiorValorAceito => Mensagens.ValorUnitarioAcimaDoPermitido,
+            _ when decimal.Round(valor.Value, 2) != valor.Value => Mensagens.ValorUnitarioComMaisDeDuasCasas,
             _ => null,
         };
 

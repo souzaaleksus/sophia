@@ -8,7 +8,9 @@ namespace Sophia.Specs.Passos;
 [Binding]
 public sealed class PassosDeVendas(Cenario cenario)
 {
+    private readonly Guid _chaveDoFormulario = Guid.NewGuid();
     private DateOnly _dataSugerida;
+    private int[] _idsDosEnvios = [];
 
     [When("eu iniciar uma nova venda")]
     public void QuandoEuIniciarUmaNovaVenda()
@@ -21,6 +23,29 @@ public sealed class PassosDeVendas(Cenario cenario)
     {
         var comprador = await cenario.ClienteChamadoAsync(cliente);
         await RegistrarAsync(Cenario.Data(data), comprador.Id, await LerItensAsync(itens));
+    }
+
+    [When(@"^eu enviar duas vezes a mesma venda para o cliente ""(.*)"" em (\d{2}/\d{2}/\d{4}) com os itens$")]
+    public async Task QuandoEuEnviarDuasVezesAMesmaVenda(string cliente, string data, DataTable itens)
+    {
+        var comprador = await cenario.ClienteChamadoAsync(cliente);
+        var dados = new DadosVenda(Cenario.Data(data), comprador.Id, await LerItensAsync(itens), Guid.NewGuid());
+
+        var primeiro = await cenario.Vendas.RegistrarAsync(dados);
+        var segundo = await cenario.Vendas.RegistrarAsync(dados);
+
+        _idsDosEnvios = [primeiro.Valor, segundo.Valor];
+    }
+
+    [Given(@"^que eu registrei pelo mesmo formulário uma venda para o cliente ""(.*)"" em (\d{2}/\d{2}/\d{4}) com os itens$")]
+    [When(@"^eu registrar pelo mesmo formulário uma venda para o cliente ""(.*)"" em (\d{2}/\d{2}/\d{4}) com os itens$")]
+    public async Task QuandoEuRegistrarPeloMesmoFormulario(string cliente, string data, DataTable itens)
+    {
+        var comprador = await cenario.ClienteChamadoAsync(cliente);
+        var resultado = await cenario.Vendas.RegistrarAsync(
+            new DadosVenda(Cenario.Data(data), comprador.Id, await LerItensAsync(itens), _chaveDoFormulario));
+        cenario.UltimoResultado = resultado;
+        cenario.UltimaVendaId = resultado.Sucesso ? resultado.Valor : null;
     }
 
     [When(@"^eu registrar uma venda para o cliente ""(.*)"" em (\d{2}/\d{2}/\d{4}) sem itens$")]
@@ -47,6 +72,18 @@ public sealed class PassosDeVendas(Cenario cenario)
     {
         cenario.UltimoResultado!.Erros.Should().BeEmpty();
         cenario.UltimaVendaId.Should().BePositive();
+    }
+
+    [Then("os dois envios apontam para a mesma venda")]
+    public void EntaoOsDoisEnviosApontamParaAMesmaVenda()
+    {
+        _idsDosEnvios.Should().HaveCount(2).And.OnlyContain(id => id == _idsDosEnvios[0]);
+    }
+
+    [Then(@"^existem? (\d+) vendas? registradas?$")]
+    public async Task EntaoExistemVendasRegistradas(int quantidade)
+    {
+        (await cenario.Vendas.ListarAsync(new ConsultaDeVendas())).Pagina.TotalDeItens.Should().Be(quantidade);
     }
 
     [Then("a venda mostra o CPF {string} e o nome {string}")]
@@ -80,7 +117,7 @@ public sealed class PassosDeVendas(Cenario cenario)
 
     private async Task RegistrarAsync(DateOnly? data, int? clienteId, IReadOnlyList<DadosItemVenda> itens)
     {
-        var resultado = await cenario.Vendas.RegistrarAsync(new DadosVenda(data, clienteId, itens));
+        var resultado = await cenario.Vendas.RegistrarAsync(new DadosVenda(data, clienteId, itens, Guid.NewGuid()));
         cenario.UltimoResultado = resultado;
         cenario.UltimaVendaId = resultado.Sucesso ? resultado.Valor : null;
     }

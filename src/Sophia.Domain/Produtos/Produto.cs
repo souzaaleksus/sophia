@@ -9,7 +9,7 @@ public sealed class Produto
         Nome = null!;
     }
 
-    public int Id { get; private set; }
+    public int Id { get; }
 
     public string Nome { get; private set; }
 

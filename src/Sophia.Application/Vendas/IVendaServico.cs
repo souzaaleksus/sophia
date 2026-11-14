@@ -7,7 +7,7 @@ public interface IVendaServico
 {
     DateOnly DataSugerida();
 
-    Task<IReadOnlyList<VendaResumoDto>> ListarAsync(CancellationToken cancelamento = default);
+    Task<Lista<VendaResumoDto>> ListarAsync(ConsultaDeVendas consulta, CancellationToken cancelamento = default);
 
     Task<VendaDetalheDto?> ObterAsync(int id, CancellationToken cancelamento = default);
 

@@ -5,7 +5,9 @@ namespace Sophia.Application.Clientes;
 
 public interface IClienteServico
 {
-    Task<IReadOnlyList<ClienteDto>> ListarAsync(string? termo, int? limite = null, CancellationToken cancelamento = default);
+    Task<Lista<ClienteDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default);
+
+    Task<IReadOnlyList<ClienteDto>> BuscarAsync(string? termo, int limite, CancellationToken cancelamento = default);
 
     Task<ClienteDto?> ObterAsync(int id, CancellationToken cancelamento = default);
 

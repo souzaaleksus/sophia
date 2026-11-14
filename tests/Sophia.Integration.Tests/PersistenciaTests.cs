@@ -1,3 +1,4 @@
+using Sophia.Application;
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
 using Sophia.Application.Painel;
@@ -8,6 +9,7 @@ using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
 using Sophia.Infrastructure.Persistencia;
 using Sophia.Integration.Tests.Apoio;
+using Sophia.Testes.Banco;
 
 namespace Sophia.Integration.Tests;
 
@@ -15,6 +17,7 @@ namespace Sophia.Integration.Tests;
 public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
 {
     private static readonly DateOnly Hoje = new(2026, 11, 13);
+    private static readonly Ordenacao<ColunaDeVendas> MaisRecentes = new(ColunaDeVendas.Data, Decrescente: true);
 
     public Task InitializeAsync() => banco.LimparAsync();
 
@@ -144,6 +147,279 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
             .Which.Tipo.Should().Be(TipoDeConflito.RegistroEmUso);
     }
 
+    [Fact]
+    public async Task O_indice_unico_da_chave_de_registro_barra_a_segunda_gravacao()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var chave = Guid.NewGuid();
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], chave);
+
+        var gravarDeNovo = () => RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], chave);
+
+        (await gravarDeNovo.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.ValorDuplicado);
+    }
+
+    [Fact]
+    public async Task Vendas_sem_chave_de_registro_nao_esbarram_no_indice_unico()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
+
+        await using var contexto = banco.NovoContexto();
+        (await new VendaRepositorio(contexto).ListarAsync()).Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Acha_o_numero_da_venda_pela_chave_de_registro()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var chave = Guid.NewGuid();
+        var vendaId = await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], chave);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+
+        (await repositorio.ObterPelaChaveAsync(chave))!.Id.Should().Be(vendaId);
+        (await repositorio.ObterPelaChaveAsync(Guid.NewGuid())).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Totaliza_por_dia_no_banco_so_os_dias_do_periodo_que_tem_venda()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var caderno = await CadastrarProdutoAsync("Caderno 96 folhas", 18.90m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], data: new DateOnly(2026, 11, 6));
+        await RegistrarVendaAsync(maria, [new(caneta, 2, 2.50m)], data: new DateOnly(2026, 11, 7));
+        await RegistrarVendaAsync(maria, [new(caderno, 1, 18.90m)], data: new DateOnly(2026, 11, 7));
+        await RegistrarVendaAsync(maria, [new(caneta, 10, 2.50m), new(caderno, 2, 18.90m)], data: Hoje);
+
+        await using var contexto = banco.NovoContexto();
+        var totais = await new VendaRepositorio(contexto).TotaisPorDiaAsync(new DateOnly(2026, 11, 7), Hoje);
+
+        totais.Should().Equal(
+            new TotalDoDia(new DateOnly(2026, 11, 7), 23.90m, 2),
+            new TotalDoDia(Hoje, 62.80m, 1));
+    }
+
+    [Fact]
+    public async Task Agrupa_os_mais_vendidos_no_banco_por_quantidade_total_e_nome()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var caderno = await CadastrarProdutoAsync("Caderno 96 folhas", 18.90m);
+        var lapis = await CadastrarProdutoAsync("Lápis", 1.50m);
+        var borracha = await CadastrarProdutoAsync("Borracha", 1.50m);
+        var regua = await CadastrarProdutoAsync("Régua", 4m);
+        await RegistrarVendaAsync(maria, [new(regua, 90, 4m)], data: new DateOnly(2026, 10, 31));
+        await RegistrarVendaAsync(maria, [new(caneta, 6, 2.50m), new(lapis, 3, 1.50m)], data: new DateOnly(2026, 11, 2));
+        await RegistrarVendaAsync(maria, [new(caneta, 4, 2.40m), new(caderno, 3, 18.90m)], data: new DateOnly(2026, 11, 5));
+        await RegistrarVendaAsync(maria, [new(borracha, 3, 1.50m), new(regua, 1, 4m)], data: Hoje);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+        var doMes = await repositorio.MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 4);
+
+        doMes.Should().Equal(
+            new ProdutoMaisVendido(caneta, "Caneta azul", 10, 24.60m),
+            new ProdutoMaisVendido(caderno, "Caderno 96 folhas", 3, 56.70m),
+            new ProdutoMaisVendido(borracha, "Borracha", 3, 4.50m),
+            new ProdutoMaisVendido(lapis, "Lápis", 3, 4.50m));
+        (await repositorio.MaisVendidosAsync(new DateOnly(2026, 12, 1), new DateOnly(2026, 12, 31), 5))
+            .Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Soma_dos_mais_vendidos_passa_do_limite_de_um_inteiro_sem_falhar()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 0.01m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1_500_000_000, 0.01m)], data: new DateOnly(2026, 11, 2));
+        await RegistrarVendaAsync(maria, [new(caneta, 1_000_000_000, 0.01m)], data: Hoje);
+
+        await using var contexto = banco.NovoContexto();
+        var doMes = await new VendaRepositorio(contexto).MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 5);
+
+        doMes.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul", 2_500_000_000, 25_000_000m));
+    }
+
+    [Fact]
+    public async Task Pagina_as_vendas_no_banco_das_mais_recentes_para_as_mais_antigas()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var ids = new List<int>();
+        for (var dias = 4; dias >= 0; dias--)
+        {
+            ids.Add(await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], data: Hoje.AddDays(-dias)));
+        }
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+        var primeira = await repositorio.ListarPaginaAsync(null, null, MaisRecentes, 1, 2);
+        var ultima = await repositorio.ListarPaginaAsync(null, null, MaisRecentes, 3, 2);
+        var alemDaUltima = await repositorio.ListarPaginaAsync(null, null, MaisRecentes, 4, 2);
+
+        primeira.Should().BeEquivalentTo(new { Numero = 1, Tamanho = 2, TotalDeItens = 5 });
+        primeira.Itens.Select(v => v.Id).Should().Equal(ids[4], ids[3]);
+        primeira.Itens[0].Should().Be(new VendaResumoDto(ids[4], Hoje, "529.982.247-25", "Maria Santos", 1, 2.50m));
+        ultima.Itens.Select(v => v.Id).Should().Equal(ids[0]);
+        alemDaUltima.Itens.Should().BeEmpty();
+        alemDaUltima.TotalDeItens.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task A_pagina_de_vendas_e_contada_e_recortada_no_proprio_sql()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
+        var comandos = new List<string>();
+
+        await using var contexto = banco.NovoContexto(comandos.Add);
+        await new VendaRepositorio(contexto).ListarPaginaAsync(
+            Hoje.AddDays(-7),
+            Hoje,
+            new Ordenacao<ColunaDeVendas>(ColunaDeVendas.Total, Decrescente: true),
+            2,
+            25);
+
+        var sql = string.Join(Environment.NewLine, comandos);
+        sql.Should().Contain("COUNT(*)").And.Contain("OFFSET").And.Contain("FETCH NEXT");
+        sql.Should().Contain("[Data] >= @").And.Contain("[Data] <= @").And.Contain("SUM(");
+    }
+
+    [Fact]
+    public async Task Filtra_o_periodo_e_ordena_pela_data_ou_pelo_total_no_banco()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var caderno = await CadastrarProdutoAsync("Caderno 96 folhas", 18.90m);
+        var antesDoPeriodo = await RegistrarVendaAsync(maria, [new(caneta, 10, 2.50m)], data: new DateOnly(2026, 11, 1));
+        var dia5 = await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], data: new DateOnly(2026, 11, 5));
+        var dia10 = await RegistrarVendaAsync(maria, [new(caderno, 2, 18.90m)], data: new DateOnly(2026, 11, 10));
+        var dia12 = await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m), new(caderno, 1, 18.90m)], data: new DateOnly(2026, 11, 12));
+        var dia5DeNovo = await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], data: new DateOnly(2026, 11, 5));
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+        var inicio = new DateOnly(2026, 11, 5);
+        var fim = new DateOnly(2026, 11, 12);
+
+        async Task<IEnumerable<int>> IdsAsync(DateOnly? de, DateOnly? ate, ColunaDeVendas coluna, bool decrescente) =>
+            (await repositorio.ListarPaginaAsync(de, ate, new(coluna, decrescente), 1, 10)).Itens.Select(v => v.Id);
+
+        var maiores = await repositorio.ListarPaginaAsync(inicio, fim, new(ColunaDeVendas.Total, Decrescente: true), 1, 10);
+        maiores.TotalDeItens.Should().Be(4);
+        maiores.Itens.Select(v => v.Id).Should().Equal(dia10, dia12, dia5DeNovo, dia5);
+        maiores.Itens[1].Should().Be(
+            new VendaResumoDto(dia12, new DateOnly(2026, 11, 12), "529.982.247-25", "Maria Santos", 2, 21.40m));
+        (await IdsAsync(inicio, fim, ColunaDeVendas.Total, false)).Should().Equal(dia5, dia5DeNovo, dia12, dia10);
+        (await IdsAsync(inicio, fim, ColunaDeVendas.Data, false)).Should().Equal(dia5, dia5DeNovo, dia10, dia12);
+        (await IdsAsync(inicio, fim, ColunaDeVendas.Data, true)).Should().Equal(dia12, dia10, dia5DeNovo, dia5);
+        (await IdsAsync(new DateOnly(2026, 11, 10), null, ColunaDeVendas.Data, true)).Should().Equal(dia12, dia10);
+        (await IdsAsync(null, new DateOnly(2026, 11, 4), ColunaDeVendas.Data, true)).Should().Equal(antesDoPeriodo);
+    }
+
+    [Fact]
+    public async Task Pagina_os_clientes_no_banco_pela_coluna_pedida_com_desempate_pelo_id()
+    {
+        var ana = await CadastrarClienteAsync("111.444.777-35", "Ana Lima");
+        var bia = await CadastrarClienteAsync("529.982.247-25", "Bia Santos");
+        var caio = await CadastrarClienteAsync("390.533.447-05", "Caio Lima");
+        var outraAna = await CadastrarClienteAsync("200.000.001-08", "Ana Lima");
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ClienteRepositorio(contexto);
+        var todos = BuscaDeCliente.Interpretar(null);
+
+        async Task<IEnumerable<int>> IdsAsync(BuscaDeCliente busca, ColunaDeClientes coluna, bool decrescente, int numero, int tamanho) =>
+            (await repositorio.ListarPaginaAsync(busca, new(coluna, decrescente), numero, tamanho)).Itens.Select(c => c.Id);
+
+        (await IdsAsync(todos, ColunaDeClientes.Nome, false, 1, 3)).Should().Equal(ana, outraAna, bia);
+        (await IdsAsync(todos, ColunaDeClientes.Nome, false, 2, 3)).Should().Equal(caio);
+        (await IdsAsync(todos, ColunaDeClientes.Nome, true, 1, 4)).Should().Equal(caio, bia, outraAna, ana);
+        (await IdsAsync(todos, ColunaDeClientes.Cpf, false, 1, 4)).Should().Equal(ana, outraAna, caio, bia);
+        (await IdsAsync(todos, ColunaDeClientes.Cpf, true, 1, 4)).Should().Equal(bia, caio, outraAna, ana);
+
+        var lima = await repositorio.ListarPaginaAsync(
+            BuscaDeCliente.Interpretar("lima"),
+            new(ColunaDeClientes.Nome, Decrescente: false),
+            1,
+            2);
+        lima.TotalDeItens.Should().Be(3);
+        lima.Itens.Select(c => c.Id).Should().Equal(ana, outraAna);
+        (await IdsAsync(BuscaDeCliente.Interpretar("529.9"), ColunaDeClientes.Nome, false, 1, 25)).Should().Equal(bia);
+    }
+
+    [Fact]
+    public async Task A_pagina_de_clientes_e_contada_ordenada_e_recortada_no_proprio_sql()
+    {
+        await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var comandos = new List<string>();
+
+        await using var contexto = banco.NovoContexto(comandos.Add);
+        await new ClienteRepositorio(contexto).ListarPaginaAsync(
+            BuscaDeCliente.Interpretar("maria"),
+            new Ordenacao<ColunaDeClientes>(ColunaDeClientes.Cpf, Decrescente: true),
+            2,
+            25);
+
+        var sql = string.Join(Environment.NewLine, comandos);
+        sql.Should().Contain("COUNT(*)").And.Contain("OFFSET").And.Contain("FETCH NEXT");
+        sql.Should().Contain("LIKE").And.Contain("[Cpf] DESC");
+    }
+
+    [Fact]
+    public async Task Pagina_os_produtos_no_banco_pelo_nome_ou_pelo_valor_com_desempate_pelo_id()
+    {
+        var borracha = await CadastrarProdutoAsync("Borracha", 1.50m);
+        var regua = await CadastrarProdutoAsync("Régua", 4m);
+        var apontador = await CadastrarProdutoAsync("Apontador", 1.50m);
+        var caderno = await CadastrarProdutoAsync("Caderno 96 folhas", 18.90m);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ProdutoRepositorio(contexto);
+
+        async Task<IEnumerable<int>> IdsAsync(string? trecho, ColunaDeProdutos coluna, bool decrescente, int numero, int tamanho) =>
+            (await repositorio.ListarPaginaAsync(trecho, new(coluna, decrescente), numero, tamanho)).Itens.Select(p => p.Id);
+
+        (await IdsAsync(null, ColunaDeProdutos.Nome, false, 1, 3)).Should().Equal(apontador, borracha, caderno);
+        (await IdsAsync(null, ColunaDeProdutos.Nome, false, 2, 3)).Should().Equal(regua);
+        (await IdsAsync(null, ColunaDeProdutos.Nome, true, 1, 4)).Should().Equal(regua, caderno, borracha, apontador);
+        (await IdsAsync(null, ColunaDeProdutos.Valor, false, 1, 4)).Should().Equal(borracha, apontador, regua, caderno);
+        (await IdsAsync(null, ColunaDeProdutos.Valor, true, 1, 4)).Should().Equal(caderno, regua, apontador, borracha);
+
+        var comR = await repositorio.ListarPaginaAsync("r", new(ColunaDeProdutos.Valor, Decrescente: false), 1, 2);
+        comR.TotalDeItens.Should().Be(4);
+        comR.Itens.Select(p => p.Id).Should().Equal(borracha, apontador);
+        (await IdsAsync("régua", ColunaDeProdutos.Nome, false, 1, 25)).Should().Equal(regua);
+    }
+
+    [Fact]
+    public async Task A_pagina_de_produtos_e_contada_ordenada_e_recortada_no_proprio_sql()
+    {
+        await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var comandos = new List<string>();
+
+        await using var contexto = banco.NovoContexto(comandos.Add);
+        await new ProdutoRepositorio(contexto).ListarPaginaAsync(
+            "caneta",
+            new Ordenacao<ColunaDeProdutos>(ColunaDeProdutos.Valor, Decrescente: true),
+            2,
+            25);
+
+        var sql = string.Join(Environment.NewLine, comandos);
+        sql.Should().Contain("COUNT(*)").And.Contain("OFFSET").And.Contain("FETCH NEXT");
+        sql.Should().Contain("LIKE").And.Contain("[ValorUnitario] DESC");
+    }
+
     private async Task<int> CadastrarClienteAsync(string cpf, string nome, string? telefone = null)
     {
         await using var contexto = banco.NovoContexto();
@@ -162,10 +438,14 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         return produto.Id;
     }
 
-    private async Task<int> RegistrarVendaAsync(int clienteId, IReadOnlyList<DadosItemVenda> itens)
+    private async Task<int> RegistrarVendaAsync(
+        int clienteId,
+        IReadOnlyList<DadosItemVenda> itens,
+        Guid? chave = null,
+        DateOnly? data = null)
     {
         await using var contexto = banco.NovoContexto();
-        var venda = Venda.Registrar(new DadosVenda(Hoje, clienteId, itens), Hoje).Valor;
+        var venda = Venda.Registrar(new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje).Valor;
         new VendaRepositorio(contexto).Adicionar(venda);
         await new UnidadeDeTrabalho(contexto).SalvarAsync();
         return venda.Id;
