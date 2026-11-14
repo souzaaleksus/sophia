@@ -13,6 +13,7 @@ internal sealed class VendaConfiguracao : IEntityTypeConfiguration<Venda>
         venda.ToTable("Vendas");
         venda.HasKey(v => v.Id);
         venda.Property(v => v.Data).HasColumnType("date");
+        venda.HasIndex(v => v.Data).IsDescending().HasDatabaseName("IX_Vendas_Data");
         venda.Ignore(v => v.Total);
         ConfigurarChaveDeRegistro(venda);
         ConfigurarCliente(venda);
@@ -50,16 +51,25 @@ internal sealed class ItemVendaConfiguracao : IEntityTypeConfiguration<ItemVenda
 {
     public void Configure(EntityTypeBuilder<ItemVenda> item)
     {
-        item.ToTable("VendaItens");
+        ConfigurarTabela(item);
         item.HasKey(i => i.Id);
         item.Property(i => i.ValorUnitario).HasPrecision(18, 2);
         item.Ignore(i => i.Subtotal);
         item.HasIndex(i => new { i.VendaId, i.ProdutoId }).IsUnique().HasDatabaseName("UQ_VendaItens_Venda_Produto");
+        ConfigurarProduto(item);
+    }
 
+    private static void ConfigurarTabela(EntityTypeBuilder<ItemVenda> item) =>
+        item.ToTable("VendaItens", tabela =>
+        {
+            tabela.HasCheckConstraint("CK_VendaItens_Quantidade_Positiva", "Quantidade > 0");
+            tabela.HasCheckConstraint("CK_VendaItens_ValorUnitario_Positivo", "ValorUnitario > 0");
+        });
+
+    private static void ConfigurarProduto(EntityTypeBuilder<ItemVenda> item) =>
         item.HasOne<Produto>()
             .WithMany()
             .HasForeignKey(i => i.ProdutoId)
             .OnDelete(DeleteBehavior.NoAction)
             .HasConstraintName("FK_VendaItens_Produtos");
-    }
 }

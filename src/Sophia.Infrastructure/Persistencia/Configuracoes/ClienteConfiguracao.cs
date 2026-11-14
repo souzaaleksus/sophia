@@ -8,7 +8,13 @@ internal sealed class ClienteConfiguracao : IEntityTypeConfiguration<Cliente>
 {
     public void Configure(EntityTypeBuilder<Cliente> cliente)
     {
-        cliente.ToTable("Clientes");
+        cliente.ToTable("Clientes", tabela =>
+        {
+            tabela.HasCheckConstraint("CK_Clientes_Cpf_SomenteDigitos", "Cpf NOT LIKE '%[^0-9]%'");
+            tabela.HasCheckConstraint(
+                "CK_Clientes_Telefone_SomenteDigitos",
+                "Telefone NOT LIKE '%[^0-9]%' AND LEN(Telefone) IN (10, 11)");
+        });
         cliente.HasKey(c => c.Id);
         ConfigurarCpf(cliente);
         ConfigurarNome(cliente);
