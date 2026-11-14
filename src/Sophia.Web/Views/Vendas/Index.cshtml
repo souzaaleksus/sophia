@@ -1,7 +1,7 @@
 @model Sophia.Application.Pagina<VendaResumoDto>
 @inject Sophia.Application.Abstracoes.IRelogio Relogio
 @{
-    ViewData["Title"] = "Vendas";
+    ViewData["Title"] = T["menu.vendas"].Value;
     var ordem = ViewData["Ordem"] as string ?? "-data";
     var de = ViewData["De"] as DateOnly?;
     var ate = ViewData["Ate"] as DateOnly?;
@@ -10,35 +10,35 @@
     var comPeriodo = de is not null || ate is not null;
     var atalhos = new[]
     {
-        (Rotulo: "Hoje", De: hoje, Ate: hoje),
-        (Rotulo: "7 dias", De: hoje.AddDays(-6), Ate: hoje),
-        (Rotulo: "Mês", De: new DateOnly(hoje.Year, hoje.Month, 1), Ate: hoje),
+        (Rotulo: T["vendas.atalho-hoje"].Value, De: hoje, Ate: hoje),
+        (Rotulo: T["vendas.atalho-7-dias"].Value, De: hoje.AddDays(-6), Ate: hoje),
+        (Rotulo: T["vendas.atalho-mes"].Value, De: new DateOnly(hoje.Year, hoje.Month, 1), Ate: hoje),
     };
-    var colunaData = new ColunaOrdenavel("Data", "data", ordem, filtros, "coluna-opcional");
-    var colunaTotal = new ColunaOrdenavel("Total", "total", ordem, filtros, "valor");
+    var colunaData = new ColunaOrdenavel(T["campo.data"], "data", ordem, filtros, "coluna-opcional");
+    var colunaTotal = new ColunaOrdenavel(T["campo.total"], "total", ordem, filtros, "valor");
 }
 
 <div class="cabecalho-da-pagina">
     <div>
-        <h1>Vendas</h1>
-        <p class="subtitulo">Tudo o que a loja vendeu, com filtro por período.</p>
+        <h1>@T["menu.vendas"]</h1>
+        <p class="subtitulo">@T["vendas.subtitulo"]</p>
     </div>
 </div>
 
-<form class="periodo" method="get" asp-action="Index" aria-label="Período das vendas">
+<form class="periodo" method="get" asp-action="Index" aria-label="@T["vendas.periodo"]">
     <div class="periodo-campos">
         <div class="campo">
-            <label class="form-label" for="periodo-de">De</label>
+            <label class="form-label" for="periodo-de">@T["vendas.de"]</label>
             <input class="form-control" type="date" id="periodo-de" name="de" value="@FiltrosDaLista.DataDaConsulta(de)" max="@FiltrosDaLista.DataDaConsulta(hoje)" />
         </div>
         <div class="campo">
-            <label class="form-label" for="periodo-ate">Até</label>
+            <label class="form-label" for="periodo-ate">@T["vendas.ate"]</label>
             <input class="form-control" type="date" id="periodo-ate" name="ate" value="@FiltrosDaLista.DataDaConsulta(ate)" max="@FiltrosDaLista.DataDaConsulta(hoje)" />
         </div>
         <input type="hidden" name="ordem" value="@ordem" />
-        <button type="submit" class="btn btn-outline-secondary">Filtrar</button>
+        <button type="submit" class="btn btn-outline-secondary">@T["vendas.filtrar"]</button>
     </div>
-    <nav class="periodo-atalhos" aria-label="Atalhos de período">
+    <nav class="periodo-atalhos" aria-label="@T["vendas.atalhos"]">
         @foreach (var atalho in atalhos)
         {
             var ativo = de == atalho.De && ate == atalho.Ate;
@@ -47,7 +47,7 @@
         }
         @if (comPeriodo)
         {
-            <a class="atalho-de-periodo" asp-route-ordem="@ordem">Todas</a>
+            <a class="atalho-de-periodo" asp-route-ordem="@ordem">@T["vendas.todas"]</a>
         }
     </nav>
 </form>
@@ -56,37 +56,37 @@
 {
     <div class="vazio">
         <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-busca" /></svg>
-        <p class="vazio-titulo">Nenhuma venda neste período.</p>
-        <p>Escolha outras datas ou veja todas as vendas.</p>
-        <a class="btn btn-outline-secondary" asp-action="Index">Ver todas as vendas</a>
+        <p class="vazio-titulo">@T["vendas.nenhuma-no-periodo"]</p>
+        <p>@T["vendas.outro-periodo"]</p>
+        <a class="btn btn-outline-secondary" asp-action="Index">@T["vendas.ver-todas"]</a>
     </div>
 }
 else if (Model.TotalDeItens == 0)
 {
     <div class="vazio">
         <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-vendas" /></svg>
-        <p class="vazio-titulo">Nenhuma venda registrada ainda.</p>
-        <p>Escolha o cliente, lance os produtos e a primeira venda aparece aqui.</p>
+        <p class="vazio-titulo">@T["vendas.nenhuma"]</p>
+        <p>@T["vendas.vazio-convite"]</p>
         <a class="btn btn-primary" asp-action="Nova">
             <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-            Registrar a primeira venda
+            @T["vendas.registrar-primeira"]
         </a>
     </div>
 }
 else
 {
-    <p class="contagem" data-testid="contagem" aria-live="polite">@Formato.Quantidade(Model.TotalDeItens, "venda", "vendas")</p>
+    <p class="contagem" data-testid="contagem" aria-live="polite">@Formato.Quantidade(Model.TotalDeItens, T["vendas.contagem-singular"], T["vendas.contagem-plural"])</p>
 
     <div class="cartao tabela-rolavel">
         <table class="tabela">
             <thead>
                 <tr>
-                    <th scope="col" class="coluna-opcional">Nº</th>
+                    <th scope="col" class="coluna-opcional">@T["vendas.numero"]</th>
                     <partial name="_ColunaOrdenavel" model="colunaData" />
-                    <th scope="col">Cliente</th>
-                    <th scope="col" class="valor coluna-opcional">Itens</th>
+                    <th scope="col">@T["campo.cliente"]</th>
+                    <th scope="col" class="valor coluna-opcional">@T["campo.itens"]</th>
                     <partial name="_ColunaOrdenavel" model="colunaTotal" />
-                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                    <th scope="col"><span class="visually-hidden">@T["lista.acoes"]</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -103,7 +103,7 @@ else
                         <td class="valor coluna-opcional">@venda.QuantidadeDeItens</td>
                         <td class="valor destaque">@Formato.Moeda(venda.Total)</td>
                         <td class="acoes">
-                            <a class="acao" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="Ver a venda @venda.Id">Ver</a>
+                            <a class="acao" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="@T["acao.ver-venda", venda.Id]">@T["acao.ver"]</a>
                         </td>
                     </tr>
                 }

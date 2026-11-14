@@ -1,33 +1,33 @@
 @model Sophia.Application.Painel.PainelDto
 @{
-    ViewData["Title"] = "Painel";
+    ViewData["Title"] = T["painel.titulo"].Value;
     var nomeDoMes = Formato.NomeDoMes(Model.Hoje);
 }
 
 <div class="cabecalho-da-pagina">
     <div>
-        <h1>Painel</h1>
+        <h1>@T["painel.titulo"]</h1>
         <p class="subtitulo">@Formato.DataPorExtenso(Model.Hoje)</p>
     </div>
 </div>
 
-<section class="indicadores" aria-label="Resumo das vendas">
+<section class="indicadores" aria-label="@T["painel.resumo"]">
     <div class="visor" data-testid="vendido-hoje">
-        <span class="visor-rotulo">Vendido hoje</span>
+        <span class="visor-rotulo">@T["painel.vendido-hoje"]</span>
         <span class="visor-valor">@Formato.Moeda(Model.Dia.Total)</span>
-        <span class="visor-detalhe">@Formato.Quantidade(Model.Dia.QuantidadeDeVendas, "venda", "vendas")</span>
+        <span class="visor-detalhe">@Formato.Quantidade(Model.Dia.QuantidadeDeVendas, T["vendas.contagem-singular"], T["vendas.contagem-plural"])</span>
     </div>
 
     <div class="cartao indicador" data-testid="vendido-no-mes">
-        <span class="indicador-rotulo">Vendido em @nomeDoMes</span>
+        <span class="indicador-rotulo">@T["painel.vendido-no-mes", nomeDoMes]</span>
         <span class="indicador-valor">@Formato.Moeda(Model.Mes.Total)</span>
-        <span class="indicador-detalhe">@Formato.Quantidade(Model.Mes.QuantidadeDeVendas, "venda", "vendas")</span>
+        <span class="indicador-detalhe">@Formato.Quantidade(Model.Mes.QuantidadeDeVendas, T["vendas.contagem-singular"], T["vendas.contagem-plural"])</span>
     </div>
 
     <div class="cartao indicador" data-testid="ticket-medio">
-        <span class="indicador-rotulo">Ticket médio em @nomeDoMes</span>
+        <span class="indicador-rotulo">@T["painel.ticket-medio", nomeDoMes]</span>
         <span class="indicador-valor">@Formato.Moeda(Model.Mes.TicketMedio)</span>
-        <span class="indicador-detalhe">por venda</span>
+        <span class="indicador-detalhe">@T["painel.por-venda"]</span>
     </div>
 </section>
 
@@ -40,7 +40,7 @@
 <div class="graficos">
     <section class="cartao grafico" aria-labelledby="titulo-ultimos-dias" data-testid="grafico-ultimos-dias">
         <div class="cabecalho-do-grafico">
-            <h2 id="titulo-ultimos-dias">Últimos 7 dias</h2>
+            <h2 id="titulo-ultimos-dias">@T["painel.ultimos-dias"]</h2>
             <p class="grafico-resumo numero">@Formato.Moeda(totalDaSemana)</p>
         </div>
         <ol class="barras" aria-hidden="true">
@@ -48,18 +48,18 @@
             {
                 var ehHoje = dia.Dia == Model.Hoje;
                 <li class="barra-do-dia@(ehHoje ? " hoje" : string.Empty)" data-dia="@Formato.DataParaCampo(dia.Dia)" aria-current="@(ehHoje ? "date" : null)"
-                    title="@Formato.DiaDaSemanaCurto(dia.Dia) @Formato.DiaEMes(dia.Dia): @Formato.Moeda(dia.Total), @Formato.Quantidade(dia.QuantidadeDeVendas, "venda", "vendas")">
+                    title="@T["painel.dica-do-dia", Formato.DiaDaSemanaCurto(dia.Dia), Formato.DiaEMes(dia.Dia), Formato.Moeda(dia.Total), Formato.Quantidade(dia.QuantidadeDeVendas, T["vendas.contagem-singular"], T["vendas.contagem-plural"])]">
                     <span class="barra-valor numero">@Formato.Moeda(dia.Total)</span>
                     <span class="barra-trilho"><span class="barra" style="--altura: @Formato.Percentual(dia.Total, maiorDia)"></span></span>
-                    <span class="barra-rotulo">@(ehHoje ? "hoje" : Formato.DiaDaSemanaCurto(dia.Dia))</span>
+                    <span class="barra-rotulo">@(ehHoje ? T["painel.hoje"].Value : Formato.DiaDaSemanaCurto(dia.Dia))</span>
                 </li>
             }
         </ol>
         <div class="visually-hidden">
             <table>
-                <caption>Total vendido em cada um dos últimos 7 dias</caption>
+                <caption>@T["painel.tabela-dos-dias"]</caption>
                 <thead>
-                    <tr><th scope="col">Dia</th><th scope="col">Total</th><th scope="col">Vendas</th></tr>
+                    <tr><th scope="col">@T["painel.dia"]</th><th scope="col">@T["campo.total"]</th><th scope="col">@T["menu.vendas"]</th></tr>
                 </thead>
                 <tbody>
                     @foreach (var dia in Model.UltimosDias)
@@ -77,12 +77,12 @@
 
     <section class="cartao grafico" aria-labelledby="titulo-mais-vendidos">
         <div class="cabecalho-do-grafico">
-            <h2 id="titulo-mais-vendidos">Mais vendidos em @nomeDoMes</h2>
-            <p class="grafico-resumo">por unidades</p>
+            <h2 id="titulo-mais-vendidos">@T["painel.mais-vendidos", nomeDoMes]</h2>
+            <p class="grafico-resumo">@T["painel.por-unidades"]</p>
         </div>
         @if (Model.MaisVendidos.Count == 0)
         {
-            <p class="grafico-vazio">Nenhum produto vendido neste mês ainda.</p>
+            <p class="grafico-vazio">@T["painel.nenhum-vendido"]</p>
         }
         else
         {
@@ -92,7 +92,7 @@
                     <li class="ranking-item" data-testid="mais-vendido">
                         <div class="ranking-linha">
                             <span class="ranking-nome">@produto.Nome</span>
-                            <span class="ranking-quantidade numero">@Formato.Quantidade(produto.Quantidade, "unidade", "unidades")</span>
+                            <span class="ranking-quantidade numero">@Formato.Quantidade(produto.Quantidade, T["vendas.unidades-singular"], T["vendas.unidades-plural"])</span>
                         </div>
                         <span class="ranking-trilho" aria-hidden="true"><span class="ranking-barra" style="--largura: @Formato.Percentual(produto.Quantidade, maiorQuantidade)"></span></span>
                         <span class="secundario numero">@Formato.Moeda(produto.Total)</span>
@@ -105,18 +105,18 @@
 
 <section class="cartao ultimas-vendas" aria-labelledby="titulo-ultimas-vendas">
     <div class="cabecalho-do-cartao">
-        <h2 id="titulo-ultimas-vendas">Últimas vendas</h2>
-        <a asp-controller="Vendas" asp-action="Index">Ver todas</a>
+        <h2 id="titulo-ultimas-vendas">@T["painel.ultimas-vendas"]</h2>
+        <a asp-controller="Vendas" asp-action="Index">@T["painel.ver-todas"]</a>
     </div>
 
     @if (Model.UltimasVendas.Count == 0)
     {
         <div class="vazio vazio-embutido">
             <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-vendas" /></svg>
-            <p class="vazio-titulo">Nenhuma venda registrada ainda.</p>
+            <p class="vazio-titulo">@T["vendas.nenhuma"]</p>
             <a class="btn btn-primary" asp-controller="Vendas" asp-action="Nova">
                 <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-                Registrar a primeira venda
+                @T["vendas.registrar-primeira"]
             </a>
         </div>
     }
@@ -126,11 +126,11 @@
             <table class="tabela">
                 <thead>
                     <tr>
-                        <th scope="col" class="coluna-opcional">Nº</th>
-                        <th scope="col" class="coluna-opcional">Data</th>
-                        <th scope="col">Cliente</th>
-                        <th scope="col" class="valor">Total</th>
-                        <th scope="col"><span class="visually-hidden">Ações</span></th>
+                        <th scope="col" class="coluna-opcional">@T["vendas.numero"]</th>
+                        <th scope="col" class="coluna-opcional">@T["campo.data"]</th>
+                        <th scope="col">@T["campo.cliente"]</th>
+                        <th scope="col" class="valor">@T["campo.total"]</th>
+                        <th scope="col"><span class="visually-hidden">@T["lista.acoes"]</span></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,11 +142,11 @@
                             <td>
                                 <div class="destaque">@venda.ClienteNome</div>
                                 <div class="secundario numero">@venda.ClienteCpf</div>
-                                <div class="secundario numero apenas-no-celular">nº @venda.Id, @Formato.Data(venda.Data)</div>
+                                <div class="secundario numero apenas-no-celular">@T["vendas.numero-e-data", venda.Id, Formato.Data(venda.Data)]</div>
                             </td>
                             <td class="valor destaque">@Formato.Moeda(venda.Total)</td>
                             <td class="acoes">
-                                <a class="acao" asp-controller="Vendas" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="Ver a venda @venda.Id">Ver</a>
+                                <a class="acao" asp-controller="Vendas" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="@T["acao.ver-venda", venda.Id]">@T["acao.ver"]</a>
                             </td>
                         </tr>
                     }

@@ -1,12 +1,12 @@
 @model ClienteDto
 @{
-    ViewData["Title"] = "Excluir cliente";
+    ViewData["Title"] = T["clientes.excluir-pagina"].Value;
     var pagina = new PaginaDeExclusao(
         Model.Id,
-        "Excluir cliente?",
-        "A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.",
+        T["clientes.excluir-titulo"],
+        T["clientes.excluir-aviso"],
         Model.Nome,
-        "CPF",
+        T["campo.cpf"],
         Model.Cpf);
 }
 

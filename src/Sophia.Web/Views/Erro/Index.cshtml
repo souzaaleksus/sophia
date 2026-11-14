@@ -1,7 +1,7 @@
 @model int
 @{
     var naoEncontrado = Model == StatusCodes.Status404NotFound;
-    ViewData["Title"] = naoEncontrado ? "Página não encontrada" : "Algo deu errado";
+    ViewData["Title"] = naoEncontrado ? T["erro.nao-encontrada"].Value : T["erro.algo-deu-errado"].Value;
 }
 
 <div class="vazio">
@@ -9,11 +9,11 @@
     <h1>@ViewData["Title"]</h1>
     @if (naoEncontrado)
     {
-        <p>O endereço não existe ou o registro foi excluído.</p>
+        <p>@T["erro.nao-existe"]</p>
     }
     else
     {
-        <p>Não foi possível concluir a operação. Tente de novo em instantes.</p>
+        <p>@T["erro.tente-de-novo"]</p>
     }
-    <a class="btn btn-primary" asp-controller="Vendas" asp-action="Index">Ir para as vendas</a>
+    <a class="btn btn-primary" asp-controller="Vendas" asp-action="Index">@T["erro.ir-para-as-vendas"]</a>
 </div>

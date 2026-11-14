@@ -1,12 +1,12 @@
 @model ProdutoDto
 @{
-    ViewData["Title"] = "Excluir produto";
+    ViewData["Title"] = T["produtos.excluir-pagina"].Value;
     var pagina = new PaginaDeExclusao(
         Model.Id,
-        "Excluir produto?",
-        "A exclusão não pode ser desfeita. Produtos já vendidos não podem ser excluídos.",
+        T["produtos.excluir-titulo"],
+        T["produtos.excluir-aviso"],
         Model.Nome,
-        "Valor unitário",
+        T["campo.valor-unitario"],
         Formato.Moeda(Model.ValorUnitario));
 }
 

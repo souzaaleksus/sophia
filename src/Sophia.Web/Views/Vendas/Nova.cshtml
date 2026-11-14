@@ -1,14 +1,11 @@
 @model NovaVendaFormulario
 @{
-    ViewData["Title"] = "Nova venda";
+    ViewData["Title"] = T["vendas.nova-venda"].Value;
     var hoje = (DateOnly)ViewData["Hoje"]!;
     var clienteEscolhido = Model.ClienteId is not null;
     var erroDosItens = ViewData.ModelState.PrimeiroErro("Itens");
     var itensLancados = Model.Itens.Where(item => item.ProdutoId is not null).ToList();
     var totalDaVenda = Model.Itens.Sum(item => (item.Quantidade ?? 0) * (item.ValorUnitario ?? 0));
-
-    string Contagem(int quantidade, string singular, string plural) =>
-        $"{quantidade:N0} {(quantidade == 1 ? singular : plural)}";
 
     void LinhaDoItem(int indice, ItemDaVendaFormulario item, bool comErros)
     {
@@ -16,43 +13,43 @@
 
         <div class="caixa-item" data-testid="item-da-venda" data-item>
             <div class="campo caixa-produto">
-                <label class="form-label caixa-rotulo" for="item-@indice-ProdutoNome">Produto</label>
+                <label class="form-label caixa-rotulo" for="item-@indice-ProdutoNome">@T["campo.produto"]</label>
                 <div class="autocompletar">
                     <input id="item-@indice-ProdutoNome" name="Itens[@indice].ProdutoNome" value="@item.ProdutoNome"
                            type="text" class="form-control" role="combobox" aria-autocomplete="list"
                            aria-expanded="false" aria-controls="item-@indice-opcoes" autocomplete="off"
-                           placeholder="Busque pelo nome" data-campo="ProdutoNome" />
-                    <ul id="item-@indice-opcoes" class="opcoes" role="listbox" aria-label="Produtos encontrados" hidden></ul>
+                           placeholder="@T["caixa.busque-pelo-nome"]" data-campo="ProdutoNome" />
+                    <ul id="item-@indice-opcoes" class="opcoes" role="listbox" aria-label="@T["caixa.produtos-encontrados"]" hidden></ul>
                 </div>
                 <input type="hidden" name="Itens[@indice].ProdutoId" value="@item.ProdutoId" data-campo="ProdutoId" />
                 <span class="erro" data-erro="ProdutoId" data-valmsg-for="Itens[@indice].ProdutoId">@ErroDe("ProdutoId")</span>
             </div>
             <div class="campo caixa-valor">
-                <label class="form-label caixa-rotulo" for="item-@indice-ValorUnitario">Valor unitário</label>
+                <label class="form-label caixa-rotulo" for="item-@indice-ValorUnitario">@T["campo.valor-unitario"]</label>
                 <div class="input-group">
-                    <span class="input-group-text">R$</span>
+                    <span class="input-group-text">@T["geral.moeda"]</span>
                     <input id="item-@indice-ValorUnitario" name="Itens[@indice].ValorUnitario" value="@Formato.Numero(item.ValorUnitario)"
                            type="text" class="form-control valor" inputmode="decimal" autocomplete="off"
-                           placeholder="0,00" data-campo="ValorUnitario" />
+                           placeholder="@T["caixa.valor-vazio"]" data-campo="ValorUnitario" />
                 </div>
                 <span class="erro" data-erro="ValorUnitario" data-valmsg-for="Itens[@indice].ValorUnitario">@ErroDe("ValorUnitario")</span>
             </div>
             <div class="campo caixa-quantidade">
-                <label class="form-label caixa-rotulo" for="item-@indice-Quantidade">Quantidade</label>
+                <label class="form-label caixa-rotulo" for="item-@indice-Quantidade">@T["campo.quantidade"]</label>
                 <div class="quantidade-com-botoes">
-                    <button type="button" class="botao-quantidade" data-acao="menos" aria-label="Diminuir a quantidade">&minus;</button>
+                    <button type="button" class="botao-quantidade" data-acao="menos" aria-label="@T["caixa.diminuir"]">&minus;</button>
                     <input id="item-@indice-Quantidade" name="Itens[@indice].Quantidade" value="@item.Quantidade"
                            type="number" min="1" step="1" class="form-control valor" inputmode="numeric"
                            data-campo="Quantidade" />
-                    <button type="button" class="botao-quantidade" data-acao="mais" aria-label="Aumentar a quantidade">+</button>
+                    <button type="button" class="botao-quantidade" data-acao="mais" aria-label="@T["caixa.aumentar"]">+</button>
                 </div>
                 <span class="erro" data-erro="Quantidade" data-valmsg-for="Itens[@indice].Quantidade">@ErroDe("Quantidade")</span>
             </div>
             <div class="campo caixa-subtotal">
-                <span class="caixa-rotulo">Subtotal</span>
+                <span class="caixa-rotulo">@T["campo.subtotal"]</span>
                 <output data-testid="subtotal" data-campo="Subtotal">@Formato.Moeda((item.Quantidade ?? 0) * (item.ValorUnitario ?? 0))</output>
             </div>
-            <button type="button" class="caixa-remover" data-acao="remover-item" aria-label="Remover este produto" title="Remover este produto">
+            <button type="button" class="caixa-remover" data-acao="remover-item" aria-label="@T["caixa.remover"]" title="@T["caixa.remover"]">
                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
             </button>
         </div>
@@ -65,8 +62,8 @@
 
 <div class="cabecalho-da-pagina">
     <div>
-        <h1>Nova venda</h1>
-        <p class="subtitulo">Escolha o cliente, lance os produtos e finalize.</p>
+        <h1>@T["vendas.nova-venda"]</h1>
+        <p class="subtitulo">@T["caixa.subtitulo"]</p>
     </div>
 </div>
 
@@ -77,21 +74,21 @@
       data-endereco-busca-de-produtos="@Url.Action("Buscar", "Produtos")"
       data-endereco-novo-cliente="@Url.Action("Novo", "Clientes")"
       data-envio
-      data-texto-enviando="Registrando…"
-      data-texto-buscando="Buscando…"
-      data-texto-falha-na-busca="Não foi possível buscar. Tente de novo."
-      data-texto-cliente-nao-encontrado="Nenhum cliente encontrado."
-      data-texto-cadastrar-cliente="Cadastrar novo cliente"
-      data-texto-produto-nao-encontrado="Nenhum produto encontrado."
-      data-texto-item="item"
-      data-texto-itens="itens"
-      data-texto-unidade="unidade"
-      data-texto-unidades="unidades">
+      data-texto-enviando="@T["caixa.registrando"]"
+      data-texto-buscando="@T["caixa.buscando"]"
+      data-texto-falha-na-busca="@T["caixa.falha-na-busca"]"
+      data-texto-cliente-nao-encontrado="@T["clientes.nenhum"]"
+      data-texto-cadastrar-cliente="@T["caixa.cadastrar-cliente"]"
+      data-texto-produto-nao-encontrado="@T["produtos.nenhum"]"
+      data-texto-item="@T["venda.itens-singular"]"
+      data-texto-itens="@T["venda.itens-plural"]"
+      data-texto-unidade="@T["vendas.unidades-singular"]"
+      data-texto-unidades="@T["vendas.unidades-plural"]">
 
     <section class="cartao caixa-cliente" aria-labelledby="titulo-cliente">
         <div class="caixa-cabecalho-do-cartao">
-            <h2 id="titulo-cliente">Cliente</h2>
-            <kbd class="atalho" title="Atalho de teclado">F2</kbd>
+            <h2 id="titulo-cliente">@T["campo.cliente"]</h2>
+            <kbd class="atalho" title="@T["caixa.atalho-de-teclado"]">F2</kbd>
         </div>
 
         <input type="hidden" asp-for="Chave" />
@@ -100,14 +97,14 @@
         <input type="hidden" asp-for="ClienteCpf" data-cliente="cpf" />
 
         <div class="caixa-busca-de-cliente" data-cliente="busca" hidden="@clienteEscolhido">
-            <label for="busca-cliente" class="visually-hidden">Cliente</label>
+            <label for="busca-cliente" class="visually-hidden">@T["campo.cliente"]</label>
             <div class="autocompletar">
                 <input id="busca-cliente" type="text" class="form-control form-control-lg"
                        role="combobox" aria-autocomplete="list" aria-expanded="false"
                        aria-controls="busca-cliente-opcoes" aria-keyshortcuts="F2" autocomplete="off"
                        autofocus="@(!clienteEscolhido)"
-                       placeholder="Digite o CPF ou o nome" />
-                <ul id="busca-cliente-opcoes" class="opcoes" role="listbox" aria-label="Clientes encontrados" hidden></ul>
+                       placeholder="@T["caixa.digite-cpf-ou-nome"]" />
+                <ul id="busca-cliente-opcoes" class="opcoes" role="listbox" aria-label="@T["caixa.clientes-encontrados"]" hidden></ul>
             </div>
         </div>
 
@@ -119,7 +116,7 @@
                     <span class="numero" data-cliente="cpf-exibido">@Model.ClienteCpf</span>
                 </div>
             </div>
-            <button type="button" class="btn btn-outline-secondary" data-cliente="trocar">Trocar cliente</button>
+            <button type="button" class="btn btn-outline-secondary" data-cliente="trocar">@T["caixa.trocar-cliente"]</button>
         </div>
         <span asp-validation-for="ClienteId" class="erro"></span>
 
@@ -133,9 +130,9 @@
 
     <section class="cartao caixa-itens" aria-labelledby="titulo-itens">
         <div class="caixa-cabecalho-do-cartao">
-            <h2 id="titulo-itens">Produtos</h2>
+            <h2 id="titulo-itens">@T["caixa.produtos"]</h2>
             <p class="dica caixa-dica-de-teclado">
-                <kbd>Enter</kbd> na quantidade abre a próxima linha e <kbd>Esc</kbd> fecha as sugestões.
+                <kbd>@T["teclado.enter"]</kbd> @T["caixa.dica-enter"] <kbd>@T["teclado.esc"]</kbd> @T["caixa.dica-esc"]
             </p>
         </div>
 
@@ -145,10 +142,10 @@
         }
 
         <div class="caixa-cabecalho-dos-itens" aria-hidden="true">
-            <span>Produto</span>
-            <span class="valor">Valor unitário</span>
-            <span class="valor">Quantidade</span>
-            <span class="valor">Subtotal</span>
+            <span>@T["campo.produto"]</span>
+            <span class="valor">@T["campo.valor-unitario"]</span>
+            <span class="valor">@T["campo.quantidade"]</span>
+            <span class="valor">@T["campo.subtotal"]</span>
         </div>
 
         <div class="caixa-lista-de-itens" data-itens>
@@ -159,29 +156,29 @@
         </div>
 
         <div class="caixa-desfazer" data-desfazer role="status" hidden>
-            <span>Produto removido.</span>
-            <button type="button" class="btn btn-outline-secondary btn-sm" data-acao="desfazer-remocao">Desfazer</button>
+            <span>@T["caixa.produto-removido"]</span>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-acao="desfazer-remocao">@T["caixa.desfazer"]</button>
         </div>
 
         <div class="caixa-novo-item">
-            <button type="button" class="btn btn-outline-primary" data-acao="adicionar-item" aria-keyshortcuts="F4">Adicionar produto</button>
-            <kbd class="atalho" title="Atalho de teclado">F4</kbd>
+            <button type="button" class="btn btn-outline-primary" data-acao="adicionar-item" aria-keyshortcuts="F4">@T["caixa.adicionar-produto"]</button>
+            <kbd class="atalho" title="@T["caixa.atalho-de-teclado"]">F4</kbd>
         </div>
     </section>
 
     <div class="caixa-fechamento">
         <section class="visor" aria-labelledby="titulo-do-visor">
-            <h2 class="visor-rotulo" id="titulo-do-visor">Total da venda</h2>
-            <output class="visor-valor" data-testid="total-da-venda" aria-live="polite"><span class="visor-moeda">R$</span> <span data-visor="valor">@Formato.Numero(totalDaVenda)</span></output>
+            <h2 class="visor-rotulo" id="titulo-do-visor">@T["venda.total"]</h2>
+            <output class="visor-valor" data-testid="total-da-venda" aria-live="polite"><span class="visor-moeda">@T["geral.moeda"]</span> <span data-visor="valor">@Formato.Numero(totalDaVenda)</span></output>
             <p class="visor-detalhe">
-                <span data-testid="itens-da-venda">@Contagem(itensLancados.Count, "item", "itens")</span>
-                <span data-testid="unidades-da-venda">@Contagem(itensLancados.Sum(item => item.Quantidade ?? 0), "unidade", "unidades")</span>
+                <span data-testid="itens-da-venda">@Formato.Quantidade(itensLancados.Count, T["venda.itens-singular"], T["venda.itens-plural"])</span>
+                <span data-testid="unidades-da-venda">@Formato.Quantidade(itensLancados.Sum(item => item.Quantidade ?? 0), T["vendas.unidades-singular"], T["vendas.unidades-plural"])</span>
             </p>
         </section>
 
-        <button type="submit" class="btn btn-primary btn-lg w-100 caixa-finalizar" aria-keyshortcuts="Control+Enter">Finalizar venda</button>
-        <p class="dica caixa-dica-de-teclado"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> finaliza de qualquer campo.</p>
-        <a class="btn btn-link w-100" asp-action="Index">Cancelar</a>
+        <button type="submit" class="btn btn-primary btn-lg w-100 caixa-finalizar" aria-keyshortcuts="Control+Enter">@T["caixa.finalizar"]</button>
+        <p class="dica caixa-dica-de-teclado"><kbd>@T["teclado.ctrl"]</kbd> + <kbd>@T["teclado.enter"]</kbd> @T["caixa.dica-finalizar"]</p>
+        <a class="btn btn-link w-100" asp-action="Index">@T["formulario.cancelar"]</a>
     </div>
 </form>
 

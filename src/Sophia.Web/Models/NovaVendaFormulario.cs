@@ -7,7 +7,7 @@ public sealed class NovaVendaFormulario
 {
     public Guid? Chave { get; set; }
 
-    [Display(Name = "Data da venda")]
+    [Display(Name = "campo.data-da-venda")]
     public DateOnly? Data { get; set; }
 
     public int? ClienteId { get; set; }

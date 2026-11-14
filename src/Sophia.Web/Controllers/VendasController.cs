@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Sophia.Application;
 using Sophia.Application.Vendas;
 using Sophia.Web.Apoio;
@@ -6,7 +7,7 @@ using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class VendasController(IVendaServico vendas) : Controller
+public sealed class VendasController(IVendaServico vendas, IStringLocalizer<Textos> textos) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeVendas consulta, CancellationToken cancelamento)
@@ -49,7 +50,7 @@ public sealed class VendasController(IVendaServico vendas) : Controller
             return ExibirNovaVenda(formulario);
         }
 
-        TempData.Sucesso("Venda registrada.");
+        TempData.Sucesso(textos["venda.registrada"]);
         return RedirectToAction(nameof(Detalhe), new { id = resultado.Valor });
     }
 

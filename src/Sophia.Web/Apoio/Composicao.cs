@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Sophia.Application;
 using Sophia.Infrastructure;
 
@@ -19,11 +20,20 @@ public static class Composicao
         builder.Services.AddParametrosDoSophia(configuracao);
         builder.Services.AddAplicacao();
         builder.Services.AddInfraestrutura(textoDeConexao, configuracao["Sophia:FusoHorario"] ?? FusoHorarioPadrao);
-        builder.Services.AddControllersWithViews(opcoes =>
-        {
-            opcoes.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-            MensagensDeValidacao.TraduzirParaPortugues(opcoes.ModelBindingMessageProvider);
-        });
+        AdicionarMvc(builder.Services);
+    }
+
+    private static void AdicionarMvc(IServiceCollection servicos)
+    {
+        servicos.AddLocalization(opcoes => opcoes.ResourcesPath = Textos.Pasta);
+        servicos
+            .AddControllersWithViews(opcoes => opcoes.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
+            .AddDataAnnotationsLocalization(opcoes =>
+                opcoes.DataAnnotationLocalizerProvider = (_, fabrica) => fabrica.Create(typeof(Textos)));
+        servicos
+            .AddOptions<MvcOptions>()
+            .Configure<IStringLocalizerFactory>((opcoes, fabrica) =>
+                MensagensDeValidacao.TraduzirParaPortugues(opcoes.ModelBindingMessageProvider, fabrica.Create(typeof(Textos))));
     }
 
     public static void UsarSophia(this WebApplication app)

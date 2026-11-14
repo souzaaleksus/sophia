@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Sophia.Application;
 using Sophia.Application.Produtos;
 using Sophia.Web.Apoio;
@@ -6,7 +7,7 @@ using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSophia parametros) : Controller
+public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSophia parametros, IStringLocalizer<Textos> textos) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
@@ -52,7 +53,7 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
             return View("Formulario", formulario);
         }
 
-        TempData.Sucesso("Produto cadastrado.");
+        TempData.Sucesso(textos["produtos.cadastrado"]);
         return RedirectToAction(nameof(Index));
     }
 
@@ -84,7 +85,7 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
             return View("Formulario", formulario);
         }
 
-        TempData.Sucesso("Produto alterado.");
+        TempData.Sucesso(textos["produtos.alterado"]);
         return RedirectToAction(nameof(Index));
     }
 
@@ -112,7 +113,7 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
         var resultado = await produtos.ExcluirAsync(id, cancelamento);
         if (resultado.Sucesso)
         {
-            TempData.Sucesso("Produto excluído.");
+            TempData.Sucesso(textos["produtos.excluido"]);
         }
         else
         {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Sophia.Application;
 using Sophia.Application.Clientes;
 using Sophia.Web.Apoio;
@@ -6,7 +7,7 @@ using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class ClientesController(IClienteServico clientes, ParametrosDoSophia parametros) : Controller
+public sealed class ClientesController(IClienteServico clientes, ParametrosDoSophia parametros, IStringLocalizer<Textos> textos) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
@@ -52,7 +53,7 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
             return View("Formulario", formulario);
         }
 
-        TempData.Sucesso("Cliente cadastrado.");
+        TempData.Sucesso(textos["clientes.cadastrado"]);
         return RedirectToAction(nameof(Index));
     }
 
@@ -84,7 +85,7 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
             return View("Formulario", formulario);
         }
 
-        TempData.Sucesso("Cliente alterado.");
+        TempData.Sucesso(textos["clientes.alterado"]);
         return RedirectToAction(nameof(Index));
     }
 
@@ -112,7 +113,7 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
         var resultado = await clientes.ExcluirAsync(id, cancelamento);
         if (resultado.Sucesso)
         {
-            TempData.Sucesso("Cliente excluído.");
+            TempData.Sucesso(textos["clientes.excluido"]);
         }
         else
         {
