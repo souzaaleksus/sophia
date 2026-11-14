@@ -61,6 +61,7 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
         var aviso = _pagina.Locator("[data-valmsg-for=Cpf]");
         await Expect(aviso).ToHaveTextAsync("Já existe um cliente com este CPF.");
+        await Expect(_pagina.GetByLabel("CPF")).ToHaveAttributeAsync("aria-invalid", "true");
 
         await _pagina.GetByLabel("CPF").FillAsync("111.444.777-35");
 

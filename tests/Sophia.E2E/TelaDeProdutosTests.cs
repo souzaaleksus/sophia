@@ -55,6 +55,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
         var aviso = _pagina.Locator("[data-valmsg-for=Nome]");
         await Expect(aviso).ToHaveTextAsync("Já existe um produto com este nome.");
+        await Expect(_pagina.GetByLabel("Nome")).ToHaveAttributeAsync("aria-invalid", "true");
 
         await _pagina.GetByLabel("Nome").FillAsync("Caneta vermelha");
 
