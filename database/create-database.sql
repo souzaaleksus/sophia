@@ -1,18 +1,32 @@
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 SET ARITHABORT ON;
+SET NOCOUNT ON;
+SET XACT_ABORT ON;
 GO
 
-IF DB_ID(N'Sophia') IS NULL
+IF DB_ID() <= 4 AND DB_ID(N'Sophia') IS NULL
 BEGIN
     CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;
 END
 GO
 
-USE [Sophia];
-GO
+DECLARE @banco SYSNAME = IIF(DB_ID() <= 4, N'Sophia', DB_NAME());
+DECLARE @noBanco NVARCHAR(300) = QUOTENAME(@banco) + N'.sys.sp_executesql';
 
-IF OBJECT_ID(N'dbo.Clientes', N'U') IS NULL
+PRINT CONCAT(N'Criando ou atualizando o banco ', @banco, N'.');
+
+EXEC @noBanco N'
+IF CONVERT(SYSNAME, DATABASEPROPERTYEX(DB_NAME(), N''Collation'')) <> N''Latin1_General_CI_AS''
+BEGIN
+    IF EXISTS (SELECT 1 FROM sys.tables WHERE is_ms_shipped = 0)
+        THROW 50001, N''O banco escolhido já tem tabelas e não usa o agrupamento Latin1_General_CI_AS; crie um banco vazio com COLLATE Latin1_General_CI_AS.'', 1;
+
+    ALTER DATABASE CURRENT COLLATE Latin1_General_CI_AS;
+END';
+
+EXEC @noBanco N'
+IF OBJECT_ID(N''dbo.Clientes'', N''U'') IS NULL
 BEGIN
     CREATE TABLE dbo.Clientes
     (
@@ -24,15 +38,15 @@ BEGIN
         Telefone       VARCHAR(11)                   NULL,
         CONSTRAINT PK_Clientes PRIMARY KEY CLUSTERED (Id),
         CONSTRAINT UQ_Clientes_Cpf UNIQUE (Cpf),
-        CONSTRAINT CK_Clientes_Cpf_SomenteDigitos CHECK (Cpf NOT LIKE '%[^0-9]%'),
-        CONSTRAINT CK_Clientes_Telefone_SomenteDigitos CHECK (Telefone NOT LIKE '%[^0-9]%' AND LEN(Telefone) IN (10, 11))
+        CONSTRAINT CK_Clientes_Cpf_SomenteDigitos CHECK (Cpf NOT LIKE ''%[^0-9]%''),
+        CONSTRAINT CK_Clientes_Telefone_SomenteDigitos CHECK (Telefone NOT LIKE ''%[^0-9]%'' AND LEN(Telefone) IN (10, 11))
     );
 
     CREATE NONCLUSTERED INDEX IX_Clientes_Nome ON dbo.Clientes (Nome);
-END
-GO
+END';
 
-IF OBJECT_ID(N'dbo.Produtos', N'U') IS NULL
+EXEC @noBanco N'
+IF OBJECT_ID(N''dbo.Produtos'', N''U'') IS NULL
 BEGIN
     CREATE TABLE dbo.Produtos
     (
@@ -43,10 +57,10 @@ BEGIN
         CONSTRAINT UQ_Produtos_Nome UNIQUE (Nome),
         CONSTRAINT CK_Produtos_ValorUnitario_Positivo CHECK (ValorUnitario > 0)
     );
-END
-GO
+END';
 
-IF OBJECT_ID(N'dbo.Vendas', N'U') IS NULL
+EXEC @noBanco N'
+IF OBJECT_ID(N''dbo.Vendas'', N''U'') IS NULL
 BEGIN
     CREATE TABLE dbo.Vendas
     (
@@ -61,26 +75,26 @@ BEGIN
 
     CREATE NONCLUSTERED INDEX IX_Vendas_ClienteId ON dbo.Vendas (ClienteId);
     CREATE NONCLUSTERED INDEX IX_Vendas_Data ON dbo.Vendas (Data DESC);
-END
-GO
+END';
 
-IF COL_LENGTH(N'dbo.Vendas', N'ChaveDeRegistro') IS NULL
+EXEC @noBanco N'
+IF COL_LENGTH(N''dbo.Vendas'', N''ChaveDeRegistro'') IS NULL
 BEGIN
     ALTER TABLE dbo.Vendas ADD ChaveDeRegistro UNIQUEIDENTIFIER NULL;
-END
-GO
+END';
 
+EXEC @noBanco N'
 IF NOT EXISTS (
     SELECT 1 FROM sys.indexes
-    WHERE object_id = OBJECT_ID(N'dbo.Vendas') AND name = N'UQ_Vendas_ChaveDeRegistro')
+    WHERE object_id = OBJECT_ID(N''dbo.Vendas'') AND name = N''UQ_Vendas_ChaveDeRegistro'')
 BEGIN
     CREATE UNIQUE NONCLUSTERED INDEX UQ_Vendas_ChaveDeRegistro
         ON dbo.Vendas (ChaveDeRegistro)
         WHERE ChaveDeRegistro IS NOT NULL;
-END
-GO
+END';
 
-IF OBJECT_ID(N'dbo.VendaItens', N'U') IS NULL
+EXEC @noBanco N'
+IF OBJECT_ID(N''dbo.VendaItens'', N''U'') IS NULL
 BEGIN
     CREATE TABLE dbo.VendaItens
     (
@@ -100,5 +114,5 @@ BEGIN
     );
 
     CREATE NONCLUSTERED INDEX IX_VendaItens_ProdutoId ON dbo.VendaItens (ProdutoId);
-END
+END';
 GO

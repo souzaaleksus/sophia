@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Sophia.Integration.Tests.Apoio;
 using Sophia.Testes.Banco;
 
@@ -6,6 +7,8 @@ namespace Sophia.Integration.Tests;
 [Collection(ColecaoDoBanco.Nome)]
 public sealed class ScriptDoBancoTests(BancoDeTestes banco)
 {
+    private const string Tabelas = "SELECT name FROM sys.tables ORDER BY name";
+
     [Fact]
     public async Task Cria_as_quatro_tabelas()
     {
@@ -82,6 +85,59 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         (await banco.ConsultarAsync("SELECT name FROM sys.tables ORDER BY name"))
             .Should().Equal("Clientes", "Produtos", "VendaItens", "Vendas");
         (await IndiceDaChaveAsync()).Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task No_banco_escolhido_pela_conexao_cria_as_tabelas_nele_sem_tocar_no_banco_sophia()
+    {
+        var sophiaExistia = await BancoAvulso.ExisteAsync(BancoDeTestes.Servidor, "Sophia");
+        await using var outro = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Auditoria");
+
+        await BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
+        await BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
+
+        (await outro.ConsultarAsync(Tabelas)).Should().Equal("Clientes", "Produtos", "VendaItens", "Vendas");
+        (await BancoAvulso.ExisteAsync(BancoDeTestes.Servidor, "Sophia")).Should().Be(sophiaExistia);
+    }
+
+    [Fact]
+    public async Task Banco_escolhido_vazio_com_outro_agrupamento_passa_ao_agrupamento_do_sophia()
+    {
+        await using var outro = await BancoAvulso.CriarVazioAsync(
+            BancoDeTestes.Servidor, "Loja_Agrupamento", "SQL_Latin1_General_CP1_CI_AS");
+
+        await BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
+
+        (await outro.ConsultarAsync("SELECT CONVERT(NVARCHAR(128), DATABASEPROPERTYEX(DB_NAME(), 'Collation'))"))
+            .Should().Equal(BancoAvulso.AgrupamentoDoSophia);
+        (await outro.ConsultarAsync(Tabelas)).Should().HaveCount(4);
+    }
+
+    [Fact]
+    public async Task Banco_escolhido_com_tabelas_e_outro_agrupamento_e_recusado_sem_criar_nada()
+    {
+        await using var outro = await BancoAvulso.CriarVazioAsync(
+            BancoDeTestes.Servidor, "Loja_Ocupada", "SQL_Latin1_General_CP1_CI_AS");
+        await outro.ConsultarAsync("CREATE TABLE dbo.Alheia (Id INT); SELECT N'criada';");
+
+        var rodar = () => BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
+
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("COLLATE Latin1_General_CI_AS");
+        (await outro.ConsultarAsync(Tabelas)).Should().Equal("Alheia");
+    }
+
+    [Fact]
+    public async Task Sem_banco_escolhido_cria_o_banco_sophia_e_rodar_de_novo_nao_falha()
+    {
+        await using var sophia = await BancoAvulso.SophiaAindaInexistenteAsync();
+        var semBancoEscolhido = new SqlConnectionStringBuilder(sophia.Servidor) { InitialCatalog = "master" }.ConnectionString;
+
+        await BancoAvulso.ExecutarScriptAsync(semBancoEscolhido);
+        await BancoAvulso.ExecutarScriptAsync(semBancoEscolhido);
+
+        (await sophia.ConsultarAsync(Tabelas)).Should().Equal("Clientes", "Produtos", "VendaItens", "Vendas");
+        (await sophia.ConsultarAsync("SELECT CONVERT(NVARCHAR(128), DATABASEPROPERTYEX(DB_NAME(), 'Collation'))"))
+            .Should().Equal(BancoAvulso.AgrupamentoDoSophia);
     }
 
     private Task<List<string>> ColunaDaChaveAsync() =>

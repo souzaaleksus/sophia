@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Sophia.Integration.Tests.Apoio;
 using Sophia.Testes.Banco;
 
@@ -34,6 +35,17 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
         (await ContarAsync("Produtos")).Should().Be(1);
         (await ContarAsync("Clientes")).Should().Be(0);
         (await ContarAsync("Vendas")).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Fora_de_um_banco_criado_pelo_script_recusa_sem_gravar_nada()
+    {
+        await using var vazio = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_SemTabelas");
+
+        var carregar = () => BancoAvulso.ExecutarScriptAsync(vazio.TextoDeConexao, Carga);
+
+        (await carregar.Should().ThrowAsync<SqlException>()).Which.Number.Should().Be(50001);
+        (await vazio.ConsultarAsync("SELECT name FROM sys.tables")).Should().BeEmpty();
     }
 
     private async Task<int> ContarAsync(string tabela) =>
