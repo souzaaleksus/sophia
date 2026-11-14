@@ -48,7 +48,19 @@
                     <span class="texto-nova-venda">Nova venda</span>
                 </a>
 
-                <div class="dropdown">
+                <div class="seletor-de-tema" role="radiogroup" aria-label="Tema" data-tema="grupo">
+                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="claro" data-tema-nome="claro" aria-checked="false" aria-label="Claro" title="Claro">
+                        <svg class="icone" aria-hidden="true"><use href="#icone-sol" /></svg>
+                    </button>
+                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="escuro" data-tema-nome="escuro" aria-checked="false" aria-label="Escuro" title="Escuro">
+                        <svg class="icone" aria-hidden="true"><use href="#icone-lua" /></svg>
+                    </button>
+                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="automatico" data-tema-nome="automático" aria-checked="true" aria-label="Automático" title="Automático">
+                        <svg class="icone" aria-hidden="true"><use href="#icone-automatico" /></svg>
+                    </button>
+                </div>
+
+                <div class="dropdown menu-do-tema-compacto">
                     <button type="button" class="btn botao-do-tema" data-bs-toggle="dropdown" aria-expanded="false"
                             aria-label="Escolher o tema (atual: automático)" data-rotulo="Escolher o tema (atual: {tema})" data-tema="botao">
                         <svg class="icone" aria-hidden="true"><use href="#icone-automatico" data-tema="icone" /></svg>
@@ -122,6 +134,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/confirmar.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

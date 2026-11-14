@@ -1611,3 +1611,103 @@ a:hover {
         width: 100%;
     }
 }
+
+.seletor-de-tema {
+    background: var(--cor-realce);
+    border: 1px solid var(--cor-borda);
+    border-radius: 999px;
+    display: none;
+    gap: 0.15rem;
+    padding: 0.2rem;
+}
+
+.seletor-de-tema-opcao {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    color: var(--cor-texto-suave);
+    display: inline-flex;
+    height: 2.5rem;
+    justify-content: center;
+    width: 2.75rem;
+}
+
+.seletor-de-tema-opcao:hover {
+    color: var(--cor-titulo);
+}
+
+.seletor-de-tema-opcao[aria-checked=true] {
+    background: var(--cor-cartao);
+    box-shadow: var(--sombra);
+    color: var(--cor-primaria);
+}
+
+.seletor-de-tema-opcao:focus-visible {
+    outline: 2px solid var(--cor-primaria);
+    outline-offset: 1px;
+}
+
+@media (min-width: 992px) {
+    .seletor-de-tema {
+        display: inline-flex;
+    }
+
+    .menu-do-tema-compacto {
+        display: none;
+    }
+}
+
+.dialogo {
+    background: var(--cor-cartao);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra-flutuante);
+    color: var(--cor-texto);
+    max-width: min(28rem, calc(100vw - 2rem));
+    padding: 0;
+    width: 100%;
+}
+
+.dialogo::backdrop {
+    background: color-mix(in srgb, var(--cor-titulo) 45%, transparent);
+}
+
+.dialogo-conteudo {
+    display: grid;
+    gap: 0.75rem;
+    padding: 1.5rem;
+}
+
+.dialogo-registro {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.75rem;
+    margin: 0;
+}
+
+.dialogo-aviso {
+    color: var(--cor-texto-suave);
+    margin: 0;
+}
+
+.dialogo-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .dialogo[open] {
+        animation: dialogo-abrindo 0.18s ease-out;
+    }
+
+    @keyframes dialogo-abrindo {
+        from {
+            opacity: 0;
+            transform: translateY(0.5rem) scale(0.98);
+        }
+    }
+}

@@ -78,17 +78,43 @@
         icone?.setAttribute('href', tema.icone);
         opcoes.forEach(opcao => {
             const escolhida = opcao.dataset.temaOpcao === preferencia;
-            opcao.setAttribute('aria-pressed', String(escolhida));
-            opcao.classList.toggle('active', escolhida);
+            if (opcao.getAttribute('role') === 'radio') {
+                opcao.setAttribute('aria-checked', String(escolhida));
+                opcao.tabIndex = escolhida ? 0 : -1;
+            } else {
+                opcao.setAttribute('aria-pressed', String(escolhida));
+                opcao.classList.toggle('active', escolhida);
+            }
         });
+    };
+
+    const escolher = opcao => {
+        guardarPreferencia(opcao.dataset.temaOpcao);
+        aplicar(opcao.dataset.temaOpcao);
     };
 
     opcoes.forEach(opcao => {
         opcao.addEventListener('click', () => {
-            guardarPreferencia(opcao.dataset.temaOpcao);
-            aplicar(opcao.dataset.temaOpcao);
-            botao?.focus();
+            escolher(opcao);
+            if (opcao.getAttribute('role') !== 'radio') {
+                botao?.focus();
+            }
         });
+    });
+
+    const passoDaSeta = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+    document.querySelector('[data-tema=grupo]')?.addEventListener('keydown', evento => {
+        const passo = passoDaSeta[evento.key];
+        if (!passo) {
+            return;
+        }
+
+        evento.preventDefault();
+        const radios = [...evento.currentTarget.querySelectorAll('[role=radio]')];
+        const atual = radios.indexOf(document.activeElement);
+        const proximo = radios[(atual + passo + radios.length) % radios.length];
+        escolher(proximo);
+        proximo.focus();
     });
 
     sistemaEscuro.addEventListener('change', () => aplicar(lerPreferencia()));

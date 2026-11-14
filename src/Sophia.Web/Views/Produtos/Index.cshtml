@@ -75,7 +75,10 @@ else
                                 <svg class="icone" aria-hidden="true"><use href="#icone-editar" /></svg>
                                 <span class="acao-texto">Editar</span>
                             </a>
-                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@produto.Id" aria-label="Excluir @produto.Nome">
+                            <a class="acao perigo" asp-action="Excluir" asp-route-id="@produto.Id" aria-label="Excluir @produto.Nome"
+                               data-confirmar data-confirmar-titulo="Excluir produto?" data-confirmar-nome="@produto.Nome"
+                               data-confirmar-detalhe="@Formato.Moeda(produto.ValorUnitario)"
+                               data-confirmar-aviso="A exclusão não pode ser desfeita. Produtos já vendidos não podem ser excluídos.">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
                                 <span class="acao-texto">Excluir</span>
                             </a>
@@ -86,3 +89,5 @@ else
         </table>
     </div>
 }
+
+<partial name="_ConfirmarExclusao" />
