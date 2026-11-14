@@ -11,13 +11,13 @@ public sealed class ProdutoServico(
     ParametrosDoSophia parametros) : IProdutoServico
 {
     private static readonly Ordenacao<ColunaDeProdutos> OrdemPadrao = new(ColunaDeProdutos.Nome, Decrescente: false);
-    private static readonly Erro NomeDuplicado = new("Nome", Mensagens.NomeDeProdutoDuplicado);
+    private static readonly Erro NomeDuplicado = new(nameof(DadosProduto.Nome), Mensagens.NomeDeProdutoDuplicado);
     private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ProdutoNaoEncontrado);
     private static readonly Erro JaVendido = new(string.Empty, Mensagens.ProdutoJaVendido);
 
     public async Task<Lista<ProdutoDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default)
     {
-        var termo = Aparar(consulta.Busca);
+        var termo = Texto.Aparar(consulta.Busca);
         var ordem = Ordenacao.Interpretar(consulta.Ordem, OrdemPadrao);
         var pagina = await Paginacao.RecortarAsync(
             consulta.Pagina,
@@ -31,7 +31,7 @@ public sealed class ProdutoServico(
         int limite,
         CancellationToken cancelamento = default)
     {
-        var encontrados = await produtos.ListarAsync(Aparar(trechoDoNome), limite, cancelamento);
+        var encontrados = await produtos.ListarAsync(Texto.Aparar(trechoDoNome), limite, cancelamento);
         return encontrados.Select(ProdutoDto.De).ToList();
     }
 
@@ -99,19 +99,6 @@ public sealed class ProdutoServico(
         return await SalvarAsync(cancelamento);
     }
 
-    private static string? Aparar(string? trechoDoNome) =>
-        string.IsNullOrWhiteSpace(trechoDoNome) ? null : trechoDoNome.Trim();
-
-    private async Task<Resultado> SalvarAsync(CancellationToken cancelamento)
-    {
-        try
-        {
-            await unidadeDeTrabalho.SalvarAsync(cancelamento);
-            return Resultado.Ok();
-        }
-        catch (ConflitoAoSalvarException conflito)
-        {
-            return Resultado.Falha(conflito.Tipo == TipoDeConflito.ValorDuplicado ? NomeDuplicado : JaVendido);
-        }
-    }
+    private Task<Resultado> SalvarAsync(CancellationToken cancelamento) =>
+        unidadeDeTrabalho.SalvarCadastroAsync(NomeDuplicado, JaVendido, cancelamento);
 }

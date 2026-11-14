@@ -28,6 +28,14 @@ public sealed class ClienteTests
     }
 
     [Fact]
+    public void Junta_os_espacos_repetidos_dentro_do_nome()
+    {
+        var resultado = Cliente.Criar(DadosValidos() with { Nome = "Maria   dos	Santos" }, Hoje);
+
+        resultado.Valor.Nome.Should().Be("Maria dos Santos");
+    }
+
+    [Fact]
     public void Aceita_somente_cpf_e_nome()
     {
         var resultado = Cliente.Criar(new DadosCliente("52998224725", "João Lima", null, " ", ""), Hoje);

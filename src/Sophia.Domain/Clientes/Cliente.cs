@@ -54,7 +54,7 @@ public sealed partial class Cliente
         erros.AddRange(cpf.Erros);
         return new DadosValidos(
             cpf.Sucesso ? cpf.Valor : null,
-            RegrasComuns.ValidarNome(dados.Nome, TamanhoMaximoNome, erros),
+            RegrasComuns.ValidarNome(dados.Nome, nameof(DadosCliente.Nome), TamanhoMaximoNome, erros),
             ValidarDataNascimento(dados.DataNascimento, hoje, erros),
             ValidarEmail(dados.Email, erros),
             ValidarTelefone(dados.Telefone, erros));
@@ -73,11 +73,11 @@ public sealed partial class Cliente
     {
         if (data > hoje)
         {
-            erros.Add(new Erro("DataNascimento", Mensagens.DataDeNascimentoNoFuturo));
+            erros.Add(new Erro(nameof(DadosCliente.DataNascimento), Mensagens.DataDeNascimentoNoFuturo));
         }
         else if (data < DataNascimentoMinima)
         {
-            erros.Add(new Erro("DataNascimento", Mensagens.DataDeNascimentoInvalida));
+            erros.Add(new Erro(nameof(DadosCliente.DataNascimento), Mensagens.DataDeNascimentoInvalida));
         }
 
         return data;
@@ -88,7 +88,7 @@ public sealed partial class Cliente
         var aparado = Texto.Aparar(email);
         if (aparado is not null && (aparado.Length > TamanhoMaximoEmail || !FormatoDeEmail().IsMatch(aparado)))
         {
-            erros.Add(new Erro("Email", Mensagens.EmailInvalido));
+            erros.Add(new Erro(nameof(DadosCliente.Email), Mensagens.EmailInvalido));
         }
 
         return aparado;
@@ -104,7 +104,7 @@ public sealed partial class Cliente
         var digitos = Texto.SomenteDigitos(aparado);
         if (!FormatoDeTelefone().IsMatch(aparado) || digitos.Length is not (10 or 11))
         {
-            erros.Add(new Erro("Telefone", Mensagens.TelefoneSemDdd));
+            erros.Add(new Erro(nameof(DadosCliente.Telefone), Mensagens.TelefoneSemDdd));
         }
 
         return digitos;

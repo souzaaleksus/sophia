@@ -39,6 +39,21 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
         await Expect(_pagina.GetByTestId("mais-vendido").First).ToContainTextAsync("2.500.000.000 unidades");
     }
 
+    [Theory]
+    [InlineData("/Clientes/Editar/abc")]
+    [InlineData("/Clientes/Excluir/abc")]
+    [InlineData("/Produtos/Editar/abc")]
+    [InlineData("/Produtos/Excluir/abc")]
+    [InlineData("/Vendas/Detalhe/abc")]
+    [InlineData("/Erro?codigo=abc")]
+    public async Task Endereco_com_identificador_invalido_mostra_a_pagina_de_erro(string endereco)
+    {
+        var resposta = await _pagina.GotoAsync(endereco);
+
+        resposta!.Status.Should().Be(400);
+        await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Algo deu errado");
+    }
+
     [Fact]
     public async Task Envio_com_token_invalido_mostra_a_pagina_de_erro_e_nao_uma_tela_em_branco()
     {

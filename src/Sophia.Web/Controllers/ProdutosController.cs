@@ -10,18 +10,8 @@ namespace Sophia.Web.Controllers;
 public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSophia parametros, IStringLocalizer<Textos> textos) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
-        var lista = await produtos.ListarAsync(consulta, cancelamento);
-        ViewData["Busca"] = consulta.Busca;
-        ViewData["Ordem"] = lista.Ordem;
-        return View(lista.Pagina);
-    }
+    public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento) =>
+        this.ExibirLista(consulta, await produtos.ListarAsync(consulta, cancelamento));
 
     [HttpGet]
     public async Task<IActionResult> Buscar(string? termo, CancellationToken cancelamento)
@@ -36,90 +26,35 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     }
 
     [HttpGet]
-    public IActionResult Novo() => View("Formulario", new ProdutoFormulario());
+    public IActionResult Novo() => View(AcoesDeCadastro.Formulario, new ProdutoFormulario());
 
     [HttpPost]
-    public async Task<IActionResult> Novo(ProdutoFormulario formulario, CancellationToken cancelamento)
-    {
-        if (!ModelState.IsValid)
-        {
-            return View("Formulario", formulario);
-        }
-
-        var resultado = await produtos.CadastrarAsync(formulario.ParaDados(), cancelamento);
-        if (!resultado.Sucesso)
-        {
-            ModelState.AdicionarErros(resultado.Erros);
-            return View("Formulario", formulario);
-        }
-
-        TempData.Sucesso(textos["produtos.cadastrado"]);
-        return RedirectToAction(nameof(Index));
-    }
+    public Task<IActionResult> Novo(ProdutoFormulario formulario, CancellationToken cancelamento) =>
+        this.GravarAsync(formulario, () => produtos.CadastrarAsync(formulario.ParaDados(), cancelamento), textos["produtos.cadastrado"]);
 
     [HttpGet]
     public async Task<IActionResult> Editar(int id, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var produto = await produtos.ObterAsync(id, cancelamento);
-        return produto is null ? NotFound() : View("Formulario", ProdutoFormulario.De(produto));
+        return produto is null ? NotFound() : View(AcoesDeCadastro.Formulario, ProdutoFormulario.De(produto));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Editar(int id, ProdutoFormulario formulario, CancellationToken cancelamento)
+    public Task<IActionResult> Editar(int id, ProdutoFormulario formulario, CancellationToken cancelamento)
     {
         formulario.Id = id;
-        if (!ModelState.IsValid)
-        {
-            return View("Formulario", formulario);
-        }
-
-        var resultado = await produtos.AlterarAsync(id, formulario.ParaDados(), cancelamento);
-        if (!resultado.Sucesso)
-        {
-            ModelState.AdicionarErros(resultado.Erros);
-            return View("Formulario", formulario);
-        }
-
-        TempData.Sucesso(textos["produtos.alterado"]);
-        return RedirectToAction(nameof(Index));
+        return this.GravarAsync(formulario, () => produtos.AlterarAsync(id, formulario.ParaDados(), cancelamento), textos["produtos.alterado"]);
     }
 
     [HttpGet]
     public async Task<IActionResult> Excluir(int id, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var produto = await produtos.ObterAsync(id, cancelamento);
         return produto is null ? NotFound() : View(produto);
     }
 
     [HttpPost]
     [ActionName(nameof(Excluir))]
-    public async Task<IActionResult> ConfirmarExclusao(int id, CancellationToken cancelamento)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
-        var resultado = await produtos.ExcluirAsync(id, cancelamento);
-        if (resultado.Sucesso)
-        {
-            TempData.Sucesso(textos["produtos.excluido"]);
-        }
-        else
-        {
-            TempData.Falha(resultado.Erros[0].Mensagem);
-        }
-
-        return RedirectToAction(nameof(Index));
-    }
+    public Task<IActionResult> ConfirmarExclusao(int id, CancellationToken cancelamento) =>
+        this.ExcluirAsync(() => produtos.ExcluirAsync(id, cancelamento), textos["produtos.excluido"]);
 }

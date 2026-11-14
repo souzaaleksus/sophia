@@ -12,7 +12,7 @@ public sealed class ClienteServico(
     ParametrosDoSophia parametros) : IClienteServico
 {
     private static readonly Ordenacao<ColunaDeClientes> OrdemPadrao = new(ColunaDeClientes.Nome, Decrescente: false);
-    private static readonly Erro CpfDuplicado = new("Cpf", Mensagens.CpfDuplicado);
+    private static readonly Erro CpfDuplicado = new(nameof(DadosCliente.Cpf), Mensagens.CpfDuplicado);
     private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ClienteNaoEncontrado);
     private static readonly Erro PossuiVendas = new(string.Empty, Mensagens.ClientePossuiVendas);
 
@@ -100,16 +100,6 @@ public sealed class ClienteServico(
         return await SalvarAsync(cancelamento);
     }
 
-    private async Task<Resultado> SalvarAsync(CancellationToken cancelamento)
-    {
-        try
-        {
-            await unidadeDeTrabalho.SalvarAsync(cancelamento);
-            return Resultado.Ok();
-        }
-        catch (ConflitoAoSalvarException conflito)
-        {
-            return Resultado.Falha(conflito.Tipo == TipoDeConflito.ValorDuplicado ? CpfDuplicado : PossuiVendas);
-        }
-    }
+    private Task<Resultado> SalvarAsync(CancellationToken cancelamento) =>
+        unidadeDeTrabalho.SalvarCadastroAsync(CpfDuplicado, PossuiVendas, cancelamento);
 }

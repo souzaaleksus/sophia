@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Sophia.Domain;
+using Sophia.Web.Models;
 
 namespace Sophia.Web.Apoio;
 
@@ -9,7 +10,7 @@ public static class ModelStateExtensions
     {
         foreach (var erro in erros)
         {
-            modelState.AddModelError(erro.Campo, erro.Mensagem);
+            modelState.AddModelError(ChaveNaTela(erro), erro.Mensagem);
         }
     }
 
@@ -17,4 +18,7 @@ public static class ModelStateExtensions
         modelState.TryGetValue(campo, out var entrada) && entrada.Errors.Count > 0
             ? entrada.Errors[0].ErrorMessage
             : null;
+
+    private static string ChaveNaTela(Erro erro) =>
+        erro.Linha is { } linha ? $"{nameof(NovaVendaFormulario.Itens)}[{linha}].{erro.Campo}" : erro.Campo;
 }
