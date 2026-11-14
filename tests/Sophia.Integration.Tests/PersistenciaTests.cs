@@ -1,3 +1,5 @@
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Sophia.Application;
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
@@ -50,6 +52,60 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
             .Should().Equal("João Lima");
         (await repositorio.ListarAsync(BuscaDeCliente.Interpretar(null), 1)).Select(c => c.Nome)
             .Should().Equal("João Lima");
+    }
+
+    [Fact]
+    public async Task A_busca_de_clientes_pelo_nome_junta_os_espacos_repetidos_do_termo()
+    {
+        await CadastrarClienteAsync("529.982.247-25", "Maria Silva");
+
+        await using var contexto = banco.NovoContexto();
+        var encontrados = await new ClienteRepositorio(contexto).ListarAsync(BuscaDeCliente.Interpretar("Maria  Silva"), null);
+
+        encontrados.Select(c => c.Nome).Should().Equal("Maria Silva");
+    }
+
+    [Fact]
+    public async Task A_busca_de_clientes_pelo_nome_nao_diferencia_acentos()
+    {
+        await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        await CadastrarClienteAsync("111.444.777-35", "João Lima");
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ClienteRepositorio(contexto);
+        var busca = BuscaDeCliente.Interpretar("joao");
+
+        (await repositorio.ListarAsync(busca, null)).Select(c => c.Nome).Should().Equal("João Lima");
+        (await repositorio.ListarPaginaAsync(busca, new(ColunaDeClientes.Nome, Decrescente: false), 1, 25))
+            .Itens.Select(c => c.Nome).Should().Equal("João Lima");
+    }
+
+    [Fact]
+    public async Task A_busca_de_clientes_so_com_pontuacao_nao_traz_ninguem()
+    {
+        await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ClienteRepositorio(contexto);
+        var busca = BuscaDeCliente.Interpretar("-");
+
+        (await repositorio.ListarAsync(busca, null)).Should().BeEmpty();
+        (await repositorio.ListarPaginaAsync(busca, new(ColunaDeClientes.Nome, Decrescente: false), 1, 25))
+            .TotalDeItens.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task A_busca_de_produtos_pelo_nome_nao_diferencia_acentos()
+    {
+        await CadastrarProdutoAsync("Açúcar cristal", 5m);
+        await CadastrarProdutoAsync("Caneta azul", 2.50m);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ProdutoRepositorio(contexto);
+
+        (await repositorio.ListarAsync("acucar", null)).Select(p => p.Nome).Should().Equal("Açúcar cristal");
+        (await repositorio.ListarPaginaAsync("ACUCAR", new(ColunaDeProdutos.Nome, Decrescente: false), 1, 25))
+            .Itens.Select(p => p.Nome).Should().Equal("Açúcar cristal");
     }
 
     [Fact]
@@ -145,6 +201,31 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
 
         (await salvar.Should().ThrowAsync<ConflitoAoSalvarException>())
             .Which.Tipo.Should().Be(TipoDeConflito.RegistroEmUso);
+    }
+
+    [Fact]
+    public async Task Venda_que_aponta_para_cadastro_inexistente_e_um_conflito_de_referencia()
+    {
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+
+        var gravar = () => RegistrarVendaAsync(999, [new(caneta, 1, 2.50m)]);
+
+        (await gravar.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.ReferenciaInexistente);
+    }
+
+    [Fact]
+    public async Task Restricao_de_verificacao_violada_por_fora_do_dominio_nao_vira_conflito_de_referencia()
+    {
+        await using var contexto = banco.NovoContexto();
+        var produto = Produto.Criar(new DadosProduto("Caneta azul", 2.50m)).Valor;
+        new ProdutoRepositorio(contexto).Adicionar(produto);
+        contexto.Entry(produto).Property(p => p.ValorUnitario).CurrentValue = -1m;
+
+        var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
+
+        (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
+            .WithInnerException<SqlException>().Which.Message.Should().Contain("CK_Produtos_ValorUnitario_Positivo");
     }
 
     [Fact]

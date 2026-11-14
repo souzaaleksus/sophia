@@ -25,8 +25,8 @@ public sealed class Produto
     public Resultado Alterar(DadosProduto dados)
     {
         var erros = new List<Erro>();
-        var nome = RegrasComuns.ValidarNome(dados.Nome, TamanhoMaximoNome, erros);
-        var valorUnitario = RegrasComuns.ValidarValorUnitario(dados.ValorUnitario, "ValorUnitario", erros);
+        var nome = RegrasComuns.ValidarNome(dados.Nome, nameof(DadosProduto.Nome), TamanhoMaximoNome, erros);
+        var valorUnitario = RegrasComuns.ValidarValorUnitario(dados.ValorUnitario, nameof(DadosProduto.ValorUnitario), linha: null, erros);
 
         if (erros.Count > 0)
         {

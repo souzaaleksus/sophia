@@ -16,7 +16,7 @@ public static class FiltrosDaLista
     }
 
     public static string? DataDaConsulta(DateOnly? data) =>
-        data?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        data?.ToString(DataIso.Formato, CultureInfo.InvariantCulture);
 
     private static void Incluir(Dictionary<string, string> filtros, string chave, string? valor)
     {

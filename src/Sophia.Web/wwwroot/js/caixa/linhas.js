@@ -1,4 +1,5 @@
 import { buscarJson, criarAutocompletar } from '../autocompletar.js';
+import { limparErro } from '../comum/erros.js';
 import { formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from '../formato.js';
 
 const camposDaLinha = ['ProdutoId', 'ProdutoNome', 'ValorUnitario', 'Quantidade'];
@@ -19,8 +20,9 @@ class Linhas {
     #movimentoReduzido;
     #aoMudar;
     #aoRemover;
+    #aoSomar;
 
-    constructor({ area, modelo, configuracao, textosDaBusca, movimentoReduzido, aoMudar, aoRemover }) {
+    constructor({ area, modelo, configuracao, textosDaBusca, movimentoReduzido, aoMudar, aoRemover, aoSomar }) {
         this.#area = area;
         this.#modelo = modelo;
         this.#configuracao = configuracao;
@@ -28,6 +30,7 @@ class Linhas {
         this.#movimentoReduzido = movimentoReduzido;
         this.#aoMudar = aoMudar;
         this.#aoRemover = aoRemover;
+        this.#aoSomar = aoSomar;
         this.todas().forEach(item => this.#preparar(item));
         this.renumerar();
     }
@@ -39,7 +42,7 @@ class Linhas {
     adicionar() {
         const item = this.#modelo.content.firstElementChild.cloneNode(true);
         this.#area.append(item);
-        this.#destacarChegada(item);
+        this.#destacar(item);
         this.#preparar(item);
         this.renumerar();
         this.#aoMudar();
@@ -82,9 +85,9 @@ class Linhas {
             aoEscolher: produto => this.#escolherProduto(item, produto),
         });
 
-        campoDe(item, 'ValorUnitario').addEventListener('input', this.#aoMudar);
+        campoDe(item, 'ValorUnitario').addEventListener('input', () => this.#corrigido(item, ['ValorUnitario']));
         campoDe(item, 'ValorUnitario').addEventListener('blur', () => arredondarValor(item));
-        campoDe(item, 'Quantidade').addEventListener('input', this.#aoMudar);
+        campoDe(item, 'Quantidade').addEventListener('input', () => this.#corrigido(item, ['Quantidade']));
         campoDe(item, 'Quantidade').addEventListener('keydown', evento => this.#abrirProximaComEnter(evento));
         item.querySelector('[data-acao=menos]').addEventListener('click', evento => this.#mudarQuantidade(item, -1, evento.detail === 0));
         item.querySelector('[data-acao=mais]').addEventListener('click', () => this.#mudarQuantidade(item, 1));
@@ -99,17 +102,21 @@ class Linhas {
         }
     }
 
-    #destacarChegada(item) {
-        if (!this.#movimentoReduzido.matches) {
-            item.classList.add('caixa-item-novo');
-            item.addEventListener('animationend', () => item.classList.remove('caixa-item-novo'), { once: true });
+    #destacar(item) {
+        if (this.#movimentoReduzido.matches) {
+            return;
         }
+
+        item.classList.remove('caixa-item-novo');
+        void item.offsetWidth;
+        item.classList.add('caixa-item-novo');
+        item.addEventListener('animationend', () => item.classList.remove('caixa-item-novo'), { once: true });
     }
 
     #escolherProduto(item, produto) {
         const jaLancado = this.todas().find(outro => outro !== item && campoDe(outro, 'ProdutoId').value === String(produto.id));
         if (jaLancado) {
-            this.#somarNaLinhaExistente(item, jaLancado);
+            this.#somarNaLinhaExistente(item, jaLancado, produto);
             return;
         }
 
@@ -121,23 +128,32 @@ class Linhas {
         }
 
         selecionar(campoDe(item, 'Quantidade'));
+        this.#corrigido(item, camposDaLinha);
+    }
+
+    #corrigido(item, campos) {
+        campos.forEach(nome => limparErro(item, campoDe(item, nome).name));
+        limparErro(this.#area.closest('form'), 'Itens');
         this.#aoMudar();
     }
 
-    #somarNaLinhaExistente(item, existente) {
+    #somarNaLinhaExistente(item, existente, produto) {
         const quantidade = campoDe(existente, 'Quantidade');
         quantidade.value = (lerInteiro(quantidade.value) ?? 0) + 1;
         camposDaLinha.forEach(nome => {
             campoDe(item, nome).value = '';
+            limparErro(item, campoDe(item, nome).name);
         });
         selecionar(quantidade);
-        this.#aoMudar();
+        this.#corrigido(existente, ['Quantidade']);
+        this.#destacar(existente);
+        this.#aoSomar(produto, this.todas().indexOf(existente) + 1);
     }
 
     #mudarQuantidade(item, passo, peloTeclado = false) {
         const campo = campoDe(item, 'Quantidade');
         campo.value = Math.max(1, (lerInteiro(campo.value) ?? 0) + passo);
-        this.#aoMudar();
+        this.#corrigido(item, ['Quantidade']);
         if (peloTeclado && item.querySelector('[data-acao=menos]').disabled) {
             campo.focus();
         }

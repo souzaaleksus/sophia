@@ -10,9 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] – @T["geral.marca"]</title>
     <script src="~/js/tema-inicial.js" asp-append-version="true"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />
+    <link rel="preload" href="~/fontes/poppins/poppins-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="~/fontes/poppins/poppins-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" type="image/png" sizes="64x64" href="~/img/simbolo.png" />
     <link rel="apple-touch-icon" href="~/img/simbolo-180.png" />
     <meta name="theme-color" content="#134169" />
@@ -133,7 +132,6 @@
 
     <footer class="rodape container">@T["geral.rodape"]</footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="~/js/site.js" asp-append-version="true"></script>
     <script type="module" src="~/js/confirmar.js" asp-append-version="true"></script>

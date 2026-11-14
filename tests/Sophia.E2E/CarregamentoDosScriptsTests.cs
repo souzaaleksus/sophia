@@ -36,6 +36,51 @@ public sealed partial class CarregamentoDosScriptsTests(AplicacaoEmExecucao apli
         }
     }
 
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/Vendas")]
+    [InlineData("/Vendas/Nova")]
+    [InlineData("/Clientes")]
+    [InlineData("/Produtos")]
+    public async Task Tela_sem_formulario_de_cadastro_nao_baixa_o_jquery(string caminho)
+    {
+        using var http = new HttpClient();
+
+        var pagina = await http.GetStringAsync(new Uri($"{aplicacao.Endereco}{caminho}"));
+
+        pagina.Should().NotContain("/lib/jquery", $"{caminho} não usa a validação do jQuery");
+    }
+
+    [Theory]
+    [InlineData("/Clientes/Novo")]
+    [InlineData("/Produtos/Novo")]
+    public async Task Formulario_de_cadastro_baixa_o_jquery_antes_da_validacao(string caminho)
+    {
+        using var http = new HttpClient();
+
+        var pagina = await http.GetStringAsync(new Uri($"{aplicacao.Endereco}{caminho}"));
+
+        var jquery = pagina.IndexOf("/lib/jquery/dist/jquery.min.js", StringComparison.Ordinal);
+        jquery.Should().BeGreaterThan(-1);
+        jquery.Should().BeLessThan(pagina.IndexOf("/lib/jquery-validation/dist/jquery.validate.min.js", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("/lib/jquery/dist/jquery.js")]
+    [InlineData("/lib/jquery/dist/jquery.min.map")]
+    [InlineData("/lib/jquery-validation/dist/additional-methods.js")]
+    [InlineData("/lib/jquery-validation/dist/additional-methods.min.js")]
+    [InlineData("/lib/jquery-validation/dist/jquery.validate.js")]
+    [InlineData("/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js")]
+    public async Task Biblioteca_sem_uso_nao_e_publicada(string caminho)
+    {
+        using var http = new HttpClient();
+
+        using var resposta = await http.GetAsync(new Uri($"{aplicacao.Endereco}{caminho}"));
+
+        resposta.StatusCode.Should().Be(System.Net.HttpStatusCode.NotFound);
+    }
+
     [GeneratedRegex(@"import '\./comum/(?<modulo>[\w-]+\.js)';")]
     private static partial Regex Importacao();
 }

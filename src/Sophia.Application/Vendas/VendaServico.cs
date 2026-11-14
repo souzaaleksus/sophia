@@ -82,6 +82,16 @@ public sealed class VendaServico(
 
             return ConferirReenvio(venda, vencedora);
         }
+        catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.ReferenciaInexistente)
+        {
+            var ausentes = await VerificarCadastrosAsync(venda, cancelamento);
+            if (ausentes.Count == 0)
+            {
+                throw;
+            }
+
+            return Resultado.Falha<int>(ausentes);
+        }
     }
 
     private async Task<Venda?> RegistradaPelaMesmaChaveAsync(Venda venda, CancellationToken cancelamento) =>
@@ -92,7 +102,7 @@ public sealed class VendaServico(
         var erros = new List<Erro>();
         if (!await clientes.ExisteAsync(venda.ClienteId, cancelamento))
         {
-            erros.Add(new Erro("ClienteId", Mensagens.ClienteNaoEncontrado));
+            erros.Add(new Erro(nameof(DadosVenda.ClienteId), Mensagens.ClienteNaoEncontrado));
         }
 
         var itens = venda.Itens.ToList();
@@ -101,7 +111,7 @@ public sealed class VendaServico(
         {
             if (!existentes.Contains(itens[linha].ProdutoId))
             {
-                erros.Add(new Erro($"Itens[{linha}].ProdutoId", Mensagens.ProdutoNaoEncontrado));
+                erros.Add(new Erro(nameof(DadosItemVenda.ProdutoId), Mensagens.ProdutoNaoEncontrado, linha));
             }
         }
 

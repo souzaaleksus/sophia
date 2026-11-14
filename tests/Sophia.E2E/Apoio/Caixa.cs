@@ -18,6 +18,9 @@ public sealed class Caixa(IPage pagina)
 
     public ILocator Linha(int indice) => Itens.Nth(indice);
 
+    public Task ProntoAsync() =>
+        Expect(pagina.Locator("#nova-venda")).ToHaveAttributeAsync("data-pronto", "true");
+
     public ILocator ProdutoDaLinha(int indice) =>
         Linha(indice).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true });
 
@@ -33,20 +36,27 @@ public sealed class Caixa(IPage pagina)
 
     public async Task EscolherClienteAsync(string termo, string nome)
     {
-        await ComboboxDeCliente.FillAsync(termo);
-        await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = nome }).ClickAsync();
+        await ProntoAsync();
+        await EscolherSugestaoAsync(ComboboxDeCliente, termo, nome);
         await Expect(pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync(nome);
     }
 
     public async Task LancarAsync(int linha, string termo, string produto, string quantidade)
     {
+        await ProntoAsync();
         if (await Itens.CountAsync() <= linha)
         {
             await pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
         }
 
-        await ProdutoDaLinha(linha).FillAsync(termo);
-        await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto }).ClickAsync();
+        await EscolherSugestaoAsync(ProdutoDaLinha(linha), termo, produto);
         await QuantidadeDaLinha(linha).FillAsync(quantidade);
+    }
+
+    private async Task EscolherSugestaoAsync(ILocator combobox, string termo, string sugestao)
+    {
+        await ProntoAsync();
+        await combobox.FillAsync(termo);
+        await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = sugestao }).ClickAsync();
     }
 }

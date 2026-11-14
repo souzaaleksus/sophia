@@ -8,12 +8,10 @@ public sealed record Paginador(
     int PrimeiroItem,
     int UltimoItem,
     int TotalDeItens,
+    bool TemAnterior,
+    bool TemProxima,
     IReadOnlyDictionary<string, string> Filtros)
 {
-    public bool TemAnterior => Numero > 1;
-
-    public bool TemProxima => Numero < TotalDePaginas;
-
     public static Paginador De<T>(Pagina<T> pagina, IReadOnlyDictionary<string, string>? filtros = null) =>
         new(
             pagina.Numero,
@@ -21,6 +19,8 @@ public sealed record Paginador(
             pagina.PrimeiroItem,
             pagina.UltimoItem,
             pagina.TotalDeItens,
+            pagina.TemAnterior,
+            pagina.TemProxima,
             filtros ?? new Dictionary<string, string>());
 
     public Dictionary<string, string> RotaDaPagina(int numero) =>

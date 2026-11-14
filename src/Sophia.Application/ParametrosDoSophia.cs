@@ -7,7 +7,7 @@ public sealed class ParametrosDoSophia
     [Range(1, 200)]
     public int TamanhoDaPagina { get; init; } = 25;
 
-    [Range(1, 31)]
+    [Range(2, 31)]
     public int DiasNoGrafico { get; init; } = 7;
 
     [Range(1, 50)]
@@ -18,4 +18,7 @@ public sealed class ParametrosDoSophia
 
     [Range(1, 50)]
     public int SugestoesNaBusca { get; init; } = 8;
+
+    [Range(2, 90)]
+    public int DiasDoAtalhoDePeriodo { get; init; } = 7;
 }

@@ -14,13 +14,38 @@ export function formatarContagem(quantidade, singular, plural) {
     return `${inteiro.format(quantidade)} ${quantidade === 1 ? singular : plural}`;
 }
 
+const comVirgula = /^([1-9]\d{0,2}(\.\d{3})+|\d+),\d+$/;
+const comMilhar = /^[1-9]\d{0,2}(\.\d{3})+$/;
+const comPontoDecimal = /^\d+\.\d{1,2}$/;
+const soDigitos = /^\d+$/;
+const limiteDoValor = 1e16;
+
+function normalizarDecimal(numero) {
+    if (comVirgula.test(numero)) {
+        return numero.replace(/\./g, '').replace(',', '.');
+    }
+
+    if (comMilhar.test(numero)) {
+        return numero.replace(/\./g, '');
+    }
+
+    return comPontoDecimal.test(numero) || soDigitos.test(numero) ? numero : null;
+}
+
 export function lerDecimal(texto) {
-    const limpo = String(texto ?? '').trim().replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
-    if (limpo === '' || !/^-?\d+(\.\d+)?$/.test(limpo)) {
+    const limpo = String(texto ?? '').replace(/\s/g, '');
+    const negativo = limpo.startsWith('-');
+    const numero = normalizarDecimal(negativo ? limpo.slice(1) : limpo);
+    if (numero === null) {
         return null;
     }
 
-    return Number(limpo);
+    const valor = Number(numero);
+    if (!Number.isFinite(valor) || valor >= limiteDoValor) {
+        return null;
+    }
+
+    return negativo ? -valor : valor;
 }
 
 export function lerInteiro(texto) {

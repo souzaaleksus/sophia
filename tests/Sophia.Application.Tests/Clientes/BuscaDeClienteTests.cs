@@ -19,6 +19,8 @@ public sealed class BuscaDeClienteTests
     [Theory]
     [InlineData("maria", "maria")]
     [InlineData("  João Lima ", "João Lima")]
+    [InlineData("Maria  Silva", "Maria Silva")]
+    [InlineData(" Maria \t Silva ", "Maria Silva")]
     public void Termo_com_letras_busca_pelo_nome(string termo, string trecho)
     {
         var busca = BuscaDeCliente.Interpretar(termo);
@@ -31,11 +33,21 @@ public sealed class BuscaDeClienteTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    [InlineData(".-")]
     public void Termo_vazio_nao_filtra(string? termo)
     {
         var busca = BuscaDeCliente.Interpretar(termo);
 
-        busca.FiltraAlgo.Should().BeFalse();
+        busca.Should().Be(new BuscaDeCliente(null, null));
+    }
+
+    [Theory]
+    [InlineData("-", "-")]
+    [InlineData(" .- ", ".-")]
+    [InlineData("...", "...")]
+    public void Termo_so_com_pontuacao_busca_pelo_nome_e_nao_lista_todos(string termo, string trecho)
+    {
+        var busca = BuscaDeCliente.Interpretar(termo);
+
+        busca.Should().Be(new BuscaDeCliente(trecho, null));
     }
 }

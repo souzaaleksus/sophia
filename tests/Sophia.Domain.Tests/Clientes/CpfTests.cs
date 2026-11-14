@@ -60,6 +60,24 @@ public sealed class CpfTests
     }
 
     [Theory]
+    [InlineData("52998224724", "529.982.247-24")]
+    [InlineData("11111111111", "111.111.111-11")]
+    [InlineData("52998224725", "529.982.247-25")]
+    public void Reconstitui_do_banco_sem_conferir_os_digitos_verificadores(string gravado, string formatado)
+    {
+        var cpf = Cpf.DoBanco(gravado);
+
+        cpf.Numero.Should().Be(gravado);
+        cpf.Formatado.Should().Be(formatado);
+    }
+
+    [Fact]
+    public void O_cpf_reconstituido_do_banco_e_igual_ao_criado_com_os_mesmos_digitos()
+    {
+        Cpf.DoBanco("52998224725").Should().Be(Cpf.Criar("529.982.247-25").Valor);
+    }
+
+    [Theory]
     [InlineData("529.982", "529982")]
     [InlineData("Maria", "")]
     [InlineData(null, "")]

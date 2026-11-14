@@ -7,12 +7,23 @@ using Sophia.Testes.Banco;
 
 namespace Sophia.E2E.Apoio;
 
-public sealed class AplicacaoEmExecucao : IAsyncLifetime
+public class AplicacaoEmExecucao : IAsyncLifetime
 {
     private readonly BancoDeTestes _banco = new();
+    private readonly IReadOnlyDictionary<string, string> _configuracao;
     private readonly ConcurrentQueue<string> _saidaDaAplicacao = new();
     private Process? _processo;
     private IPlaywright? _playwright;
+
+    public AplicacaoEmExecucao()
+        : this(new Dictionary<string, string>())
+    {
+    }
+
+    protected AplicacaoEmExecucao(IReadOnlyDictionary<string, string> configuracao)
+    {
+        _configuracao = configuracao;
+    }
 
     public string Endereco { get; private set; } = string.Empty;
 
@@ -89,6 +100,10 @@ public sealed class AplicacaoEmExecucao : IAsyncLifetime
         };
         inicio.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
         inicio.Environment["ConnectionStrings__Sophia"] = _banco.TextoDeConexao;
+        foreach (var (chave, valor) in _configuracao)
+        {
+            inicio.Environment[chave] = valor;
+        }
 
         var processo = Process.Start(inicio)!;
         processo.OutputDataReceived += (_, linha) => GuardarSaida(linha.Data);

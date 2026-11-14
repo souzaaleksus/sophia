@@ -92,7 +92,7 @@ ordenação por **Nome** ou **Valor unitário** e exclusão com confirmação.
 | Campo | Obrigatório | Observação |
 |---|---|---|
 | Nome | sim | não pode se repetir |
-| Valor unitário | sim | maior que zero, com até duas casas decimais (use vírgula: `1,75`) |
+| Valor unitário | sim | maior que zero, com até duas casas decimais: `1,75`, `1.250,00` ou `12.50` (ponto com uma ou duas casas também é decimal); formas ambíguas, como `1.2.3`, são recusadas |
 
 ![Novo produto](imagens/06-novo-produto.png)
 
@@ -138,7 +138,11 @@ gravada e a mensagem aparece no campo que precisa de correção; o que já foi d
 continua na tela.
 
 O mesmo produto não pode aparecer em duas linhas da mesma venda: escolher de novo um produto já
-lançado soma 1 à quantidade da linha existente.
+lançado soma 1 à quantidade da linha existente, e o caixa avisa, por exemplo, **Caneta azul já
+estava na venda: quantidade somada na linha 1.**
+
+Os avisos de erro somem assim que o problema é resolvido: escolher o cliente apaga
+**Selecione o cliente.**, e lançar um produto apaga **Lance ao menos um produto na venda.**
 
 Sair da tela com produtos lançados (pelo menu, por exemplo) pede confirmação, para a venda não
 se perder sem querer. **Cancelar** sai da tela sem gravar nada.
@@ -165,7 +169,7 @@ O menu **Venda** lista as vendas em páginas de 25, das mais recentes para as ma
 número, data, cliente, quantidade de itens e total. **Ver** abre o comprovante.
 
 - **Período**: preencha **De** e **Até** e clique em **Filtrar**, ou use os atalhos **Hoje**,
-  **7 dias** e **Mês**. **Todas** tira o filtro.
+  **7 dias** (a quantidade de dias pode ser configurada) e **Mês**. **Todas** tira o filtro.
 - **Ordenar**: clique em **Data** ou em **Total** para ordenar por essas colunas.
 
 Vendas registradas não são alteradas nem excluídas: são o histórico da loja.
@@ -200,7 +204,7 @@ Valem na tela de venda:
 | `F4` | vai para o próximo produto em branco, abrindo uma linha se precisar |
 | `↑` `↓` | navegam pelas sugestões de cliente ou de produto |
 | `Enter` | confirma a sugestão; na quantidade, abre a próxima linha |
-| `Esc` | fecha as sugestões |
+| `Esc` | fecha as sugestões; com as sugestões já fechadas, se a busca foi aberta pelo `F2`, devolve o cliente que estava escolhido |
 | `Ctrl` + `Enter` | finaliza a venda |
 
 ## 10. Mensagens e o que fazer
@@ -220,6 +224,9 @@ Valem na tela de venda:
 | Lance ao menos um produto na venda. | nenhum item preenchido | use `F4` e lance um produto |
 | Selecione o produto. | a linha tem valor ou quantidade, mas não tem produto | escolha o produto na lista de sugestões |
 | A quantidade deve ser maior que zero. | quantidade zero ou vazia | informe a quantidade |
+| Quantidade aceita no máximo 2.147.483.647. | número grande demais, em geral zeros a mais | confira a quantidade |
+| Quantidade deve ser maior que zero. | número negativo grande demais | confira a quantidade |
+| Valor unitário está acima do permitido. | valor com dígitos demais, em geral zeros a mais | confira o valor |
 | A data da venda não pode estar no futuro. | data depois de hoje | corrija a data |
 | Não foi possível atualizar a lista. Tente de novo. | a busca da lista falhou | aguarde um instante e digite de novo |
 | Não foi possível concluir a operação. Tente de novo em instantes. | falha inesperada | tente de novo; se persistir, avise o responsável pelo sistema |

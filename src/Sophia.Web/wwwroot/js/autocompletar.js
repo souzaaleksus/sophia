@@ -57,10 +57,23 @@ class Autocompletar {
 
     #aoTeclar(evento) {
         if (evento.key === 'Escape') {
-            this.#fechar();
+            this.#fecharComEsc(evento);
         } else if (!this.#lista.hidden) {
             this.#navegar(evento);
         }
+    }
+
+    #fecharComEsc(evento) {
+        if (this.#estaAberto()) {
+            evento.preventDefault();
+            evento.stopPropagation();
+        }
+
+        this.#fechar();
+    }
+
+    #estaAberto() {
+        return !this.#lista.hidden || !this.#aviso.hidden;
     }
 
     #navegar(evento) {

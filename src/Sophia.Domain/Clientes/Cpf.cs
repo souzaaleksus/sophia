@@ -4,7 +4,7 @@ namespace Sophia.Domain.Clientes;
 
 public sealed record Cpf
 {
-    private const string Campo = "Cpf";
+    private const string Campo = nameof(DadosCliente.Cpf);
     private const int QuantidadeDeDigitos = 11;
 
     private Cpf(string numero)
@@ -31,6 +31,8 @@ public sealed record Cpf
 
         return Resultado.Ok(new Cpf(digitos));
     }
+
+    public static Cpf DoBanco(string digitos) => new(digitos);
 
     public static string SomenteDigitos(string? texto) => Texto.SomenteDigitos(texto);
 

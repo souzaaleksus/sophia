@@ -20,20 +20,21 @@ public static class Composicao
         builder.Services.AddParametrosDoSophia(configuracao);
         builder.Services.AddAplicacao();
         builder.Services.AddInfraestrutura(textoDeConexao, configuracao["Sophia:FusoHorario"] ?? FusoHorarioPadrao);
-        AdicionarMvc(builder.Services);
+        builder.Services.AdicionarMvc().AdicionarNumerosDoBrasil();
     }
 
-    private static void AdicionarMvc(IServiceCollection servicos)
+    public static IServiceCollection AdicionarMvc(this IServiceCollection servicos)
     {
         servicos.AddLocalization(opcoes => opcoes.ResourcesPath = Textos.Pasta);
         servicos
-            .AddControllersWithViews(opcoes => opcoes.UsarDatasIso().Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
+            .AddControllersWithViews(opcoes => opcoes.UsarDatasIso().RecusarConsultasInvalidas().Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
             .AddDataAnnotationsLocalization(opcoes =>
                 opcoes.DataAnnotationLocalizerProvider = (_, fabrica) => fabrica.Create(typeof(Textos)));
         servicos
             .AddOptions<MvcOptions>()
             .Configure<IStringLocalizerFactory>((opcoes, fabrica) =>
                 MensagensDeValidacao.TraduzirParaPortugues(opcoes.ModelBindingMessageProvider, fabrica.Create(typeof(Textos))));
+        return servicos;
     }
 
     public static void UsarSophia(this WebApplication app)

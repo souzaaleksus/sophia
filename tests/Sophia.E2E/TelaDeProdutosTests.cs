@@ -46,6 +46,19 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task Avisa_no_campo_quando_o_nome_ja_existe_com_espacos_a_mais()
+    {
+        await CadastrarAsync("Caderno Universitário", "18,90");
+
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caderno  Universitário");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("18,90");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for=Nome]")).ToHaveTextAsync("Já existe um produto com este nome.");
+    }
+
+    [Fact]
     public async Task Altera_o_valor_do_produto()
     {
         await CadastrarAsync("Caneta azul", "2,50");
@@ -56,6 +69,65 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" }))
             .ToContainTextAsync("R$ 2,75");
+    }
+
+    [Theory]
+    [InlineData("12.50", "R$ 12,50")]
+    [InlineData("1.250", "R$ 1.250,00")]
+    [InlineData("1.250,75", "R$ 1.250,75")]
+    public async Task Valor_com_ponto_segue_a_mesma_regra_do_caixa(string digitado, string esperado)
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync(digitado);
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Produto cadastrado.");
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" })).ToContainTextAsync(esperado);
+    }
+
+    [Theory]
+    [InlineData("12.5055")]
+    [InlineData("1.2.3")]
+    [InlineData("1.25,0")]
+    [InlineData("0.500")]
+    [InlineData("1000000000000000000000000000000")]
+    [InlineData("99999999999999999")]
+    public async Task Valor_em_forma_ambigua_ou_acima_do_aceito_e_recusado_no_campo(string digitado)
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync(digitado);
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("Informe um número em Valor unitário.");
+        (await new Cadastro(aplicacao.Banco).QuantidadeDeProdutosAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_enviado_direto_avisa_que_esta_acima_do_permitido()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("1000000000000000000000000000000");
+
+        await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("Valor unitário está acima do permitido.");
+        await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("1000000000000000000000000000000");
+    }
+
+    [Fact]
+    public async Task Valor_recusado_pelo_servidor_volta_com_o_que_foi_digitado()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("2,5x");
+
+        await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O valor \"2,5x\" não é válido para Valor unitário.");
+        await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("2,5x");
     }
 
     private async Task CadastrarAsync(string nome, string valor)

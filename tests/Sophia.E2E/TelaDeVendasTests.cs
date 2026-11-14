@@ -120,6 +120,21 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
     }
 
     [Fact]
+    public async Task Produto_excluido_antes_de_finalizar_e_apontado_na_linha_do_item()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await EscolherClienteAsync("Maria", "Maria Santos");
+        await LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await LancarAsync(1, "Cader", "Caderno 96 folhas", "1");
+        await aplicacao.Banco.ExecutarAsync("DELETE FROM dbo.Produtos WHERE Nome = N'Caderno 96 folhas'");
+
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Finalizar venda" }).ClickAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for='Itens[1].ProdutoId']")).ToHaveTextAsync("Produto não encontrado.");
+        await Expect(_pagina.Locator("[data-valmsg-for='Itens[0].ProdutoId']")).ToBeEmptyAsync();
+    }
+
+    [Fact]
     public async Task Lista_a_venda_registrada()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
@@ -233,24 +248,10 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
 
     private ILocator ProdutoDaLinha(int indice) => Linha(indice).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true });
 
-    private async Task EscolherClienteAsync(string termo, string nome)
-    {
-        await ComboboxDeCliente().FillAsync(termo);
-        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = nome }).ClickAsync();
-        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync(nome);
-    }
+    private Task EscolherClienteAsync(string termo, string nome) => new Caixa(_pagina).EscolherClienteAsync(termo, nome);
 
-    private async Task LancarAsync(int linha, string termo, string produto, string quantidade)
-    {
-        if (await _pagina.GetByTestId("item-da-venda").CountAsync() <= linha)
-        {
-            await _pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
-        }
-
-        await ProdutoDaLinha(linha).FillAsync(termo);
-        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto }).ClickAsync();
-        await Linha(linha).GetByLabel("Quantidade", new() { Exact = true }).FillAsync(quantidade);
-    }
+    private Task LancarAsync(int linha, string termo, string produto, string quantidade) =>
+        new Caixa(_pagina).LancarAsync(linha, termo, produto, quantidade);
 
     private async Task PrepararCadastrosAsync()
     {

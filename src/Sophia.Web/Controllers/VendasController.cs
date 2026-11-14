@@ -12,11 +12,6 @@ public sealed class VendasController(IVendaServico vendas, IStringLocalizer<Text
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeVendas consulta, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         return ExibirLista(consulta, await vendas.ListarAsync(consulta, cancelamento));
     }
 
@@ -58,11 +53,6 @@ public sealed class VendasController(IVendaServico vendas, IStringLocalizer<Text
     [HttpGet]
     public async Task<IActionResult> Detalhe(int id, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var venda = await vendas.ObterAsync(id, cancelamento);
         return venda is null ? NotFound() : View(venda);
     }

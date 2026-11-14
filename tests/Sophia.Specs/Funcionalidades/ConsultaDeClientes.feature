@@ -39,6 +39,27 @@ Funcionalidade: Consulta de clientes
     Quando eu buscar na lista de clientes o CPF de "Cliente 07"
     Então vejo 1 cliente, de "Cliente 07" a "Cliente 07"
 
+  Esquema do Cenário: A busca pelo nome não diferencia acentos nem maiúsculas
+    Dado que existe o cliente "João Lima" com o CPF "529.982.247-25"
+    Quando eu buscar "<Termo>" na lista de clientes
+    Então vejo 1 cliente, de "João Lima" a "João Lima"
+
+    Exemplos:
+      | Termo |
+      | joao  |
+      | JOÃO  |
+      | Joao  |
+
+  Esquema do Cenário: Busca só com pontuação não traz a carteira inteira
+    Quando eu buscar "<Termo>" na lista de clientes
+    Então nenhum cliente é encontrado
+
+    Exemplos:
+      | Termo |
+      | -     |
+      | .-    |
+      | ...   |
+
   Esquema do Cenário: Página fora dos limites mostra a página válida mais próxima
     Quando eu consultar a página <Pedida> dos clientes
     Então estou na página <Mostrada> de 2, com os clientes <Primeiro> a <Ultimo> de 30

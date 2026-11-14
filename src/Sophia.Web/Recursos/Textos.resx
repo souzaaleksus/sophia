@@ -42,6 +42,15 @@
   <data name="binder.numero" xml:space="preserve">
     <value>Informe um número.</value>
   </data>
+  <data name="binder.numero-acima-do-maximo-no-campo" xml:space="preserve">
+    <value>{0} aceita no máximo {1}.</value>
+  </data>
+  <data name="binder.numero-acima-do-permitido-no-campo" xml:space="preserve">
+    <value>{0} está acima do permitido.</value>
+  </data>
+  <data name="binder.numero-maior-que-zero-no-campo" xml:space="preserve">
+    <value>{0} deve ser maior que zero.</value>
+  </data>
   <data name="binder.numero-no-campo" xml:space="preserve">
     <value>Informe um número em {0}.</value>
   </data>
@@ -107,6 +116,9 @@
   </data>
   <data name="caixa.produto-removido" xml:space="preserve">
     <value>Produto removido.</value>
+  </data>
+  <data name="caixa.produto-somado" xml:space="preserve">
+    <value>{produto} já estava na venda: quantidade somada na linha {linha}.</value>
   </data>
   <data name="caixa.produtos" xml:space="preserve">
     <value>Produtos</value>
@@ -358,7 +370,7 @@
     <value>Resumo das vendas</value>
   </data>
   <data name="painel.tabela-dos-dias" xml:space="preserve">
-    <value>Total vendido em cada um dos últimos 7 dias</value>
+    <value>Total vendido em cada um dos últimos {0} dias</value>
   </data>
   <data name="painel.ticket-medio" xml:space="preserve">
     <value>Ticket médio em {0}</value>
@@ -370,7 +382,7 @@
     <value>Últimas vendas</value>
   </data>
   <data name="painel.ultimos-dias" xml:space="preserve">
-    <value>Últimos 7 dias</value>
+    <value>Últimos {0} dias</value>
   </data>
   <data name="painel.vendido-hoje" xml:space="preserve">
     <value>Vendido hoje</value>
@@ -543,8 +555,8 @@
   <data name="venda.voltar" xml:space="preserve">
     <value>Voltar para as vendas</value>
   </data>
-  <data name="vendas.atalho-7-dias" xml:space="preserve">
-    <value>7 dias</value>
+  <data name="vendas.atalho-dias" xml:space="preserve">
+    <value>{0} dias</value>
   </data>
   <data name="vendas.atalho-hoje" xml:space="preserve">
     <value>Hoje</value>

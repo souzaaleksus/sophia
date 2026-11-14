@@ -105,9 +105,9 @@ public sealed class VendaTests
 
         resultado.Erros.Should().BeEquivalentTo(new[]
         {
-            new Erro("Itens[1].ProdutoId", "Selecione o produto."),
-            new Erro("Itens[1].Quantidade", "A quantidade deve ser maior que zero."),
-            new Erro("Itens[1].ValorUnitario", "O valor unitário deve ser maior que zero."),
+            new Erro("ProdutoId", "Selecione o produto.", 1),
+            new Erro("Quantidade", "A quantidade deve ser maior que zero.", 1),
+            new Erro("ValorUnitario", "O valor unitário deve ser maior que zero.", 1),
         });
     }
 
@@ -118,8 +118,8 @@ public sealed class VendaTests
 
         resultado.Erros.Should().BeEquivalentTo(new[]
         {
-            new Erro("Itens[0].Quantidade", "Informe a quantidade."),
-            new Erro("Itens[0].ValorUnitario", "Informe o valor unitário."),
+            new Erro("Quantidade", "Informe a quantidade.", 0),
+            new Erro("ValorUnitario", "Informe o valor unitário.", 0),
         });
     }
 
@@ -129,7 +129,7 @@ public sealed class VendaTests
         var resultado = Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 2.505m)]), Hoje);
 
         resultado.Erros.Should().ContainSingle()
-            .Which.Should().Be(new Erro("Itens[0].ValorUnitario", "O valor unitário aceita no máximo duas casas decimais."));
+            .Which.Should().Be(new Erro("ValorUnitario", "O valor unitário aceita no máximo duas casas decimais.", 0));
     }
 
     [Fact]
@@ -145,8 +145,9 @@ public sealed class VendaTests
         var resultado = Venda.Registrar(new DadosVenda(Hoje, Maria, itens), Hoje);
 
         resultado.Erros.Should().ContainSingle().Which.Should().Be(new Erro(
-            "Itens[2].ProdutoId",
-            "Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior."));
+            "ProdutoId",
+            "Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior.",
+            2));
     }
 
     [Fact]

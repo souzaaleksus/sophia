@@ -12,6 +12,8 @@ public static class Formato
 
     public static string Numero(decimal? valor) => valor?.ToString("N2", PortuguesDoBrasil) ?? string.Empty;
 
+    public static string Inteiro(int? valor) => valor?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+
     public static string Data(DateOnly? data) => data?.ToString("dd/MM/yyyy", PortuguesDoBrasil) ?? string.Empty;
 
     public static string DataPorExtenso(DateOnly data) =>
@@ -46,7 +48,7 @@ public static class Formato
     public static int TomDoAvatar(string nome) =>
         nome.Aggregate(0, (soma, letra) => (soma * 31 + letra) % 9973) % 5;
 
-    public static string DataParaCampo(DateOnly? data) => data?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty;
+    public static string DataParaCampo(DateOnly? data) => data?.ToString(DataIso.Formato, CultureInfo.InvariantCulture) ?? string.Empty;
 
     private static string PrimeiraMaiuscula(string texto) =>
         texto.Length == 0 ? texto : string.Concat(char.ToUpper(texto[0], PortuguesDoBrasil), texto[1..]);

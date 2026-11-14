@@ -31,7 +31,9 @@ public sealed class ItemDaVendaFormulario
 
     public string? ProdutoNome { get; set; }
 
+    [Display(Name = "campo.quantidade")]
     public int? Quantidade { get; set; }
 
+    [Display(Name = "campo.valor-unitario")]
     public decimal? ValorUnitario { get; set; }
 }

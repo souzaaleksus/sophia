@@ -1,5 +1,4 @@
 using Reqnroll;
-using Sophia.Domain;
 using Sophia.Domain.Clientes;
 using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
@@ -56,7 +55,7 @@ public sealed class PassosComuns(Cenario cenario)
     public void EntaoAOperacaoERecusadaNoCampo(string mensagem, string campo)
     {
         cenario.UltimoResultado!.Erros.Should().ContainSingle()
-            .Which.Should().Be(new Erro(campo, mensagem));
+            .Which.Should().Be(Cenario.ErroNoCampo(campo, mensagem));
     }
 
     [Then("a exclusão é recusada com a mensagem {string}")]
