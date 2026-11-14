@@ -61,6 +61,12 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
     public SophiaDbContext NovoContexto() =>
         new(new DbContextOptionsBuilder<SophiaDbContext>().UseSqlServer(TextoDeConexao).Options);
 
+    public SophiaDbContext NovoContexto(Action<string> registrarSql) =>
+        new(new DbContextOptionsBuilder<SophiaDbContext>()
+            .UseSqlServer(TextoDeConexao)
+            .LogTo(registrarSql, [DbLoggerCategory.Database.Command.Name])
+            .Options);
+
     public async Task LimparAsync()
     {
         await using var conexao = new SqlConnection(TextoDeConexao);

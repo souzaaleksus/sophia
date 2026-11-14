@@ -100,7 +100,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
         await _servico.RegistrarAsync(new DadosVenda(Hoje.AddDays(-1), _maria, [new(_caneta, 2, 2.50m)]));
         await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caderno, 1, 18.90m), new(_caneta, 1, 2.50m)]));
 
-        var vendas = await _servico.ListarAsync();
+        var vendas = await PrimeiraPaginaAsync();
 
         vendas.Select(v => (v.Data, v.ClienteNome, v.QuantidadeDeItens, v.Total)).Should().Equal(
             (Hoje, "Maria Santos", 2, 21.40m),
@@ -117,7 +117,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
 
         segunda.Sucesso.Should().BeTrue();
         segunda.Valor.Should().Be(primeira.Valor);
-        (await _servico.ListarAsync()).Should().ContainSingle();
+        (await PrimeiraPaginaAsync()).Should().ContainSingle();
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
         var segunda = await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, itens, Guid.NewGuid()));
 
         segunda.Valor.Should().NotBe(primeira.Valor);
-        (await _servico.ListarAsync()).Should().HaveCount(2);
+        (await PrimeiraPaginaAsync()).Should().HaveCount(2);
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
         await _servico.RegistrarAsync(dados);
         await _servico.RegistrarAsync(dados);
 
-        (await _servico.ListarAsync()).Should().HaveCount(2);
+        (await PrimeiraPaginaAsync()).Should().HaveCount(2);
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
         var resultado = await _servico.RegistrarAsync(dados);
 
         resultado.Sucesso.Should().BeTrue();
-        (await _servico.ListarAsync()).Should().ContainSingle()
+        (await PrimeiraPaginaAsync()).Should().ContainSingle()
             .Which.Id.Should().Be(resultado.Valor);
     }
 
@@ -171,5 +171,87 @@ public sealed class VendaServicoTests : IAsyncLifetime
     public async Task Venda_inexistente_devolve_nulo()
     {
         (await _servico.ObterAsync(999)).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Lista_em_paginas_de_25_das_mais_recentes_para_as_mais_antigas()
+    {
+        await RegistrarUmaVendaPorDiaAsync(60);
+
+        var pagina = await _servico.ListarAsync(1);
+
+        pagina.Numero.Should().Be(1);
+        pagina.Tamanho.Should().Be(VendaServico.TamanhoDaPagina).And.Be(25);
+        pagina.TotalDeItens.Should().Be(60);
+        pagina.TotalDePaginas.Should().Be(3);
+        pagina.Itens.Should().HaveCount(25);
+        pagina.Itens.Select(v => v.Data).Should().BeInDescendingOrder();
+        pagina.Itens[0].Data.Should().Be(Hoje);
+        pagina.Itens[^1].Data.Should().Be(Hoje.AddDays(-24));
+    }
+
+    [Fact]
+    public async Task A_ultima_pagina_traz_as_vendas_que_sobraram()
+    {
+        await RegistrarUmaVendaPorDiaAsync(60);
+
+        var pagina = await _servico.ListarAsync(3);
+
+        pagina.Numero.Should().Be(3);
+        pagina.Itens.Select(v => v.Data).Should().Equal(Enumerable.Range(50, 10).Select(dias => Hoje.AddDays(-dias)));
+        pagina.TemProxima.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task No_mesmo_dia_a_venda_de_numero_maior_vem_primeiro_e_nenhuma_se_repete_entre_paginas()
+    {
+        for (var vez = 0; vez < 30; vez++)
+        {
+            await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)]));
+        }
+
+        var primeira = await _servico.ListarAsync(1);
+        var segunda = await _servico.ListarAsync(2);
+
+        var ids = primeira.Itens.Concat(segunda.Itens).Select(v => v.Id).ToList();
+        ids.Should().HaveCount(30).And.OnlyHaveUniqueItems().And.BeInDescendingOrder();
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-5, 1)]
+    [InlineData(4, 3)]
+    [InlineData(99, 3)]
+    public async Task Pagina_fora_dos_limites_vira_a_primeira_ou_a_ultima(int pedida, int mostrada)
+    {
+        await RegistrarUmaVendaPorDiaAsync(60);
+
+        var pagina = await _servico.ListarAsync(pedida);
+
+        pagina.Numero.Should().Be(mostrada);
+        pagina.Itens.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task Sem_vendas_devolve_uma_pagina_vazia()
+    {
+        var pagina = await _servico.ListarAsync(7);
+
+        pagina.Numero.Should().Be(1);
+        pagina.Itens.Should().BeEmpty();
+        pagina.TotalDeItens.Should().Be(0);
+        pagina.TotalDePaginas.Should().Be(1);
+    }
+
+    private async Task<IReadOnlyList<VendaResumoDto>> PrimeiraPaginaAsync() => (await _servico.ListarAsync(1)).Itens;
+
+    private async Task RegistrarUmaVendaPorDiaAsync(int quantidade)
+    {
+        for (var dias = quantidade - 1; dias >= 0; dias--)
+        {
+            var resultado = await _servico.RegistrarAsync(
+                new DadosVenda(Hoje.AddDays(-dias), _maria, [new(_caneta, 1, 2.50m)]));
+            resultado.Sucesso.Should().BeTrue();
+        }
     }
 }

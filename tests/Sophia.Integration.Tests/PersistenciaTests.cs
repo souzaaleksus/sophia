@@ -258,6 +258,46 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
             .Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task Pagina_as_vendas_no_banco_das_mais_recentes_para_as_mais_antigas()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var ids = new List<int>();
+        for (var dias = 4; dias >= 0; dias--)
+        {
+            ids.Add(await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)], data: Hoje.AddDays(-dias)));
+        }
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new VendaRepositorio(contexto);
+        var primeira = await repositorio.ListarPaginaAsync(1, 2);
+        var ultima = await repositorio.ListarPaginaAsync(3, 2);
+        var alemDaUltima = await repositorio.ListarPaginaAsync(4, 2);
+
+        primeira.Should().BeEquivalentTo(new { Numero = 1, Tamanho = 2, TotalDeItens = 5 });
+        primeira.Itens.Select(v => v.Id).Should().Equal(ids[4], ids[3]);
+        primeira.Itens[0].Should().Be(new VendaResumoDto(ids[4], Hoje, "529.982.247-25", "Maria Santos", 1, 2.50m));
+        ultima.Itens.Select(v => v.Id).Should().Equal(ids[0]);
+        alemDaUltima.Itens.Should().BeEmpty();
+        alemDaUltima.TotalDeItens.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task A_pagina_de_vendas_e_contada_e_recortada_no_proprio_sql()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
+        var comandos = new List<string>();
+
+        await using var contexto = banco.NovoContexto(comandos.Add);
+        await new VendaRepositorio(contexto).ListarPaginaAsync(2, 25);
+
+        var sql = string.Join(Environment.NewLine, comandos);
+        sql.Should().Contain("COUNT(*)").And.Contain("OFFSET").And.Contain("FETCH NEXT");
+    }
+
     private async Task<int> CadastrarClienteAsync(string cpf, string nome, string? telefone = null)
     {
         await using var contexto = banco.NovoContexto();

@@ -1,3 +1,4 @@
+using Sophia.Application;
 using Sophia.Application.Painel;
 using Sophia.Application.Vendas;
 using Sophia.Domain.Vendas;
@@ -8,21 +9,21 @@ internal sealed class VendaRepositorioEmMemoria(BancoEmMemoria banco) : IVendaRe
 {
     public Task<IReadOnlyList<VendaResumoDto>> ListarAsync(int? limite = null, CancellationToken cancelamento = default)
     {
-        var clientes = banco.TabelaDeClientes.Gravados.ToDictionary(c => c.Id);
-        IReadOnlyList<VendaResumoDto> vendas = banco.TabelaDeVendas.Gravados
-            .OrderByDescending(v => v.Data)
-            .ThenByDescending(v => v.Id)
-            .Select(v => new VendaResumoDto(
-                v.Id,
-                v.Data,
-                clientes[v.ClienteId].Cpf.Formatado,
-                clientes[v.ClienteId].Nome,
-                v.Itens.Count,
-                v.Total))
+        IReadOnlyList<VendaResumoDto> vendas = ResumosDasMaisRecentesParaAsMaisAntigas()
             .Take(limite ?? int.MaxValue)
             .ToList();
 
         return Task.FromResult(vendas);
+    }
+
+    public Task<Pagina<VendaResumoDto>> ListarPaginaAsync(int numero, int tamanho, CancellationToken cancelamento = default)
+    {
+        var itens = ResumosDasMaisRecentesParaAsMaisAntigas()
+            .Skip((numero - 1) * tamanho)
+            .Take(tamanho)
+            .ToList();
+
+        return Task.FromResult(new Pagina<VendaResumoDto>(itens, numero, tamanho, banco.TabelaDeVendas.Gravados.Count));
     }
 
     public Task<VendaDetalheDto?> ObterDetalheAsync(int id, CancellationToken cancelamento = default)
@@ -91,6 +92,21 @@ internal sealed class VendaRepositorioEmMemoria(BancoEmMemoria banco) : IVendaRe
         Task.FromResult(banco.TabelaDeVendas.Gravados.FirstOrDefault(v => v.ChaveDeRegistro == chave)?.Id);
 
     public void Adicionar(Venda venda) => banco.TabelaDeVendas.Adicionar(venda);
+
+    private IEnumerable<VendaResumoDto> ResumosDasMaisRecentesParaAsMaisAntigas()
+    {
+        var clientes = banco.TabelaDeClientes.Gravados.ToDictionary(c => c.Id);
+        return banco.TabelaDeVendas.Gravados
+            .OrderByDescending(v => v.Data)
+            .ThenByDescending(v => v.Id)
+            .Select(v => new VendaResumoDto(
+                v.Id,
+                v.Data,
+                clientes[v.ClienteId].Cpf.Formatado,
+                clientes[v.ClienteId].Nome,
+                v.Itens.Count,
+                v.Total));
+    }
 
     private IEnumerable<Venda> DoPeriodo(DateOnly inicio, DateOnly fim) =>
         banco.TabelaDeVendas.Gravados.Where(v => v.Data >= inicio && v.Data <= fim);

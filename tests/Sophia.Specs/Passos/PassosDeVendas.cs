@@ -71,7 +71,7 @@ public sealed class PassosDeVendas(Cenario cenario)
     [Then(@"^existem? (\d+) vendas? registradas?$")]
     public async Task EntaoExistemVendasRegistradas(int quantidade)
     {
-        (await cenario.Vendas.ListarAsync()).Should().HaveCount(quantidade);
+        (await cenario.Vendas.ListarAsync(1)).TotalDeItens.Should().Be(quantidade);
     }
 
     [Then("a venda mostra o CPF {string} e o nome {string}")]
