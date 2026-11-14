@@ -6,7 +6,7 @@ using Sophia.Testes.Banco;
 namespace Sophia.Specs.Apoio;
 
 [Binding]
-public sealed class Ganchos
+public static class Ganchos
 {
     internal static readonly BancoDeTestes Banco = new();
 

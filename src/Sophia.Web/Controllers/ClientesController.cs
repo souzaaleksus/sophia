@@ -9,14 +9,15 @@ namespace Sophia.Web.Controllers;
 public sealed class ClientesController(IClienteServico clientes, ParametrosDoSophia parametros) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> Index(
-        int pagina = 1,
-        string? busca = null,
-        string? ordem = null,
-        CancellationToken cancelamento = default)
+    public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
     {
-        var lista = await clientes.ListarAsync(new ConsultaDeLista(pagina, busca, ordem), cancelamento);
-        ViewData["Busca"] = busca;
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var lista = await clientes.ListarAsync(consulta, cancelamento);
+        ViewData["Busca"] = consulta.Busca;
         ViewData["Ordem"] = lista.Ordem;
         return View(lista.Pagina);
     }
@@ -58,6 +59,11 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Editar(int id, CancellationToken cancelamento)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var cliente = await clientes.ObterAsync(id, cancelamento);
         return cliente is null ? NotFound() : View("Formulario", ClienteFormulario.De(cliente));
     }
@@ -85,6 +91,11 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Excluir(int id, CancellationToken cancelamento)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var cliente = await clientes.ObterAsync(id, cancelamento);
         return cliente is null ? NotFound() : View(cliente);
     }
@@ -93,6 +104,11 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     [ActionName(nameof(Excluir))]
     public async Task<IActionResult> ConfirmarExclusao(int id, CancellationToken cancelamento)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var resultado = await clientes.ExcluirAsync(id, cancelamento);
         if (resultado.Sucesso)
         {

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Playwright;
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
@@ -32,7 +33,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await _pagina.GetByRole(AriaRole.Link, new() { Name = "Nova venda", Exact = true }).ClickAsync();
 
         var hoje = new RelogioDoSistema(TimeProvider.System, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo")).Hoje;
-        await Expect(_pagina.GetByLabel("Data da venda")).ToHaveValueAsync(hoje.ToString("yyyy-MM-dd"));
+        await Expect(_pagina.GetByLabel("Data da venda")).ToHaveValueAsync(hoje.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
     }
 
     [Theory]

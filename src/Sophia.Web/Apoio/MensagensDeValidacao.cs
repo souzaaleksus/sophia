@@ -6,6 +6,12 @@ public static class MensagensDeValidacao
 {
     public static void TraduzirParaPortugues(DefaultModelBindingMessageProvider mensagens)
     {
+        TraduzirValoresInvalidos(mensagens);
+        TraduzirValoresAusentes(mensagens);
+    }
+
+    private static void TraduzirValoresInvalidos(DefaultModelBindingMessageProvider mensagens)
+    {
         mensagens.SetAttemptedValueIsInvalidAccessor((valor, campo) => $"O valor \"{valor}\" não é válido para {campo}.");
         mensagens.SetNonPropertyAttemptedValueIsInvalidAccessor(valor => $"O valor \"{valor}\" não é válido.");
         mensagens.SetUnknownValueIsInvalidAccessor(campo => $"O valor informado não é válido para {campo}.");
@@ -13,6 +19,10 @@ public static class MensagensDeValidacao
         mensagens.SetValueIsInvalidAccessor(valor => $"O valor \"{valor}\" não é válido.");
         mensagens.SetValueMustBeANumberAccessor(campo => $"Informe um número em {campo}.");
         mensagens.SetNonPropertyValueMustBeANumberAccessor(() => "Informe um número.");
+    }
+
+    private static void TraduzirValoresAusentes(DefaultModelBindingMessageProvider mensagens)
+    {
         mensagens.SetValueMustNotBeNullAccessor(campo => $"Informe {campo}.");
         mensagens.SetMissingBindRequiredValueAccessor(campo => $"Informe {campo}.");
         mensagens.SetMissingKeyOrValueAccessor(() => "Informe um valor.");

@@ -8,5 +8,13 @@ public sealed class ErroController : Controller
 {
     [Route("")]
     [Route("{codigo:int}")]
-    public IActionResult Index(int? codigo) => View(codigo ?? StatusCodes.Status500InternalServerError);
+    public IActionResult Index(int? codigo)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(StatusCodes.Status400BadRequest);
+        }
+
+        return View(codigo ?? StatusCodes.Status500InternalServerError);
+    }
 }

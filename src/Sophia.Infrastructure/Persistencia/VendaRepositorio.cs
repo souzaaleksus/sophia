@@ -21,17 +21,7 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         int tamanho,
         CancellationToken cancelamento = default)
     {
-        var doPeriodo = contexto.Vendas.AsQueryable();
-        if (inicio is { } de)
-        {
-            doPeriodo = doPeriodo.Where(v => v.Data >= de);
-        }
-
-        if (fim is { } ate)
-        {
-            doPeriodo = doPeriodo.Where(v => v.Data <= ate);
-        }
-
+        var doPeriodo = DoPeriodo(inicio, fim);
         var total = await doPeriodo.CountAsync(cancelamento);
         var itens = await ResumirAsync(doPeriodo, ordem, numero, tamanho, cancelamento);
         return new Pagina<VendaResumoDto>(itens, numero, tamanho, total);
@@ -39,51 +29,37 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
 
     public async Task<VendaDetalheDto?> ObterDetalheAsync(int id, CancellationToken cancelamento = default)
     {
-        var cabecalho = await (
-                from venda in contexto.Vendas
-                join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
-                where venda.Id == id
-                select new { venda.Id, venda.Data, cliente.Cpf, cliente.Nome })
-            .FirstOrDefaultAsync(cancelamento);
-
+        var cabecalho = await CabecalhoDaVendaAsync(id, cancelamento);
         if (cabecalho is null)
         {
             return null;
         }
 
-        var itens = await (
-                from item in contexto.VendaItens
-                join produto in contexto.Produtos on item.ProdutoId equals produto.Id
-                where item.VendaId == id
-                orderby item.Id
-                select new ItemVendaDto(
-                    produto.Nome,
-                    item.Quantidade,
-                    item.ValorUnitario,
-                    item.Quantidade * item.ValorUnitario))
-            .ToListAsync(cancelamento);
-
-        return new VendaDetalheDto(
-            cabecalho.Id,
-            cabecalho.Data,
-            cabecalho.Cpf.Formatado,
-            cabecalho.Nome,
-            itens,
-            itens.Sum(i => i.Subtotal));
+        var itens = await ItensDaVendaAsync(id, cancelamento);
+        return new VendaDetalheDto(cabecalho.Id, cabecalho.Data, cabecalho.Cpf.Formatado, cabecalho.Nome, itens, itens.Sum(i => i.Subtotal));
     }
+
+    private Task<LinhaDeVenda?> CabecalhoDaVendaAsync(int id, CancellationToken cancelamento) =>
+        ComCliente(contexto.Vendas.Where(v => v.Id == id))
+            .Select(v => new LinhaDeVenda { Id = v.Venda.Id, Data = v.Venda.Data, Cpf = v.Cliente.Cpf, Nome = v.Cliente.Nome })
+            .FirstOrDefaultAsync(cancelamento);
+
+    private Task<List<ItemVendaDto>> ItensDaVendaAsync(int vendaId, CancellationToken cancelamento) =>
+        (from item in contexto.VendaItens
+         join produto in contexto.Produtos on item.ProdutoId equals produto.Id
+         where item.VendaId == vendaId
+         orderby item.Id
+         select new ItemVendaDto(produto.Nome, item.Quantidade, item.ValorUnitario, item.Quantidade * item.ValorUnitario))
+        .ToListAsync(cancelamento);
 
     public async Task<ResumoDoPeriodo> ResumirAsync(
         DateOnly inicio,
         DateOnly fim,
         CancellationToken cancelamento = default)
     {
-        var doPeriodo = contexto.Vendas.Where(v => v.Data >= inicio && v.Data <= fim);
+        var doPeriodo = DoPeriodo(inicio, fim);
         var quantidade = await doPeriodo.CountAsync(cancelamento);
-        var total = await doPeriodo
-            .SelectMany(v => v.Itens)
-            .SumAsync(i => (decimal?)(i.Quantidade * i.ValorUnitario), cancelamento);
-
-        return new ResumoDoPeriodo(quantidade, total ?? 0m);
+        return new ResumoDoPeriodo(quantidade, await SomarItensAsync(doPeriodo, cancelamento));
     }
 
     public async Task<IReadOnlyList<TotalDoDia>> TotaisPorDiaAsync(
@@ -92,20 +68,13 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         CancellationToken cancelamento = default)
     {
         var totais = await (
-                from item in contexto.VendaItens
-                join venda in contexto.Vendas on item.VendaId equals venda.Id
-                where venda.Data >= inicio && venda.Data <= fim
-                group new { item.VendaId, Subtotal = item.Quantidade * item.ValorUnitario } by venda.Data into dia
+                from item in ItensDoPeriodo(inicio, fim)
+                group item by item.Data into dia
                 orderby dia.Key
-                select new
-                {
-                    Dia = dia.Key,
-                    Total = dia.Sum(i => i.Subtotal),
-                    QuantidadeDeVendas = dia.Select(i => i.VendaId).Distinct().Count(),
-                })
+                select new { Dia = dia.Key, Total = dia.Sum(i => i.Subtotal), Vendas = dia.Select(i => i.VendaId).Distinct().Count() })
             .ToListAsync(cancelamento);
 
-        return totais.Select(t => new TotalDoDia(t.Dia, t.Total, t.QuantidadeDeVendas)).ToList();
+        return totais.ConvertAll(t => new TotalDoDia(t.Dia, t.Total, t.Vendas));
     }
 
     public async Task<IReadOnlyList<ProdutoMaisVendido>> MaisVendidosAsync(
@@ -114,26 +83,14 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         int limite,
         CancellationToken cancelamento = default)
     {
-        var maisVendidos = await (
-                from item in contexto.VendaItens
-                join venda in contexto.Vendas on item.VendaId equals venda.Id
-                join produto in contexto.Produtos on item.ProdutoId equals produto.Id
-                where venda.Data >= inicio && venda.Data <= fim
-                group new { item.Quantidade, Subtotal = item.Quantidade * item.ValorUnitario }
-                    by new { produto.Id, produto.Nome } into vendido
-                select new
-                {
-                    vendido.Key.Id,
-                    vendido.Key.Nome,
-                    Quantidade = vendido.Sum(i => i.Quantidade),
-                    Total = vendido.Sum(i => i.Subtotal),
-                } into total
-                orderby total.Quantidade descending, total.Total descending, total.Nome
-                select total)
+        var maisVendidos = await TotaisPorProduto(inicio, fim)
+            .OrderByDescending(p => p.Quantidade)
+            .ThenByDescending(p => p.Total)
+            .ThenBy(p => p.Nome)
             .Take(limite)
             .ToListAsync(cancelamento);
 
-        return maisVendidos.Select(p => new ProdutoMaisVendido(p.Id, p.Nome, p.Quantidade, p.Total)).ToList();
+        return maisVendidos.ConvertAll(p => new ProdutoMaisVendido(p.Id, p.Nome, p.Quantidade, p.Total));
     }
 
     public Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default) =>
@@ -144,6 +101,45 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
 
     public void Adicionar(Venda venda) => contexto.Vendas.Add(venda);
 
+    private IQueryable<Venda> DoPeriodo(DateOnly? inicio, DateOnly? fim)
+    {
+        var vendas = contexto.Vendas.AsQueryable();
+        if (inicio is { } de)
+        {
+            vendas = vendas.Where(v => v.Data >= de);
+        }
+
+        return fim is { } ate ? vendas.Where(v => v.Data <= ate) : vendas;
+    }
+
+    private IQueryable<ItemDoPeriodo> ItensDoPeriodo(DateOnly inicio, DateOnly fim) =>
+        from item in contexto.VendaItens
+        join venda in DoPeriodo(inicio, fim) on item.VendaId equals venda.Id
+        select new ItemDoPeriodo
+        {
+            VendaId = item.VendaId,
+            ProdutoId = item.ProdutoId,
+            Data = venda.Data,
+            Quantidade = item.Quantidade,
+            Subtotal = item.Quantidade * item.ValorUnitario,
+        };
+
+    private static async Task<decimal> SomarItensAsync(IQueryable<Venda> vendas, CancellationToken cancelamento) =>
+        await vendas.SelectMany(v => v.Itens).SumAsync(i => (decimal?)(i.Quantidade * i.ValorUnitario), cancelamento) ?? 0m;
+
+    private sealed class ItemDoPeriodo
+    {
+        public int VendaId { get; init; }
+
+        public int ProdutoId { get; init; }
+
+        public DateOnly Data { get; init; }
+
+        public int Quantidade { get; init; }
+
+        public decimal Subtotal { get; init; }
+    }
+
     private async Task<List<VendaResumoDto>> ResumirAsync(
         IQueryable<Venda> vendas,
         Ordenacao<ColunaDeVendas> ordem,
@@ -151,31 +147,77 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         int tamanho,
         CancellationToken cancelamento)
     {
-        var comCliente =
-            from venda in vendas
-            join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
-            select new { Venda = venda, Cliente = cliente };
-
-        var ordenadas = ordem.Coluna == ColunaDeVendas.Total
-            ? comCliente.OrdenarPor(v => v.Venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario), ordem.Decrescente)
-            : comCliente.OrdenarPor(v => v.Venda.Data, ordem.Decrescente);
-
-        var linhas = await ordenadas
-            .DepoisPor(v => v.Venda.Id, ordem.Decrescente)
+        var linhas = await Ordenar(ComCliente(vendas), ordem)
             .Recortar(numero, tamanho)
-            .Select(v => new
+            .Select(v => new LinhaDeVenda
             {
-                v.Venda.Id,
-                v.Venda.Data,
-                v.Cliente.Cpf,
-                v.Cliente.Nome,
-                QuantidadeDeItens = v.Venda.Itens.Count(),
+                Id = v.Venda.Id,
+                Data = v.Venda.Data,
+                Cpf = v.Cliente.Cpf,
+                Nome = v.Cliente.Nome,
+                QuantidadeDeItens = v.Venda.Itens.Count,
                 Total = v.Venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario),
             })
             .ToListAsync(cancelamento);
 
-        return linhas
-            .Select(v => new VendaResumoDto(v.Id, v.Data, v.Cpf.Formatado, v.Nome, v.QuantidadeDeItens, v.Total))
-            .ToList();
+        return linhas.ConvertAll(v => new VendaResumoDto(v.Id, v.Data, v.Cpf.Formatado, v.Nome, v.QuantidadeDeItens, v.Total));
+    }
+
+    private IQueryable<VendaComCliente> ComCliente(IQueryable<Venda> vendas) =>
+        from venda in vendas
+        join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
+        select new VendaComCliente { Venda = venda, Cliente = cliente };
+
+    private static IOrderedQueryable<VendaComCliente> Ordenar(IQueryable<VendaComCliente> vendas, Ordenacao<ColunaDeVendas> ordem)
+    {
+        var porColuna = ordem.Coluna == ColunaDeVendas.Total
+            ? vendas.OrdenarPor(v => v.Venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario), ordem.Decrescente)
+            : vendas.OrdenarPor(v => v.Venda.Data, ordem.Decrescente);
+        return porColuna.DepoisPor(v => v.Venda.Id, ordem.Decrescente);
+    }
+
+    private IQueryable<TotalDoProduto> TotaisPorProduto(DateOnly inicio, DateOnly fim) =>
+        from item in ItensDoPeriodo(inicio, fim)
+        join produto in contexto.Produtos on item.ProdutoId equals produto.Id
+        group item by new { produto.Id, produto.Nome } into vendido
+        select new TotalDoProduto
+        {
+            Id = vendido.Key.Id,
+            Nome = vendido.Key.Nome,
+            Quantidade = vendido.Sum(i => i.Quantidade),
+            Total = vendido.Sum(i => i.Subtotal),
+        };
+
+    private sealed class VendaComCliente
+    {
+        public required Venda Venda { get; init; }
+
+        public required Sophia.Domain.Clientes.Cliente Cliente { get; init; }
+    }
+
+    private sealed class LinhaDeVenda
+    {
+        public int Id { get; init; }
+
+        public DateOnly Data { get; init; }
+
+        public required Sophia.Domain.Clientes.Cpf Cpf { get; init; }
+
+        public required string Nome { get; init; }
+
+        public int QuantidadeDeItens { get; init; }
+
+        public decimal Total { get; init; }
+    }
+
+    private sealed class TotalDoProduto
+    {
+        public int Id { get; init; }
+
+        public required string Nome { get; init; }
+
+        public int Quantidade { get; init; }
+
+        public decimal Total { get; init; }
     }
 }

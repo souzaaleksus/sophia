@@ -104,16 +104,9 @@ public sealed class AplicacaoEmExecucao : IAsyncLifetime
         var limite = DateTime.UtcNow.AddSeconds(60);
         while (DateTime.UtcNow < limite)
         {
-            try
+            if (await RespondeAsync(http))
             {
-                var resposta = await http.GetAsync(new Uri($"{Endereco}/Produtos"));
-                if (resposta.IsSuccessStatusCode)
-                {
-                    return;
-                }
-            }
-            catch (HttpRequestException)
-            {
+                return;
             }
 
             await Task.Delay(500);
@@ -146,6 +139,19 @@ public sealed class AplicacaoEmExecucao : IAsyncLifetime
         }
 
         return Path.Combine(pasta!.FullName, "src", "Sophia.Web");
+    }
+
+    private async Task<bool> RespondeAsync(HttpClient http)
+    {
+        try
+        {
+            var resposta = await http.GetAsync(new Uri($"{Endereco}/Produtos"));
+            return resposta.IsSuccessStatusCode;
+        }
+        catch (HttpRequestException)
+        {
+            return false;
+        }
     }
 
     private static int PortaLivre()

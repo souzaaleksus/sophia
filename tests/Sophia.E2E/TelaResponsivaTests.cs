@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Playwright;
 using Sophia.Domain.Vendas;
 using Sophia.E2E.Apoio;
@@ -110,6 +111,6 @@ public sealed class TelaResponsivaTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
     private string Resolver(string endereco) =>
         endereco
-            .Replace("{venda}", _venda.ToString(), StringComparison.Ordinal)
-            .Replace("{cliente}", _cliente.ToString(), StringComparison.Ordinal);
+            .Replace("{venda}", _venda.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("{cliente}", _cliente.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
 }

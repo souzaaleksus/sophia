@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Sophia.E2E.Apoio;
@@ -78,8 +79,8 @@ public sealed partial class ControlesDeFormularioTests(AplicacaoEmExecucao aplic
         var produto = await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
 
         await _pagina.GotoAsync(endereco
-            .Replace("{cliente}", cliente.ToString(), StringComparison.Ordinal)
-            .Replace("{produto}", produto.ToString(), StringComparison.Ordinal));
+            .Replace("{cliente}", cliente.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+            .Replace("{produto}", produto.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal));
 
         var baixos = await Medidas.AlturasMenoresQueAsync(_pagina, Controles, AlturaMinima);
         baixos.Should().BeEmpty($"em {endereco} todo controle precisa de ao menos {AlturaMinima} px de altura");

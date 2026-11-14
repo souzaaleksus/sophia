@@ -15,7 +15,7 @@ public sealed partial class Cliente
         Nome = null!;
     }
 
-    public int Id { get; private set; }
+    public int Id { get; }
 
     public Cpf Cpf { get; private set; }
 
@@ -37,25 +37,35 @@ public sealed partial class Cliente
     public Resultado Alterar(DadosCliente dados, DateOnly hoje)
     {
         var erros = new List<Erro>();
-
-        var cpf = Cpf.Criar(dados.Cpf);
-        erros.AddRange(cpf.Erros);
-        var nome = RegrasComuns.ValidarNome(dados.Nome, TamanhoMaximoNome, erros);
-        var dataNascimento = ValidarDataNascimento(dados.DataNascimento, hoje, erros);
-        var email = ValidarEmail(dados.Email, erros);
-        var telefone = ValidarTelefone(dados.Telefone, erros);
-
+        var validos = Validar(dados, hoje, erros);
         if (erros.Count > 0)
         {
             return Resultado.Falha(erros);
         }
 
-        Cpf = cpf.Valor;
-        Nome = nome!;
-        DataNascimento = dataNascimento;
-        Email = email;
-        Telefone = telefone;
+        Aplicar(validos);
         return Resultado.Ok();
+    }
+
+    private static DadosValidos Validar(DadosCliente dados, DateOnly hoje, List<Erro> erros)
+    {
+        var cpf = Cpf.Criar(dados.Cpf);
+        erros.AddRange(cpf.Erros);
+        return new DadosValidos(
+            cpf.Sucesso ? cpf.Valor : null,
+            RegrasComuns.ValidarNome(dados.Nome, TamanhoMaximoNome, erros),
+            ValidarDataNascimento(dados.DataNascimento, hoje, erros),
+            ValidarEmail(dados.Email, erros),
+            ValidarTelefone(dados.Telefone, erros));
+    }
+
+    private void Aplicar(DadosValidos validos)
+    {
+        Cpf = validos.Cpf!;
+        Nome = validos.Nome!;
+        DataNascimento = validos.DataNascimento;
+        Email = validos.Email;
+        Telefone = validos.Telefone;
     }
 
     private static DateOnly? ValidarDataNascimento(DateOnly? data, DateOnly hoje, List<Erro> erros)
@@ -104,4 +114,6 @@ public sealed partial class Cliente
 
     [GeneratedRegex(@"^[\d\s()\-]+$")]
     private static partial Regex FormatoDeTelefone();
+
+    private sealed record DadosValidos(Cpf? Cpf, string? Nome, DateOnly? DataNascimento, string? Email, string? Telefone);
 }

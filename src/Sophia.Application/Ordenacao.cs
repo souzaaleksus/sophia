@@ -20,15 +20,8 @@ public static class Ordenacao
 
         var decrescente = pedida[0] == Inversao;
         var nome = decrescente ? pedida[1..] : pedida;
-        foreach (var coluna in Enum.GetValues<TColuna>())
-        {
-            if (string.Equals(NomeDa(coluna), nome, StringComparison.Ordinal))
-            {
-                return new Ordenacao<TColuna>(coluna, decrescente);
-            }
-        }
-
-        return padrao;
+        var colunas = Enum.GetValues<TColuna>().Where(coluna => string.Equals(NomeDa(coluna), nome, StringComparison.Ordinal));
+        return colunas.Select(coluna => new Ordenacao<TColuna>(coluna, decrescente)).FirstOrDefault() ?? padrao;
     }
 
     internal static string NomeDa<TColuna>(TColuna coluna)

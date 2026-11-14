@@ -14,18 +14,29 @@ internal sealed class VendaConfiguracao : IEntityTypeConfiguration<Venda>
         venda.HasKey(v => v.Id);
         venda.Property(v => v.Data).HasColumnType("date");
         venda.Ignore(v => v.Total);
+        ConfigurarChaveDeRegistro(venda);
+        ConfigurarCliente(venda);
+        ConfigurarItens(venda);
+    }
+
+    private static void ConfigurarChaveDeRegistro(EntityTypeBuilder<Venda> venda)
+    {
         venda.Property(v => v.ChaveDeRegistro).HasColumnType("uniqueidentifier");
         venda.HasIndex(v => v.ChaveDeRegistro)
             .IsUnique()
             .HasFilter("[ChaveDeRegistro] IS NOT NULL")
             .HasDatabaseName("UQ_Vendas_ChaveDeRegistro");
+    }
 
+    private static void ConfigurarCliente(EntityTypeBuilder<Venda> venda) =>
         venda.HasOne<Cliente>()
             .WithMany()
             .HasForeignKey(v => v.ClienteId)
             .OnDelete(DeleteBehavior.NoAction)
             .HasConstraintName("FK_Vendas_Clientes");
 
+    private static void ConfigurarItens(EntityTypeBuilder<Venda> venda)
+    {
         venda.HasMany(v => v.Itens)
             .WithOne()
             .HasForeignKey(i => i.VendaId)

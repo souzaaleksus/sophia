@@ -1,3 +1,4 @@
+using System.Globalization;
 using Sophia.Application.Clientes;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
@@ -52,13 +53,13 @@ public sealed class Cadastro(BancoDeTestes banco)
     public async Task<int> QuantidadeDeVendasAsync()
     {
         var linhas = await banco.ConsultarAsync("SELECT CAST(COUNT(*) AS nvarchar(10)) FROM dbo.Vendas");
-        return int.Parse(linhas.Single());
+        return int.Parse(linhas.Single(), CultureInfo.InvariantCulture);
     }
 
     public async Task<int> QuantidadeDeClientesAsync()
     {
         var linhas = await banco.ConsultarAsync("SELECT CAST(COUNT(*) AS nvarchar(10)) FROM dbo.Clientes");
-        return int.Parse(linhas.Single());
+        return int.Parse(linhas.Single(), CultureInfo.InvariantCulture);
     }
 
     public async Task<IReadOnlyList<int>> ClientesAsync(int quantidade)
@@ -98,7 +99,7 @@ public sealed class Cadastro(BancoDeTestes banco)
 
     public static string CpfValido(int numero)
     {
-        var digitos = (200_000_000 + (numero * 7_919)).ToString("D9").Select(c => c - '0').ToList();
+        var digitos = (200_000_000 + (numero * 7_919)).ToString("D9", CultureInfo.InvariantCulture).Select(c => c - '0').ToList();
         digitos.Add(DigitoVerificador(digitos));
         digitos.Add(DigitoVerificador(digitos));
         var texto = string.Concat(digitos);

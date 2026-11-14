@@ -11,7 +11,7 @@ public sealed class Venda
     {
     }
 
-    public int Id { get; private set; }
+    public int Id { get; }
 
     public DateOnly Data { get; private set; }
 
@@ -94,29 +94,36 @@ public sealed class Venda
         List<Erro> erros)
     {
         var errosAntes = erros.Count;
-
-        if (dados.ProdutoId is null or <= 0)
-        {
-            erros.Add(new Erro($"{linha}.ProdutoId", "Selecione o produto."));
-        }
-        else if (!produtosLancados.Add(dados.ProdutoId.Value))
-        {
-            erros.Add(new Erro($"{linha}.ProdutoId", MensagemProdutoRepetido));
-        }
-
-        if (dados.Quantidade is null)
-        {
-            erros.Add(new Erro($"{linha}.Quantidade", "Informe a quantidade."));
-        }
-        else if (dados.Quantidade <= 0)
-        {
-            erros.Add(new Erro($"{linha}.Quantidade", "A quantidade deve ser maior que zero."));
-        }
-
+        ValidarProduto(dados.ProdutoId, linha, produtosLancados, erros);
+        ValidarQuantidade(dados.Quantidade, linha, erros);
         var valorUnitario = RegrasComuns.ValidarValorUnitario(dados.ValorUnitario, $"{linha}.ValorUnitario", erros);
 
         return erros.Count == errosAntes
             ? new ItemVenda(dados.ProdutoId!.Value, dados.Quantidade!.Value, valorUnitario!.Value)
             : null;
+    }
+
+    private static void ValidarProduto(int? produtoId, string linha, HashSet<int> produtosLancados, List<Erro> erros)
+    {
+        if (produtoId is null or <= 0)
+        {
+            erros.Add(new Erro($"{linha}.ProdutoId", "Selecione o produto."));
+        }
+        else if (!produtosLancados.Add(produtoId.Value))
+        {
+            erros.Add(new Erro($"{linha}.ProdutoId", MensagemProdutoRepetido));
+        }
+    }
+
+    private static void ValidarQuantidade(int? quantidade, string linha, List<Erro> erros)
+    {
+        if (quantidade is null)
+        {
+            erros.Add(new Erro($"{linha}.Quantidade", "Informe a quantidade."));
+        }
+        else if (quantidade <= 0)
+        {
+            erros.Add(new Erro($"{linha}.Quantidade", "A quantidade deve ser maior que zero."));
+        }
     }
 }

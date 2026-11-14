@@ -52,27 +52,29 @@ public sealed class VendaServico(
         }
 
         var erros = await VerificarCadastrosAsync(venda, cancelamento);
-        if (erros.Count > 0)
-        {
-            return Resultado.Falha<int>(erros);
-        }
+        return erros.Count > 0
+            ? Resultado.Falha<int>(erros)
+            : Resultado.Ok(await GravarAsync(venda, cancelamento));
+    }
 
+    private async Task<int> GravarAsync(Venda venda, CancellationToken cancelamento)
+    {
         vendas.Adicionar(venda);
         try
         {
             await unidadeDeTrabalho.SalvarAsync(cancelamento);
+            return venda.Id;
         }
         catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.ValorDuplicado)
         {
-            if (await JaRegistradaAsync(venda, cancelamento) is { } vencedora)
+            var vencedora = await JaRegistradaAsync(venda, cancelamento);
+            if (vencedora is null)
             {
-                return Resultado.Ok(vencedora);
+                throw;
             }
 
-            throw;
+            return vencedora.Value;
         }
-
-        return Resultado.Ok(venda.Id);
     }
 
     private async Task<int?> JaRegistradaAsync(Venda venda, CancellationToken cancelamento) =>

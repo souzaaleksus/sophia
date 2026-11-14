@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Sophia.Domain.Vendas;
@@ -200,8 +201,8 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         var ate = _pagina.GetByLabel("Até", new() { Exact = true });
         await Expect(de).ToBeVisibleAsync();
 
-        await de.FillAsync(Cadastro.Hoje.AddDays(-11).ToString("yyyy-MM-dd"));
-        await ate.FillAsync(Cadastro.Hoje.AddDays(-9).ToString("yyyy-MM-dd"));
+        await de.FillAsync(Cadastro.Hoje.AddDays(-11).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        await ate.FillAsync(Cadastro.Hoje.AddDays(-9).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Filtrar" }).ClickAsync();
 
         await Expect(LinhaDe("João Lima")).ToHaveCountAsync(1);

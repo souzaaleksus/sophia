@@ -11,7 +11,12 @@ public sealed record ColunaOrdenavel(
 
     public bool Decrescente => Ativa && OrdemAtual.StartsWith('-');
 
-    public string? Sentido => Ativa ? (Decrescente ? "descending" : "ascending") : null;
+    public string? Sentido => (Ativa, Decrescente) switch
+    {
+        (false, _) => null,
+        (true, true) => "descending",
+        (true, false) => "ascending",
+    };
 
     public Dictionary<string, string> RotaDoClique()
     {

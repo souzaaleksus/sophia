@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Sophia.Application;
 using Sophia.Application.Vendas;
 using Sophia.Web.Apoio;
 using Sophia.Web.Models;
@@ -8,15 +9,18 @@ namespace Sophia.Web.Controllers;
 public sealed class VendasController(IVendaServico vendas) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> Index(
-        int pagina = 1,
-        DateOnly? de = null,
-        DateOnly? ate = null,
-        string? ordem = null,
-        CancellationToken cancelamento = default)
+    public async Task<IActionResult> Index([FromQuery] ConsultaDeVendas consulta, CancellationToken cancelamento)
     {
-        var consulta = new ConsultaDeVendas(pagina, de, ate, ordem);
-        var lista = await vendas.ListarAsync(consulta, cancelamento);
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        return ExibirLista(consulta, await vendas.ListarAsync(consulta, cancelamento));
+    }
+
+    private ViewResult ExibirLista(ConsultaDeVendas consulta, Lista<VendaResumoDto> lista)
+    {
         ViewData["De"] = consulta.Inicio;
         ViewData["Ate"] = consulta.Fim;
         ViewData["Ordem"] = lista.Ordem;
@@ -52,6 +56,11 @@ public sealed class VendasController(IVendaServico vendas) : Controller
     [HttpGet]
     public async Task<IActionResult> Detalhe(int id, CancellationToken cancelamento)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         var venda = await vendas.ObterAsync(id, cancelamento);
         return venda is null ? NotFound() : View(venda);
     }
