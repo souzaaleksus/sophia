@@ -90,6 +90,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     [InlineData("12.5055")]
     [InlineData("1.2.3")]
     [InlineData("1.25,0")]
+    [InlineData("0.500")]
     public async Task Valor_em_forma_ambigua_e_recusado_no_campo(string digitado)
     {
         await _pagina.GotoAsync("/Produtos/Novo");

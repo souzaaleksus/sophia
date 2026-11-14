@@ -44,10 +44,10 @@ public static partial class DecimalPtBr
     [GeneratedRegex(@"\s")]
     private static partial Regex Espacos();
 
-    [GeneratedRegex(@"^(\d{1,3}(\.\d{3})+|\d+),\d+$")]
+    [GeneratedRegex(@"^([1-9]\d{0,2}(\.\d{3})+|\d+),\d+$")]
     private static partial Regex ComVirgula();
 
-    [GeneratedRegex(@"^\d{1,3}(\.\d{3})+$")]
+    [GeneratedRegex(@"^[1-9]\d{0,2}(\.\d{3})+$")]
     private static partial Regex ComMilhar();
 
     [GeneratedRegex(@"^\d+\.\d{1,2}$")]

@@ -40,6 +40,11 @@ public sealed class ValorNoFormularioTests
     [InlineData("1,2,3")]
     [InlineData("12.")]
     [InlineData("abc")]
+    [InlineData("0.500")]
+    [InlineData("0.050")]
+    [InlineData("00.500")]
+    [InlineData("0.500,00")]
+    [InlineData("01.250")]
     public async Task Qualquer_outra_forma_e_recusada_com_mensagem_no_campo(string digitado)
     {
         var (resultado, erros) = await LigarAsync(digitado);

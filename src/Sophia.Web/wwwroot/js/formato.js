@@ -14,8 +14,8 @@ export function formatarContagem(quantidade, singular, plural) {
     return `${inteiro.format(quantidade)} ${quantidade === 1 ? singular : plural}`;
 }
 
-const comVirgula = /^(\d{1,3}(\.\d{3})+|\d+),\d+$/;
-const comMilhar = /^\d{1,3}(\.\d{3})+$/;
+const comVirgula = /^([1-9]\d{0,2}(\.\d{3})+|\d+),\d+$/;
+const comMilhar = /^[1-9]\d{0,2}(\.\d{3})+$/;
 const comPontoDecimal = /^\d+\.\d{1,2}$/;
 const soDigitos = /^\d+$/;
 
