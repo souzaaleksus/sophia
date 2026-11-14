@@ -67,3 +67,43 @@ jobs:
 
       - name: Testes de tela
         run: dotnet test tests/Sophia.E2E --no-build -c Release
+
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Subir o Sophia pelo docker compose
+        run: docker compose up -d --build
+
+      - name: Esperar o site responder
+        run: |
+          for _ in $(seq 1 60); do
+            if curl -fs -o /dev/null http://localhost:8080/; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+
+      - name: Conferir o painel
+        run: |
+          test "$(curl -s -o painel.html -w '%{http_code}' http://localhost:8080/)" = "200"
+          grep -q '<h1>Painel</h1>' painel.html
+
+      - name: Conferir a carga de demonstração
+        run: |
+          curl -fsS -o vendas.html http://localhost:8080/Vendas
+          grep -qE 'data-testid="contagem">[1-9]' vendas.html
+          grep -o 'data-testid="contagem">[^<]*' vendas.html
+
+      - name: Registrar o estado dos serviços
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs
+
+      - name: Derrubar o Sophia
+        if: always()
+        run: docker compose down -v
