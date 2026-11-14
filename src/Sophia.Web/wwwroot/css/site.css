@@ -916,7 +916,7 @@ a:hover {
 
     .tabela th,
     .tabela td {
-        padding-inline: 0.6rem;
+        padding-inline: 0.45rem;
 
     }
 
@@ -1453,6 +1453,7 @@ a:hover {
 
 .barra-do-dia {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 1.4rem minmax(0, 1fr) auto;
     justify-items: center;
     position: relative;
@@ -1469,6 +1470,14 @@ a:hover {
 .barra-do-dia.hoje .barra-valor,
 .barra-do-dia:hover .barra-valor {
     opacity: 1;
+}
+
+.barra-do-dia:first-child .barra-valor {
+    justify-self: unsafe start;
+}
+
+.barra-do-dia:last-child .barra-valor {
+    justify-self: unsafe end;
 }
 
 .barra-trilho {
