@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Sophia.Application;
 using Sophia.Application.Produtos;
 using Sophia.Domain.Produtos;
 
@@ -14,20 +15,33 @@ public sealed class ProdutoRepositorio(SophiaDbContext contexto) : IProdutoRepos
         int? limite,
         CancellationToken cancelamento = default)
     {
-        var consulta = contexto.Produtos.AsNoTracking();
-
-        if (trechoDoNome is not null)
-        {
-            consulta = consulta.Where(p => p.Nome.Contains(trechoDoNome));
-        }
-
-        consulta = consulta.OrderBy(p => p.Nome).ThenBy(p => p.Id);
+        IQueryable<Produto> consulta = Filtrar(trechoDoNome).OrderBy(p => p.Nome).ThenBy(p => p.Id);
         if (limite is { } quantidade)
         {
             consulta = consulta.Take(quantidade);
         }
 
         return await consulta.ToListAsync(cancelamento);
+    }
+
+    public async Task<Pagina<Produto>> ListarPaginaAsync(
+        string? trechoDoNome,
+        Ordenacao<ColunaDeProdutos> ordem,
+        int numero,
+        int tamanho,
+        CancellationToken cancelamento = default)
+    {
+        var filtrados = Filtrar(trechoDoNome);
+        var total = await filtrados.CountAsync(cancelamento);
+        var ordenados = ordem.Coluna == ColunaDeProdutos.Valor
+            ? filtrados.OrdenarPor(p => p.ValorUnitario, ordem.Decrescente)
+            : filtrados.OrdenarPor(p => p.Nome, ordem.Decrescente);
+        var itens = await ordenados
+            .DepoisPor(p => p.Id, ordem.Decrescente)
+            .Recortar(numero, tamanho)
+            .ToListAsync(cancelamento);
+
+        return new Pagina<Produto>(itens, numero, tamanho, total);
     }
 
     public async Task<IReadOnlySet<int>> FiltrarExistentesAsync(
@@ -52,4 +66,10 @@ public sealed class ProdutoRepositorio(SophiaDbContext contexto) : IProdutoRepos
     public void Adicionar(Produto produto) => contexto.Produtos.Add(produto);
 
     public void Remover(Produto produto) => contexto.Produtos.Remove(produto);
+
+    private IQueryable<Produto> Filtrar(string? trechoDoNome)
+    {
+        var consulta = contexto.Produtos.AsNoTracking();
+        return trechoDoNome is null ? consulta : consulta.Where(p => p.Nome.Contains(trechoDoNome));
+    }
 }

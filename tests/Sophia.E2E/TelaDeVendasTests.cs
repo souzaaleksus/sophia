@@ -256,8 +256,8 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await using var contexto = aplicacao.Banco.NovoContexto();
         var unidade = new UnidadeDeTrabalho(contexto);
         IRelogio relogio = new RelogioDoSistema(TimeProvider.System, TimeZoneInfo.Utc);
-        var clientes = new ClienteServico(new ClienteRepositorio(contexto), unidade, relogio);
-        var produtos = new ProdutoServico(new ProdutoRepositorio(contexto), unidade);
+        var clientes = new ClienteServico(new ClienteRepositorio(contexto), unidade, relogio, new Sophia.Application.ParametrosDoSophia());
+        var produtos = new ProdutoServico(new ProdutoRepositorio(contexto), unidade, new Sophia.Application.ParametrosDoSophia());
 
         await clientes.CadastrarAsync(new DadosCliente("529.982.247-25", "Maria Santos", null, null, null));
         await clientes.CadastrarAsync(new DadosCliente("111.444.777-35", "João Lima", null, null, null));

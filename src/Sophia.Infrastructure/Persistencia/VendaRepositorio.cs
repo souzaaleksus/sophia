@@ -2,36 +2,39 @@ using Microsoft.EntityFrameworkCore;
 using Sophia.Application;
 using Sophia.Application.Painel;
 using Sophia.Application.Vendas;
-using Sophia.Domain.Clientes;
 using Sophia.Domain.Vendas;
 
 namespace Sophia.Infrastructure.Persistencia;
 
 public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositorio
 {
-    public async Task<IReadOnlyList<VendaResumoDto>> ListarAsync(int? limite = null, CancellationToken cancelamento = default)
-    {
-        var consulta = ResumosDasMaisRecentesParaAsMaisAntigas();
-        if (limite is { } quantidade)
-        {
-            consulta = consulta.Take(quantidade);
-        }
+    private static readonly Ordenacao<ColunaDeVendas> MaisRecentes = new(ColunaDeVendas.Data, Decrescente: true);
 
-        return ParaDtos(await consulta.ToListAsync(cancelamento));
-    }
+    public async Task<IReadOnlyList<VendaResumoDto>> ListarAsync(int? limite = null, CancellationToken cancelamento = default) =>
+        await ResumirAsync(contexto.Vendas, MaisRecentes, 1, limite ?? int.MaxValue, cancelamento);
 
     public async Task<Pagina<VendaResumoDto>> ListarPaginaAsync(
+        DateOnly? inicio,
+        DateOnly? fim,
+        Ordenacao<ColunaDeVendas> ordem,
         int numero,
         int tamanho,
         CancellationToken cancelamento = default)
     {
-        var total = await contexto.Vendas.CountAsync(cancelamento);
-        var linhas = await ResumosDasMaisRecentesParaAsMaisAntigas()
-            .Skip((numero - 1) * tamanho)
-            .Take(tamanho)
-            .ToListAsync(cancelamento);
+        var doPeriodo = contexto.Vendas.AsQueryable();
+        if (inicio is { } de)
+        {
+            doPeriodo = doPeriodo.Where(v => v.Data >= de);
+        }
 
-        return new Pagina<VendaResumoDto>(ParaDtos(linhas), numero, tamanho, total);
+        if (fim is { } ate)
+        {
+            doPeriodo = doPeriodo.Where(v => v.Data <= ate);
+        }
+
+        var total = await doPeriodo.CountAsync(cancelamento);
+        var itens = await ResumirAsync(doPeriodo, ordem, numero, tamanho, cancelamento);
+        return new Pagina<VendaResumoDto>(itens, numero, tamanho, total);
     }
 
     public async Task<VendaDetalheDto?> ObterDetalheAsync(int id, CancellationToken cancelamento = default)
@@ -141,22 +144,38 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
 
     public void Adicionar(Venda venda) => contexto.Vendas.Add(venda);
 
-    private static List<VendaResumoDto> ParaDtos(IEnumerable<LinhaDeResumo> linhas) =>
-        linhas
+    private async Task<List<VendaResumoDto>> ResumirAsync(
+        IQueryable<Venda> vendas,
+        Ordenacao<ColunaDeVendas> ordem,
+        int numero,
+        int tamanho,
+        CancellationToken cancelamento)
+    {
+        var comCliente =
+            from venda in vendas
+            join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
+            select new { Venda = venda, Cliente = cliente };
+
+        var ordenadas = ordem.Coluna == ColunaDeVendas.Total
+            ? comCliente.OrdenarPor(v => v.Venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario), ordem.Decrescente)
+            : comCliente.OrdenarPor(v => v.Venda.Data, ordem.Decrescente);
+
+        var linhas = await ordenadas
+            .DepoisPor(v => v.Venda.Id, ordem.Decrescente)
+            .Recortar(numero, tamanho)
+            .Select(v => new
+            {
+                v.Venda.Id,
+                v.Venda.Data,
+                v.Cliente.Cpf,
+                v.Cliente.Nome,
+                QuantidadeDeItens = v.Venda.Itens.Count(),
+                Total = v.Venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario),
+            })
+            .ToListAsync(cancelamento);
+
+        return linhas
             .Select(v => new VendaResumoDto(v.Id, v.Data, v.Cpf.Formatado, v.Nome, v.QuantidadeDeItens, v.Total))
             .ToList();
-
-    private IQueryable<LinhaDeResumo> ResumosDasMaisRecentesParaAsMaisAntigas() =>
-        from venda in contexto.Vendas
-        join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
-        orderby venda.Data descending, venda.Id descending
-        select new LinhaDeResumo(
-            venda.Id,
-            venda.Data,
-            cliente.Cpf,
-            cliente.Nome,
-            venda.Itens.Count(),
-            venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario));
-
-    private sealed record LinhaDeResumo(int Id, DateOnly Data, Cpf Cpf, string Nome, int QuantidadeDeItens, decimal Total);
+    }
 }

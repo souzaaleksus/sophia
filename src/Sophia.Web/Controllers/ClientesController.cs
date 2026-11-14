@@ -1,19 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
+using Sophia.Application;
 using Sophia.Application.Clientes;
 using Sophia.Web.Apoio;
 using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class ClientesController(IClienteServico clientes) : Controller
+public sealed class ClientesController(IClienteServico clientes, ParametrosDoSophia parametros) : Controller
 {
-    private const int SugestoesNaBusca = 8;
-
     [HttpGet]
-    public async Task<IActionResult> Index(string? busca, CancellationToken cancelamento)
+    public async Task<IActionResult> Index(
+        int pagina = 1,
+        string? busca = null,
+        string? ordem = null,
+        CancellationToken cancelamento = default)
     {
+        var lista = await clientes.ListarAsync(new ConsultaDeLista(pagina, busca, ordem), cancelamento);
         ViewData["Busca"] = busca;
-        return View(await clientes.ListarAsync(busca, cancelamento: cancelamento));
+        ViewData["Ordem"] = lista.Ordem;
+        return View(lista.Pagina);
     }
 
     [HttpGet]
@@ -24,7 +29,7 @@ public sealed class ClientesController(IClienteServico clientes) : Controller
             return Json(Array.Empty<object>());
         }
 
-        var encontrados = await clientes.ListarAsync(termo, SugestoesNaBusca, cancelamento);
+        var encontrados = await clientes.BuscarAsync(termo, parametros.SugestoesNaBusca, cancelamento);
         return Json(encontrados.Select(c => new { c.Id, c.Cpf, c.Nome }));
     }
 

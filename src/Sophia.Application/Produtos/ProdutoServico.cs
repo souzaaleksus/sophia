@@ -6,19 +6,31 @@ namespace Sophia.Application.Produtos;
 
 public sealed class ProdutoServico(
     IProdutoRepositorio produtos,
-    IUnidadeDeTrabalho unidadeDeTrabalho) : IProdutoServico
+    IUnidadeDeTrabalho unidadeDeTrabalho,
+    ParametrosDoSophia parametros) : IProdutoServico
 {
+    private static readonly Ordenacao<ColunaDeProdutos> OrdemPadrao = new(ColunaDeProdutos.Nome, Decrescente: false);
     private static readonly Erro NomeDuplicado = new("Nome", "Já existe um produto com este nome.");
     private static readonly Erro NaoEncontrado = new(string.Empty, "Produto não encontrado.");
     private static readonly Erro JaVendido = new(string.Empty, "Este produto já foi vendido e não pode ser excluído.");
 
-    public async Task<IReadOnlyList<ProdutoDto>> ListarAsync(
+    public async Task<Lista<ProdutoDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default)
+    {
+        var termo = Aparar(consulta.Busca);
+        var ordem = Ordenacao.Interpretar(consulta.Ordem, OrdemPadrao);
+        var pagina = await Paginacao.RecortarAsync(
+            consulta.Pagina,
+            numero => produtos.ListarPaginaAsync(termo, ordem, numero, parametros.TamanhoDaPagina, cancelamento));
+
+        return new Lista<ProdutoDto>(pagina.Converter(ProdutoDto.De), ordem.Texto);
+    }
+
+    public async Task<IReadOnlyList<ProdutoDto>> BuscarAsync(
         string? trechoDoNome,
-        int? limite = null,
+        int limite,
         CancellationToken cancelamento = default)
     {
-        var termo = string.IsNullOrWhiteSpace(trechoDoNome) ? null : trechoDoNome.Trim();
-        var encontrados = await produtos.ListarAsync(termo, limite, cancelamento);
+        var encontrados = await produtos.ListarAsync(Aparar(trechoDoNome), limite, cancelamento);
         return encontrados.Select(ProdutoDto.De).ToList();
     }
 
@@ -85,6 +97,9 @@ public sealed class ProdutoServico(
         produtos.Remover(produto);
         return await SalvarAsync(cancelamento);
     }
+
+    private static string? Aparar(string? trechoDoNome) =>
+        string.IsNullOrWhiteSpace(trechoDoNome) ? null : trechoDoNome.Trim();
 
     private async Task<Resultado> SalvarAsync(CancellationToken cancelamento)
     {

@@ -19,7 +19,7 @@ public sealed class Cadastro(BancoDeTestes banco)
     public async Task<int> ClienteAsync(string cpf, string nome)
     {
         await using var contexto = banco.NovoContexto();
-        var servico = new ClienteServico(new ClienteRepositorio(contexto), new UnidadeDeTrabalho(contexto), Relogio());
+        var servico = new ClienteServico(new ClienteRepositorio(contexto), new UnidadeDeTrabalho(contexto), Relogio(), new Sophia.Application.ParametrosDoSophia());
         var resultado = await servico.CadastrarAsync(new DadosCliente(cpf, nome, null, null, null));
         resultado.Sucesso.Should().BeTrue($"o cliente {nome} precisa existir para o teste");
         return resultado.Valor;
@@ -28,7 +28,7 @@ public sealed class Cadastro(BancoDeTestes banco)
     public async Task<int> ProdutoAsync(string nome, decimal valorUnitario)
     {
         await using var contexto = banco.NovoContexto();
-        var servico = new ProdutoServico(new ProdutoRepositorio(contexto), new UnidadeDeTrabalho(contexto));
+        var servico = new ProdutoServico(new ProdutoRepositorio(contexto), new UnidadeDeTrabalho(contexto), new Sophia.Application.ParametrosDoSophia());
         var resultado = await servico.CadastrarAsync(new DadosProduto(nome, valorUnitario));
         resultado.Sucesso.Should().BeTrue($"o produto {nome} precisa existir para o teste");
         return resultado.Valor;
@@ -42,7 +42,8 @@ public sealed class Cadastro(BancoDeTestes banco)
             new ClienteRepositorio(contexto),
             new ProdutoRepositorio(contexto),
             new UnidadeDeTrabalho(contexto),
-            Relogio());
+            Relogio(),
+            new Sophia.Application.ParametrosDoSophia());
         var resultado = await servico.RegistrarAsync(new DadosVenda(data, clienteId, itens));
         resultado.Sucesso.Should().BeTrue("a venda precisa existir para o teste");
         return resultado.Valor;

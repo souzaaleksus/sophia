@@ -11,6 +11,7 @@ var textoDeConexao = builder.Configuration.GetConnectionString("Sophia")
     ?? throw new InvalidOperationException("Configure a conexão ConnectionStrings:Sophia.");
 var fusoHorario = builder.Configuration["Sophia:FusoHorario"] ?? "America/Sao_Paulo";
 
+builder.Services.AddParametrosDoSophia(builder.Configuration);
 builder.Services.AddAplicacao();
 builder.Services.AddInfraestrutura(textoDeConexao, fusoHorario);
 builder.Services.AddControllersWithViews(opcoes =>

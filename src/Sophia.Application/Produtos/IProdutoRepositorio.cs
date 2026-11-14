@@ -8,6 +8,13 @@ public interface IProdutoRepositorio
 
     Task<IReadOnlyList<Produto>> ListarAsync(string? trechoDoNome, int? limite, CancellationToken cancelamento = default);
 
+    Task<Pagina<Produto>> ListarPaginaAsync(
+        string? trechoDoNome,
+        Ordenacao<ColunaDeProdutos> ordem,
+        int numero,
+        int tamanho,
+        CancellationToken cancelamento = default);
+
     Task<IReadOnlySet<int>> FiltrarExistentesAsync(IEnumerable<int> ids, CancellationToken cancelamento = default);
 
     Task<bool> ExisteComNomeAsync(string nome, int? excetoId, CancellationToken cancelamento = default);

@@ -11,4 +11,7 @@ public sealed record Pagina<T>(IReadOnlyList<T> Itens, int Numero, int Tamanho, 
     public int PrimeiroItem => Itens.Count == 0 ? 0 : ((Numero - 1) * Tamanho) + 1;
 
     public int UltimoItem => Itens.Count == 0 ? 0 : PrimeiroItem + Itens.Count - 1;
+
+    public Pagina<TNovo> Converter<TNovo>(Func<T, TNovo> conversao) =>
+        new(Itens.Select(conversao).ToList(), Numero, Tamanho, TotalDeItens);
 }

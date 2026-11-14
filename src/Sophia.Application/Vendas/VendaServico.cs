@@ -11,18 +11,27 @@ public sealed class VendaServico(
     IClienteRepositorio clientes,
     IProdutoRepositorio produtos,
     IUnidadeDeTrabalho unidadeDeTrabalho,
-    IRelogio relogio) : IVendaServico
+    IRelogio relogio,
+    ParametrosDoSophia parametros) : IVendaServico
 {
-    public const int TamanhoDaPagina = 25;
+    private static readonly Ordenacao<ColunaDeVendas> OrdemPadrao = new(ColunaDeVendas.Data, Decrescente: true);
 
     public DateOnly DataSugerida() => relogio.Hoje;
 
-    public async Task<Pagina<VendaResumoDto>> ListarAsync(int pagina, CancellationToken cancelamento = default)
+    public async Task<Lista<VendaResumoDto>> ListarAsync(ConsultaDeVendas consulta, CancellationToken cancelamento = default)
     {
-        var encontrada = await vendas.ListarPaginaAsync(Math.Max(1, pagina), TamanhoDaPagina, cancelamento);
-        return encontrada.Numero > encontrada.TotalDePaginas
-            ? await vendas.ListarPaginaAsync(encontrada.TotalDePaginas, TamanhoDaPagina, cancelamento)
-            : encontrada;
+        var ordem = Ordenacao.Interpretar(consulta.Ordem, OrdemPadrao);
+        var pagina = await Paginacao.RecortarAsync(
+            consulta.Pagina,
+            numero => vendas.ListarPaginaAsync(
+                consulta.Inicio,
+                consulta.Fim,
+                ordem,
+                numero,
+                parametros.TamanhoDaPagina,
+                cancelamento));
+
+        return new Lista<VendaResumoDto>(pagina, ordem.Texto);
     }
 
     public Task<VendaDetalheDto?> ObterAsync(int id, CancellationToken cancelamento = default) =>

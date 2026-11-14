@@ -1,19 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
+using Sophia.Application;
 using Sophia.Application.Produtos;
 using Sophia.Web.Apoio;
 using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public sealed class ProdutosController(IProdutoServico produtos) : Controller
+public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSophia parametros) : Controller
 {
-    private const int SugestoesNaBusca = 8;
-
     [HttpGet]
-    public async Task<IActionResult> Index(string? busca, CancellationToken cancelamento)
+    public async Task<IActionResult> Index(
+        int pagina = 1,
+        string? busca = null,
+        string? ordem = null,
+        CancellationToken cancelamento = default)
     {
+        var lista = await produtos.ListarAsync(new ConsultaDeLista(pagina, busca, ordem), cancelamento);
         ViewData["Busca"] = busca;
-        return View(await produtos.ListarAsync(busca, cancelamento: cancelamento));
+        ViewData["Ordem"] = lista.Ordem;
+        return View(lista.Pagina);
     }
 
     [HttpGet]
@@ -24,7 +29,7 @@ public sealed class ProdutosController(IProdutoServico produtos) : Controller
             return Json(Array.Empty<object>());
         }
 
-        var encontrados = await produtos.ListarAsync(termo, SugestoesNaBusca, cancelamento);
+        var encontrados = await produtos.BuscarAsync(termo, parametros.SugestoesNaBusca, cancelamento);
         return Json(encontrados.Select(p => new { p.Id, p.Nome, p.ValorUnitario }));
     }
 

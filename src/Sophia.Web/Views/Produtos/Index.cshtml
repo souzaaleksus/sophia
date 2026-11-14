@@ -1,4 +1,4 @@
-@model IReadOnlyList<ProdutoDto>
+@model Sophia.Application.Pagina<ProdutoDto>
 @{
     ViewData["Title"] = "Produtos";
     var busca = ViewData["Busca"] as string;
@@ -24,7 +24,7 @@
     <button type="submit" class="btn btn-outline-secondary">Buscar</button>
 </form>
 
-@if (Model.Count == 0)
+@if (Model.TotalDeItens == 0)
 {
     <div class="vazio">
         <svg class="ilustracao" aria-hidden="true"><use href="@(string.IsNullOrWhiteSpace(busca) ? "#ilustracao-produtos" : "#ilustracao-busca")" /></svg>
@@ -48,8 +48,8 @@ else
 {
     <p class="contagem" data-testid="contagem">
         @(string.IsNullOrWhiteSpace(busca)
-            ? Formato.Quantidade(Model.Count, "produto", "produtos")
-            : Formato.Quantidade(Model.Count, "produto encontrado", "produtos encontrados"))
+            ? Formato.Quantidade(Model.TotalDeItens, "produto", "produtos")
+            : Formato.Quantidade(Model.TotalDeItens, "produto encontrado", "produtos encontrados"))
     </p>
 
     <div class="cartao tabela-rolavel">
@@ -62,7 +62,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var produto in Model)
+                @foreach (var produto in Model.Itens)
                 {
                     <tr>
                         <td>
