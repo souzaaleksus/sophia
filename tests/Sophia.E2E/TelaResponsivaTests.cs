@@ -88,6 +88,40 @@ public sealed class TelaResponsivaTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         problema.Should().BeEmpty($"{endereco} com paginador em 320 px não pode rolar para o lado");
     }
 
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/Vendas")]
+    [InlineData("/Clientes")]
+    [InlineData("/Produtos")]
+    [InlineData("/Vendas/Detalhe/{venda}")]
+    public async Task No_menor_celular_nada_rola_para_o_lado_nem_dentro_de_um_cartao(string endereco)
+    {
+        var cadastro = new Cadastro(aplicacao.Banco);
+        var caderno = await cadastro.ProdutoAsync("Caderno espiral grande", 32.90m);
+        await cadastro.VendaAsync(Cadastro.Hoje, _cliente, new DadosItemVenda(caderno, 600, 32.90m));
+        _pagina = await aplicacao.NovaPaginaAsync(320, 640, toque: true);
+
+        await _pagina.GotoAsync(Resolver(endereco));
+
+        var transbordando = await _pagina.EvaluateAsync<string[]>("""
+            () => {
+                const roladores = [...document.querySelectorAll('*')]
+                    .filter(e => /auto|scroll/.test(getComputedStyle(e).overflowX) && e.scrollWidth > e.clientWidth + 1)
+                    .map(e => `${e.tagName}.${e.className} rola ${e.scrollWidth - e.clientWidth} px`);
+                const rotulos = [...document.querySelectorAll('.barra-valor')]
+                    .filter(rotulo => {
+                        const cartao = rotulo.closest('.cartao').getBoundingClientRect();
+                        const caixa = rotulo.getBoundingClientRect();
+                        return caixa.left < cartao.left || caixa.right > cartao.right;
+                    })
+                    .map(rotulo => `rótulo "${rotulo.textContent}" sai do cartão`);
+                return roladores.concat(rotulos);
+            }
+            """);
+
+        transbordando.Should().BeEmpty($"{endereco} em 320 px não pode ter conteúdo rolando para o lado");
+    }
+
     [Fact]
     public async Task No_celular_o_total_do_detalhe_aparece_inteiro_sem_corte()
     {
