@@ -63,7 +63,7 @@ public sealed class ClienteRepositorio(SophiaDbContext contexto) : IClienteRepos
 
         if (busca.TrechoDoNome is { } trecho)
         {
-            consulta = consulta.Where(c => EF.Functions.Collate(c.Nome, Agrupamento.SemAcentoNemCaixa).Contains(trecho));
+            consulta = consulta.Where(c => c.Nome.Contains(trecho));
         }
 
         if (busca.InicioDoCpf is { } inicio)

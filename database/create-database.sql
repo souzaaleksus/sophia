@@ -5,16 +5,24 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 GO
 
-IF DB_ID() <= 4 AND DB_ID(N'Sophia') IS NULL
+DECLARE @deSistema BIT = IIF(DB_ID() <= 4 OR DB_NAME() IN (N'master', N'tempdb', N'model', N'msdb'), 1, 0);
+
+IF @deSistema = 1 AND DB_ID(N'Sophia') IS NULL
 BEGIN
     CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;
 END
-GO
 
-DECLARE @banco SYSNAME = IIF(DB_ID() <= 4, N'Sophia', DB_NAME());
+DECLARE @banco SYSNAME = IIF(@deSistema = 1, N'Sophia', DB_NAME());
 DECLARE @noBanco NVARCHAR(300) = QUOTENAME(@banco) + N'.sys.sp_executesql';
 
 PRINT CONCAT(N'Criando ou atualizando o banco ', @banco, N'.');
+
+EXEC @noBanco N'
+IF EXISTS (
+    SELECT 1 FROM sys.tables
+    WHERE is_ms_shipped = 0
+      AND NOT (SCHEMA_NAME(schema_id) = N''dbo'' AND name IN (N''Clientes'', N''Produtos'', N''Vendas'', N''VendaItens'')))
+    THROW 50002, N''O banco escolhido já tem outras tabelas; use um banco vazio, ou conecte-se ao master para o script criar o banco Sophia.'', 1;';
 
 EXEC @noBanco N'
 IF CONVERT(SYSNAME, DATABASEPROPERTYEX(DB_NAME(), N''Collation'')) <> N''Latin1_General_CI_AS''
@@ -32,7 +40,7 @@ BEGIN
     (
         Id             INT            IDENTITY(1, 1) NOT NULL,
         Cpf            CHAR(11)                      NOT NULL,
-        Nome           NVARCHAR(150)                 NOT NULL,
+        Nome           NVARCHAR(150)  COLLATE Latin1_General_CI_AI NOT NULL,
         DataNascimento DATE                          NULL,
         Email          NVARCHAR(254)                 NULL,
         Telefone       VARCHAR(11)                   NULL,
@@ -43,6 +51,23 @@ BEGIN
     );
 
     CREATE NONCLUSTERED INDEX IX_Clientes_Nome ON dbo.Clientes (Nome);
+END';
+
+EXEC @noBanco N'
+IF EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N''dbo.Clientes'') AND name = N''Nome''
+      AND collation_name <> N''Latin1_General_CI_AI'')
+BEGIN
+    BEGIN TRANSACTION;
+
+    IF EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID(N''dbo.Clientes'') AND name = N''IX_Clientes_Nome'')
+        DROP INDEX IX_Clientes_Nome ON dbo.Clientes;
+
+    ALTER TABLE dbo.Clientes ALTER COLUMN Nome NVARCHAR(150) COLLATE Latin1_General_CI_AI NOT NULL;
+    CREATE NONCLUSTERED INDEX IX_Clientes_Nome ON dbo.Clientes (Nome);
+
+    COMMIT TRANSACTION;
 END';
 
 EXEC @noBanco N'
@@ -73,22 +98,23 @@ BEGIN
             WHERE o.Id <> p.Id AND o.Nome COLLATE Latin1_General_CI_AI = p.Nome COLLATE Latin1_General_CI_AI));
 
     IF @colidentes IS NOT NULL
-        PRINT CONCAT(
-            N''Aviso: a coluna Produtos.Nome continua diferenciando acentos, porque estes nomes ficariam repetidos sem eles: '',
-            @colidentes,
-            N''. Renomeie esses produtos e rode o script de novo.'');
-    ELSE
     BEGIN
-        BEGIN TRANSACTION;
-
-        IF OBJECT_ID(N''dbo.UQ_Produtos_Nome'', N''UQ'') IS NOT NULL
-            ALTER TABLE dbo.Produtos DROP CONSTRAINT UQ_Produtos_Nome;
-
-        ALTER TABLE dbo.Produtos ALTER COLUMN Nome NVARCHAR(150) COLLATE Latin1_General_CI_AI NOT NULL;
-        ALTER TABLE dbo.Produtos ADD CONSTRAINT UQ_Produtos_Nome UNIQUE (Nome);
-
-        COMMIT TRANSACTION;
+        DECLARE @mensagem NVARCHAR(2048) = LEFT(CONCAT(
+            N''A coluna Produtos.Nome não pôde passar a ignorar acentos, porque estes nomes ficariam repetidos sem eles: '',
+            @colidentes,
+            N''. Renomeie esses produtos e rode o script de novo.''), 2048);
+        THROW 50003, @mensagem, 1;
     END
+
+    BEGIN TRANSACTION;
+
+    IF OBJECT_ID(N''dbo.UQ_Produtos_Nome'', N''UQ'') IS NOT NULL
+        ALTER TABLE dbo.Produtos DROP CONSTRAINT UQ_Produtos_Nome;
+
+    ALTER TABLE dbo.Produtos ALTER COLUMN Nome NVARCHAR(150) COLLATE Latin1_General_CI_AI NOT NULL;
+    ALTER TABLE dbo.Produtos ADD CONSTRAINT UQ_Produtos_Nome UNIQUE (Nome);
+
+    COMMIT TRANSACTION;
 END';
 
 EXEC @noBanco N'
@@ -153,9 +179,9 @@ EXEC @noBanco N'
 IF OBJECT_ID(N''dbo.CK_VendaItens_QuantidadeMaxima'', N''C'') IS NULL
 BEGIN
     IF EXISTS (SELECT 1 FROM dbo.VendaItens WHERE Quantidade > 999999)
-        PRINT N''Aviso: há itens de venda com quantidade acima de 999.999, e a restrição CK_VendaItens_QuantidadeMaxima não foi criada. Corrija esses itens e rode o script de novo.'';
-    ELSE
-        ALTER TABLE dbo.VendaItens WITH CHECK
-            ADD CONSTRAINT CK_VendaItens_QuantidadeMaxima CHECK (Quantidade <= 999999);
+        THROW 50004, N''Há itens de venda com quantidade acima de 999.999, e a restrição CK_VendaItens_QuantidadeMaxima não pôde ser criada. Corrija esses itens e rode o script de novo.'', 1;
+
+    ALTER TABLE dbo.VendaItens WITH CHECK
+        ADD CONSTRAINT CK_VendaItens_QuantidadeMaxima CHECK (Quantidade <= 999999);
 END';
 GO

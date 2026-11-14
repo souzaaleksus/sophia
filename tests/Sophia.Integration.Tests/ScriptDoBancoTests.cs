@@ -1,4 +1,6 @@
+using System.Globalization;
 using Microsoft.Data.SqlClient;
+using Sophia.Application;
 using Sophia.Integration.Tests.Apoio;
 using Sophia.Testes.Banco;
 
@@ -18,6 +20,20 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     private const string AgrupamentoDoNomeDoProduto = """
         SELECT collation_name FROM sys.columns
         WHERE object_id = OBJECT_ID(N'dbo.Produtos') AND name = N'Nome'
+        """;
+
+    private const string BancoComOutrasTabelas = "banco escolhido já tem outras tabelas; use um banco vazio";
+
+    private const string AgrupamentoDoNomeDoCliente = """
+        SELECT collation_name FROM sys.columns
+        WHERE object_id = OBJECT_ID(N'dbo.Clientes') AND name = N'Nome'
+        """;
+
+    private const string IndiceDeBuscaDoNomeDoCliente = """
+        SELECT i.name FROM sys.indexes i
+        JOIN sys.index_columns ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+        JOIN sys.columns c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
+        WHERE i.object_id = OBJECT_ID(N'dbo.Clientes') AND i.is_unique = 0 AND c.name = N'Nome'
         """;
 
     private const string IndiceUnicoDoNome = """
@@ -138,30 +154,41 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     }
 
     [Fact]
-    public async Task Banco_escolhido_com_tabelas_e_outro_agrupamento_e_recusado_sem_criar_nada()
+    public async Task Banco_escolhido_com_tabela_do_sophia_e_outro_agrupamento_e_recusado_sem_criar_nada()
     {
         await using var outro = await BancoAvulso.CriarVazioAsync(
             BancoDeTestes.Servidor, "Loja_Ocupada", "SQL_Latin1_General_CP1_CI_AS");
-        await outro.ConsultarAsync("CREATE TABLE dbo.Alheia (Id INT); SELECT N'criada';");
+        await outro.ConsultarAsync("CREATE TABLE dbo.Clientes (Id INT); SELECT N'criada';");
 
         var rodar = () => BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
 
         (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("COLLATE Latin1_General_CI_AS");
-        (await outro.ConsultarAsync(Tabelas)).Should().Equal("Alheia");
+        (await outro.ConsultarAsync(Tabelas)).Should().Equal("Clientes");
     }
 
     [Fact]
-    public async Task Sem_banco_escolhido_cria_o_banco_sophia_e_rodar_de_novo_nao_falha()
+    public async Task Banco_escolhido_com_tabelas_de_outro_sistema_e_recusado_sem_criar_nada()
     {
-        await using var sophia = await BancoAvulso.SophiaAindaInexistenteAsync();
-        var semBancoEscolhido = new SqlConnectionStringBuilder(sophia.Servidor) { InitialCatalog = "master" }.ConnectionString;
+        await using var outro = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Alheia");
+        await outro.ConsultarAsync("CREATE TABLE dbo.Pedidos (Id INT); SELECT N'criada';");
 
-        await BancoAvulso.ExecutarScriptAsync(semBancoEscolhido);
-        await BancoAvulso.ExecutarScriptAsync(semBancoEscolhido);
+        var rodar = () => BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
 
-        (await sophia.ConsultarAsync(Tabelas)).Should().Equal("Clientes", "Produtos", "VendaItens", "Vendas");
-        (await sophia.ConsultarAsync("SELECT CONVERT(NVARCHAR(128), DATABASEPROPERTYEX(DB_NAME(), 'Collation'))"))
-            .Should().Equal(BancoAvulso.AgrupamentoDoSophia);
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain(BancoComOutrasTabelas);
+        (await outro.ConsultarAsync(Tabelas)).Should().Equal("Pedidos");
+    }
+
+    [Fact]
+    public async Task Banco_do_sophia_com_uma_tabela_alheia_e_recusado_sem_alterar_nada()
+    {
+        await using var outro = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Misturada");
+        await BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
+        await outro.ConsultarAsync("EXEC (N'CREATE SCHEMA estoque'); CREATE TABLE estoque.Clientes (Id INT); SELECT N'criada';");
+
+        var rodar = () => BancoAvulso.ExecutarScriptAsync(outro.TextoDeConexao);
+
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain(BancoComOutrasTabelas);
+        (await outro.ConsultarAsync(Tabelas)).Should().Equal("Clientes", "Clientes", "Produtos", "VendaItens", "Vendas");
     }
 
     [Fact]
@@ -186,11 +213,12 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
 
         await banco.ExecutarScriptAsync();
 
-        (await RestricaoDoTetoAsync(banco.ConsultarAsync)).Should().Equal("([Quantidade]<=(999999))");
+        (await RestricaoDoTetoAsync(banco.ConsultarAsync)).Should().Equal(
+            string.Create(CultureInfo.InvariantCulture, $"([Quantidade]<=({ParametrosDoSophia.QuantidadeMaximaAceita}))"));
     }
 
     [Fact]
-    public async Task Banco_com_item_acima_do_teto_so_avisa_e_segue_sem_a_restricao()
+    public async Task Banco_com_item_acima_do_teto_falha_explicando_e_nao_cria_a_restricao()
     {
         await using var antigo = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Antiga");
         await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
@@ -201,9 +229,10 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
             SELECT N'pronto';
             """);
 
-        var avisos = await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        var rodar = () => BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
 
-        avisos.Should().Contain(aviso => aviso.Contains("CK_VendaItens_QuantidadeMaxima", StringComparison.Ordinal));
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should()
+            .Contain("CK_VendaItens_QuantidadeMaxima").And.Contain("999.999");
         (await RestricaoDoTetoAsync(antigo.ConsultarAsync)).Should().BeEmpty();
         (await antigo.ConsultarAsync("SELECT CAST(Quantidade AS VARCHAR(10)) FROM dbo.VendaItens")).Should().Equal("2000000");
     }
@@ -239,7 +268,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     }
 
     [Fact]
-    public async Task Banco_antigo_com_nomes_que_colidiriam_sem_acento_so_avisa_e_nao_altera_a_coluna()
+    public async Task Banco_antigo_com_nomes_que_colidiriam_sem_acento_falha_listando_os_nomes_e_nao_altera_a_coluna()
     {
         await using var antigo = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Antiga");
         await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
@@ -249,15 +278,48 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
             SELECT N'pronto';
             """);
 
-        var avisos = await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
-        var deNovo = await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        var rodar = () => BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
 
-        avisos.Should().Contain(aviso => aviso.Contains("Café Torrado", StringComparison.Ordinal)
-            && aviso.Contains("Cafe Torrado", StringComparison.Ordinal));
-        deNovo.Should().Contain(aviso => aviso.Contains("Produtos.Nome", StringComparison.Ordinal));
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should()
+            .Contain("Produtos.Nome").And.Contain("Café Torrado").And.Contain("Cafe Torrado");
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("Produtos.Nome");
         (await antigo.ConsultarAsync(AgrupamentoDoNomeDoProduto)).Should().Equal("Latin1_General_CI_AS");
         (await antigo.ConsultarAsync(IndiceUnicoDoNome)).Should().Equal("UQ_Produtos_Nome");
         (await antigo.ConsultarAsync("SELECT Nome FROM dbo.Produtos ORDER BY Id")).Should().Equal("Café Torrado", "Cafe Torrado");
+    }
+
+    [Fact]
+    public async Task O_nome_do_cliente_nao_diferencia_acentos_e_continua_sem_ser_unico()
+    {
+        await banco.LimparAsync();
+        await banco.ExecutarAsync("""
+            INSERT INTO dbo.Clientes (Cpf, Nome) VALUES ('52998224725', N'José Antônio'), ('11144477735', N'Jose Antonio');
+            """);
+
+        (await banco.ConsultarAsync("SELECT CAST(COUNT(*) AS VARCHAR(10)) FROM dbo.Clientes WHERE Nome = N'jose antonio'"))
+            .Should().Equal("2");
+        await banco.LimparAsync();
+    }
+
+    [Fact]
+    public async Task Atualiza_banco_antigo_passando_o_nome_do_cliente_a_ignorar_acentos_com_o_indice_de_busca()
+    {
+        await using var antigo = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Antiga");
+        await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        await antigo.ConsultarAsync("""
+            DROP INDEX IX_Clientes_Nome ON dbo.Clientes;
+            ALTER TABLE dbo.Clientes ALTER COLUMN Nome NVARCHAR(150) COLLATE Latin1_General_CI_AS NOT NULL;
+            CREATE NONCLUSTERED INDEX IX_Clientes_Nome ON dbo.Clientes (Nome);
+            INSERT INTO dbo.Clientes (Cpf, Nome) VALUES ('52998224725', N'José Antônio'), ('11144477735', N'Jose Antonio');
+            SELECT N'pronto';
+            """);
+
+        await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+
+        (await antigo.ConsultarAsync(AgrupamentoDoNomeDoCliente)).Should().Equal("Latin1_General_CI_AI");
+        (await antigo.ConsultarAsync(IndiceDeBuscaDoNomeDoCliente)).Should().Equal("IX_Clientes_Nome");
+        (await antigo.ConsultarAsync("SELECT Nome FROM dbo.Clientes ORDER BY Id")).Should().Equal("José Antônio", "Jose Antonio");
     }
 
     [Fact]

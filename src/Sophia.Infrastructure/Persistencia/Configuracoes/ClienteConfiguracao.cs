@@ -32,7 +32,10 @@ internal sealed class ClienteConfiguracao : IEntityTypeConfiguration<Cliente>
 
     private static void ConfigurarNome(EntityTypeBuilder<Cliente> cliente)
     {
-        cliente.Property(c => c.Nome).HasMaxLength(Cliente.TamanhoMaximoNome).IsRequired();
+        cliente.Property(c => c.Nome)
+            .HasMaxLength(Cliente.TamanhoMaximoNome)
+            .IsRequired()
+            .UseCollation(Agrupamento.SemAcentoNemCaixa);
         cliente.HasIndex(c => c.Nome).HasDatabaseName("IX_Clientes_Nome");
     }
 

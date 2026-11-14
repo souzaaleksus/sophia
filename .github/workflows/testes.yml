@@ -98,6 +98,12 @@ jobs:
           grep -qE 'data-testid="contagem">[1-9]' vendas.html
           grep -o 'data-testid="contagem">[^<]*' vendas.html
 
+      - name: Conferir as tabelas criadas no banco Sophia
+        run: |
+          tabelas="$(docker compose exec -T banco bash -c '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -b -h -1 -W -Q "SET NOCOUNT ON; SELECT STRING_AGG(name, N'"','"') WITHIN GROUP (ORDER BY name) FROM Sophia.sys.tables"' | tr -d '\r')"
+          echo "Tabelas no banco Sophia: $tabelas"
+          test "$tabelas" = "Clientes,Produtos,VendaItens,Vendas"
+
       - name: Registrar o estado dos serviços
         if: failure()
         run: |

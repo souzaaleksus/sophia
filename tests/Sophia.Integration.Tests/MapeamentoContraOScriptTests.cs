@@ -1,6 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Sophia.Application;
 using Sophia.Integration.Tests.Apoio;
 using Sophia.Testes.Banco;
 
@@ -62,6 +66,26 @@ public sealed class MapeamentoContraOScriptTests(BancoDeTestes banco)
             """);
 
         AgrupamentosDoModelo(ModeloCompleto(contexto), padraoDoBanco).Should().BeEquivalentTo(doScript);
+    }
+
+    [Fact]
+    public async Task O_teto_da_quantidade_no_mapeamento_e_no_banco_e_o_maximo_aceito_pelo_parametro()
+    {
+        await using var contexto = banco.NovoContexto();
+        var maximoDoParametro = typeof(ParametrosDoSophia)
+            .GetProperty(nameof(ParametrosDoSophia.QuantidadeMaximaPorItem))!
+            .GetCustomAttribute<RangeAttribute>()!.Maximum;
+        var teto = Convert.ToString(maximoDoParametro, CultureInfo.InvariantCulture);
+
+        var doModelo = ModeloCompleto(contexto).GetEntityTypes()
+            .SelectMany(entidade => entidade.GetCheckConstraints())
+            .Single(restricao => restricao.Name == "CK_VendaItens_QuantidadeMaxima").Sql;
+        var doScript = await banco.ConsultarAsync("""
+            SELECT definition FROM sys.check_constraints WHERE name = N'CK_VendaItens_QuantidadeMaxima'
+            """);
+
+        doModelo.Should().Be($"Quantidade <= {teto}");
+        doScript.Should().Equal($"([Quantidade]<=({teto}))");
     }
 
     private static IModel ModeloCompleto(DbContext contexto) => contexto.GetService<IDesignTimeModel>().Model;

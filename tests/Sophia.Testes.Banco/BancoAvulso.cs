@@ -6,8 +6,6 @@ public sealed class BancoAvulso : IAsyncDisposable
 {
     public const string AgrupamentoDoSophia = "Latin1_General_CI_AS";
 
-    private const string LocalDb = @"Server=(localdb)\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true";
-
     private BancoAvulso(string servidor, string nome)
     {
         Servidor = servidor;
@@ -31,20 +29,6 @@ public sealed class BancoAvulso : IAsyncDisposable
         return banco;
     }
 
-    public static async Task<BancoAvulso> SophiaAindaInexistenteAsync()
-    {
-        foreach (var servidor in new[] { BancoDeTestes.Servidor, LocalDb }.Distinct())
-        {
-            if (await SemOBancoSophiaAsync(servidor))
-            {
-                return new BancoAvulso(servidor, "Sophia");
-            }
-        }
-
-        throw new InvalidOperationException(
-            "Nenhum servidor de testes sem o banco Sophia: o teste do nome padrão não roda onde já existe um Sophia de verdade.");
-    }
-
     public static async Task<bool> ExisteAsync(string servidor, string nome)
     {
         await using var conexao = new SqlConnection(servidor);
@@ -54,19 +38,15 @@ public sealed class BancoAvulso : IAsyncDisposable
         return (bool)(await comando.ExecuteScalarAsync())!;
     }
 
-    public static async Task<IReadOnlyList<string>> ExecutarScriptAsync(string textoDeConexao, string arquivo = "create-database.sql")
+    public static async Task ExecutarScriptAsync(string textoDeConexao, string arquivo = "create-database.sql")
     {
-        var avisos = new List<string>();
         await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(textoDeConexao) { Pooling = false }.ConnectionString);
-        conexao.InfoMessage += (_, mensagem) => avisos.Add(mensagem.Message);
         await conexao.OpenAsync();
         foreach (var lote in Lotes.Separar(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, arquivo))))
         {
             await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 120 };
             await comando.ExecuteNonQueryAsync();
         }
-
-        return avisos;
     }
 
     public async Task<List<string>> ConsultarAsync(string sql)
@@ -91,18 +71,6 @@ public sealed class BancoAvulso : IAsyncDisposable
             await ExecutarNoServidorAsync(
                 Servidor,
                 $"ALTER DATABASE [{Nome}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [{Nome}];");
-        }
-    }
-
-    private static async Task<bool> SemOBancoSophiaAsync(string servidor)
-    {
-        try
-        {
-            return !await ExisteAsync(servidor, "Sophia");
-        }
-        catch (SqlException)
-        {
-            return false;
         }
     }
 
