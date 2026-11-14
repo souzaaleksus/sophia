@@ -1,8 +1,8 @@
-import { emCentavos, formatarContagem, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from '../formato.js';
+import { formatarContagem, formatarDecimalDeCentavos, formatarMoedaDeCentavos, lerCentavos, lerInteiro } from '../formato.js';
 
 export function somarLinhas(linhas) {
     return linhas.reduce((soma, linha) => {
-        const subtotalEmCentavos = emCentavos(linha.valor ?? 0) * (linha.quantidade ?? 0);
+        const subtotalEmCentavos = (linha.centavos ?? 0n) * BigInt(linha.quantidade ?? 0);
         const lancada = linha.produtoEscolhido;
         return {
             totalEmCentavos: soma.totalEmCentavos + subtotalEmCentavos,
@@ -10,7 +10,7 @@ export function somarLinhas(linhas) {
             unidades: soma.unidades + (lancada ? linha.quantidade ?? 0 : 0),
             subtotaisEmCentavos: [...soma.subtotaisEmCentavos, subtotalEmCentavos],
         };
-    }, { totalEmCentavos: 0, itens: 0, unidades: 0, subtotaisEmCentavos: [] });
+    }, { totalEmCentavos: 0n, itens: 0, unidades: 0, subtotaisEmCentavos: [] });
 }
 
 export function criarVisor(formulario, textos, movimentoReduzido) {
@@ -20,9 +20,9 @@ export function criarVisor(formulario, textos, movimentoReduzido) {
     const unidades = formulario.querySelector('[data-testid=unidades-da-venda]');
 
     function mostrar(soma) {
-        const texto = formatarDecimal(soma.totalEmCentavos / 100);
+        const texto = formatarDecimalDeCentavos(soma.totalEmCentavos);
         if (valor.textContent !== texto) {
-            valor.textContent = texto;
+            escreverQuebrandoNoMilhar(valor, texto);
             piscar();
         }
 
@@ -42,13 +42,19 @@ export function criarVisor(formulario, textos, movimentoReduzido) {
 export function lerLinha(item) {
     const campo = nome => item.querySelector(`[data-campo=${nome}]`);
     return {
-        valor: lerDecimal(campo('ValorUnitario').value),
+        centavos: lerCentavos(campo('ValorUnitario').value),
         quantidade: lerInteiro(campo('Quantidade').value),
         produtoEscolhido: campo('ProdutoId').value !== '',
     };
 }
 
 export function mostrarSubtotal(item, subtotalEmCentavos, quantidade) {
-    item.querySelector('[data-campo=Subtotal]').textContent = formatarMoeda(subtotalEmCentavos / 100);
+    escreverQuebrandoNoMilhar(item.querySelector('[data-campo=Subtotal]'), formatarMoedaDeCentavos(subtotalEmCentavos));
     item.querySelector('[data-acao=menos]').disabled = (quantidade ?? 0) <= 1;
+}
+
+function escreverQuebrandoNoMilhar(elemento, texto) {
+    const pedacos = texto.split('.').flatMap((parte, posicao, partes) =>
+        posicao < partes.length - 1 ? [`${parte}.`, document.createElement('wbr')] : [parte]);
+    elemento.replaceChildren(...pedacos);
 }

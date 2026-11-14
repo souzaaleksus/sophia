@@ -139,7 +139,7 @@ class Linhas {
 
     #somarNaLinhaExistente(item, existente, produto) {
         const quantidade = campoDe(existente, 'Quantidade');
-        quantidade.value = (lerInteiro(quantidade.value) ?? 0) + 1;
+        quantidade.value = limitarQuantidade(quantidade, (lerInteiro(quantidade.value) ?? 0) + 1);
         camposDaLinha.forEach(nome => {
             campoDe(item, nome).value = '';
             limparErro(item, campoDe(item, nome).name);
@@ -152,7 +152,7 @@ class Linhas {
 
     #mudarQuantidade(item, passo, peloTeclado = false) {
         const campo = campoDe(item, 'Quantidade');
-        campo.value = Math.max(1, (lerInteiro(campo.value) ?? 0) + passo);
+        campo.value = limitarQuantidade(campo, (lerInteiro(campo.value) ?? 0) + passo);
         this.#corrigido(item, ['Quantidade']);
         if (peloTeclado && item.querySelector('[data-acao=menos]').disabled) {
             campo.focus();
@@ -179,6 +179,11 @@ function arredondarValor(item) {
     if (valor !== null) {
         campoDe(item, 'ValorUnitario').value = formatarDecimal(valor);
     }
+}
+
+function limitarQuantidade(campo, quantidade) {
+    const maximo = lerInteiro(campo.max) ?? Number.MAX_SAFE_INTEGER;
+    return Math.min(maximo, Math.max(1, quantidade));
 }
 
 function selecionar(campo) {

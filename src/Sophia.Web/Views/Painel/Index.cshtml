@@ -14,19 +14,19 @@
 <section class="indicadores" aria-label="@T["painel.resumo"]">
     <div class="visor" data-testid="vendido-hoje">
         <span class="visor-rotulo">@T["painel.vendido-hoje"]</span>
-        <span class="visor-valor">@Formato.Moeda(Model.Dia.Total)</span>
+        <span class="visor-valor">@Formato.QuebrarNoMilhar(Formato.Moeda(Model.Dia.Total))</span>
         <span class="visor-detalhe">@Formato.Quantidade(Model.Dia.QuantidadeDeVendas, T["vendas.contagem-singular"], T["vendas.contagem-plural"])</span>
     </div>
 
     <div class="cartao indicador" data-testid="vendido-no-mes">
         <span class="indicador-rotulo">@T["painel.vendido-no-mes", nomeDoMes]</span>
-        <span class="indicador-valor">@Formato.Moeda(Model.Mes.Total)</span>
+        <span class="indicador-valor">@Formato.QuebrarNoMilhar(Formato.Moeda(Model.Mes.Total))</span>
         <span class="indicador-detalhe">@Formato.Quantidade(Model.Mes.QuantidadeDeVendas, T["vendas.contagem-singular"], T["vendas.contagem-plural"])</span>
     </div>
 
     <div class="cartao indicador" data-testid="ticket-medio">
         <span class="indicador-rotulo">@T["painel.ticket-medio", nomeDoMes]</span>
-        <span class="indicador-valor">@Formato.Moeda(Model.Mes.TicketMedio)</span>
+        <span class="indicador-valor">@Formato.QuebrarNoMilhar(Formato.Moeda(Model.Mes.TicketMedio))</span>
         <span class="indicador-detalhe">@T["painel.por-venda"]</span>
     </div>
 </section>
@@ -144,7 +144,7 @@
                                 <div class="secundario numero">@venda.ClienteCpf</div>
                                 <div class="secundario numero apenas-no-celular">@T["vendas.numero-e-data", venda.Id, Formato.Data(venda.Data)]</div>
                             </td>
-                            <td class="valor destaque">@Formato.Moeda(venda.Total)</td>
+                            <td class="valor destaque">@Formato.QuebrarNoMilhar(Formato.Moeda(venda.Total))</td>
                             <td class="acoes">
                                 <a class="acao" asp-controller="Vendas" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="@T["acao.ver-venda", venda.Id]">@T["acao.ver"]</a>
                             </td>

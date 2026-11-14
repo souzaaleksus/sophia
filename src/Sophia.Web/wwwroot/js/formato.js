@@ -32,25 +32,51 @@ function normalizarDecimal(numero) {
     return comPontoDecimal.test(numero) || soDigitos.test(numero) ? numero : null;
 }
 
-export function lerDecimal(texto) {
+function separarDecimal(texto) {
     const limpo = String(texto ?? '').replace(/\s/g, '');
     const negativo = limpo.startsWith('-');
     const numero = normalizarDecimal(negativo ? limpo.slice(1) : limpo);
-    if (numero === null) {
+    return numero === null || Number(numero) >= limiteDoValor ? null : { numero, negativo };
+}
+
+export function lerDecimal(texto) {
+    const separado = separarDecimal(texto);
+    if (separado === null) {
         return null;
     }
 
-    const valor = Number(numero);
-    if (!Number.isFinite(valor) || valor >= limiteDoValor) {
+    const valor = Number(separado.numero);
+    return separado.negativo ? -valor : valor;
+}
+
+export function lerCentavos(texto) {
+    const separado = separarDecimal(texto);
+    if (separado === null) {
         return null;
     }
 
-    return negativo ? -valor : valor;
+    const [inteiro, fracao = ''] = separado.numero.split('.');
+    const arredondamento = fracao.length > 2 && fracao[2] >= '5' ? 1n : 0n;
+    const centavos = BigInt(inteiro) * 100n + BigInt(fracao.padEnd(2, '0').slice(0, 2)) + arredondamento;
+    return separado.negativo ? -centavos : centavos;
+}
+
+function textoDosCentavos(centavos) {
+    const absoluto = (centavos < 0n ? -centavos : centavos).toString().padStart(3, '0');
+    return `${centavos < 0n ? '-' : ''}${absoluto.slice(0, -2)}.${absoluto.slice(-2)}`;
+}
+
+export function formatarMoedaDeCentavos(centavos) {
+    return moeda.format(textoDosCentavos(centavos));
+}
+
+export function formatarDecimalDeCentavos(centavos) {
+    return decimal.format(textoDosCentavos(centavos));
 }
 
 export function lerInteiro(texto) {
     const limpo = String(texto ?? '').trim();
-    return /^\d+$/.test(limpo) ? Number(limpo) : null;
+    return /^\d+$/.test(limpo) && Number.isFinite(Number(limpo)) ? Number(limpo) : null;
 }
 
 export function iniciais(nome) {
@@ -65,8 +91,4 @@ export function iniciais(nome) {
 
 export function tomDoAvatar(nome) {
     return [...String(nome ?? '')].reduce((soma, letra) => (soma * 31 + letra.charCodeAt(0)) % 9973, 0) % 5;
-}
-
-export function emCentavos(valor) {
-    return Math.round(valor * 100);
 }

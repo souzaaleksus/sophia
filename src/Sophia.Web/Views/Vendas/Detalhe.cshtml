@@ -58,8 +58,8 @@
                         <span class="cupom-conta numero apenas-no-celular">@T["venda.conta", item.Quantidade, Formato.Moeda(item.ValorUnitario)]</span>
                     </td>
                     <td class="valor coluna-opcional">@item.Quantidade</td>
-                    <td class="valor coluna-opcional">@Formato.Moeda(item.ValorUnitario)</td>
-                    <td class="valor">@Formato.Moeda(item.Subtotal)</td>
+                    <td class="valor coluna-opcional">@Formato.QuebrarNoMilhar(Formato.Moeda(item.ValorUnitario))</td>
+                    <td class="valor">@Formato.QuebrarNoMilhar(Formato.Moeda(item.Subtotal))</td>
                 </tr>
             }
         </tbody>
@@ -71,7 +71,7 @@
         </p>
         <p class="cupom-total">
             <span>@T["venda.total"]</span>
-            <strong class="numero" data-testid="total-da-venda">@Formato.Moeda(Model.Total)</strong>
+            <strong class="numero" data-testid="total-da-venda">@Formato.QuebrarNoMilhar(Formato.Moeda(Model.Total))</strong>
         </p>
     </footer>
 </section>

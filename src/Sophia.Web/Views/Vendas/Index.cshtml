@@ -103,7 +103,7 @@ else
                             <div class="secundario numero apenas-no-celular">@Formato.Data(venda.Data)</div>
                         </td>
                         <td class="valor coluna-opcional">@venda.QuantidadeDeItens</td>
-                        <td class="valor destaque">@Formato.Moeda(venda.Total)</td>
+                        <td class="valor destaque">@Formato.QuebrarNoMilhar(Formato.Moeda(venda.Total))</td>
                         <td class="acoes">
                             <a class="acao" asp-action="Detalhe" asp-route-id="@venda.Id" aria-label="@T["acao.ver-venda", venda.Id]">@T["acao.ver"]</a>
                         </td>

@@ -362,13 +362,27 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _pagina.GotoAsync("/Vendas/Nova");
         await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
         await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "3000000000");
-        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("max", "2147483647");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("max", "99999");
 
         await _caixa.Finalizar.ClickAsync();
 
         await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("Quantidade aceita no máximo 2.147.483.647.");
         await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("3000000000");
         (await new Cadastro(aplicacao.Banco).QuantidadeDeVendasAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task O_botao_de_aumentar_nao_passa_da_quantidade_maxima_por_item()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "99998");
+        var aumentar = BotaoDaLinha(0, "Aumentar a quantidade");
+
+        await aumentar.ClickAsync();
+        await aumentar.ClickAsync();
+
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("99999");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 249.997,50");
     }
 
     [Fact]
