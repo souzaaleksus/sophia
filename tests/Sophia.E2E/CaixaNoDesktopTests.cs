@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Sophia.E2E.Apoio;
@@ -260,6 +261,24 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(erroDaQuantidade).ToBeEmptyAsync();
         await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-invalid", "true");
         await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-describedby", new Regex("erro-"));
+    }
+
+    [Fact]
+    public async Task Corrigir_a_data_da_venda_tira_o_erro_sem_novo_envio()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        var data = _pagina.GetByLabel("Data da venda");
+        await data.FillAsync(Cadastro.Hoje.AddDays(1).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        await _caixa.Finalizar.ClickAsync();
+        var erro = _pagina.Locator("[data-valmsg-for=Data]");
+        await Expect(erro).ToHaveTextAsync("A data da venda não pode estar no futuro.");
+        await _caixa.ProntoAsync();
+
+        await data.FillAsync(Cadastro.Hoje.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+        await Expect(erro).ToBeEmptyAsync();
+        await Expect(data).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(_pagina.Locator("[data-valmsg-for=ClienteId]")).ToHaveTextAsync("Selecione o cliente.");
     }
 
     [Fact]

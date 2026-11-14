@@ -32,6 +32,20 @@ if (window.jQuery?.validator) {
         return primeiro === digitos[9] && segundo === digitos[10];
     };
 
+    const formatoDeEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    const tamanhoMaximoDoEmail = 254;
+    jQuery.validator.methods.email = function (valor, elemento) {
+        const aparado = valor.trim();
+        return this.optional(elemento) || (aparado.length <= tamanhoMaximoDoEmail && formatoDeEmail.test(aparado));
+    };
+
+    jQuery.validator.addMethod('telefone', function (valor, elemento) {
+        const aparado = valor.trim();
+        const digitos = aparado.replace(/\D/g, '').length;
+        return this.optional(elemento) || (/^[\d\s()-]+$/.test(aparado) && (digitos === 10 || digitos === 11));
+    });
+    jQuery.validator.unobtrusive.adapters.addBool('telefone');
+
     jQuery.validator.addMethod('cpf', function (valor, elemento) {
         return this.optional(elemento) || cpfValido(valor);
     });

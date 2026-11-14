@@ -46,6 +46,23 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task O_aviso_de_nome_repetido_some_quando_o_nome_e_alterado()
+    {
+        await CadastrarAsync("Caneta azul", "2,50");
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("3,00");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+        var aviso = _pagina.Locator("[data-valmsg-for=Nome]");
+        await Expect(aviso).ToHaveTextAsync("Já existe um produto com este nome.");
+
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta vermelha");
+
+        await Expect(aviso).ToBeEmptyAsync();
+        await Expect(_pagina.GetByLabel("Nome")).Not.ToHaveAttributeAsync("aria-invalid", "true");
+    }
+
+    [Fact]
     public async Task Avisa_no_campo_quando_o_nome_ja_existe_com_espacos_a_mais()
     {
         await CadastrarAsync("Caderno Universitário", "18,90");
