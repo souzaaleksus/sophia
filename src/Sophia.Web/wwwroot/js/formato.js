@@ -28,6 +28,20 @@ export function lerInteiro(texto) {
     return /^\d+$/.test(limpo) ? Number(limpo) : null;
 }
 
+export function iniciais(nome) {
+    const partes = String(nome ?? '').split(' ').filter(Boolean);
+    if (partes.length === 0) {
+        return '';
+    }
+
+    const letras = partes.length === 1 ? partes[0][0] : partes[0][0] + partes.at(-1)[0];
+    return letras.toLocaleUpperCase('pt-BR');
+}
+
+export function tomDoAvatar(nome) {
+    return [...String(nome ?? '')].reduce((soma, letra) => (soma * 31 + letra.charCodeAt(0)) % 9973, 0) % 5;
+}
+
 export function emCentavos(valor) {
     return Math.round(valor * 100);
 }

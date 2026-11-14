@@ -1,5 +1,5 @@
 import { buscarJson, criarAutocompletar } from './autocompletar.js';
-import { emCentavos, formatarContagem, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from './formato.js';
+import { emCentavos, formatarContagem, formatarDecimal, formatarMoeda, iniciais, lerDecimal, lerInteiro, tomDoAvatar } from './formato.js';
 
 const formulario = document.getElementById('nova-venda');
 const configuracao = formulario.dataset;
@@ -88,6 +88,7 @@ function prepararCliente() {
             campo('cpf').value = encontrado.cpf;
             campo('nome-exibido').textContent = encontrado.nome;
             campo('cpf-exibido').textContent = encontrado.cpf;
+            mostrarAvatar(campo('avatar'), encontrado.nome);
             busca.hidden = true;
             escolhido.hidden = false;
             focarProdutoLivre();
@@ -111,6 +112,11 @@ function prepararCliente() {
     campo('trocar').addEventListener('click', buscarOutro);
 
     return { buscarOutro };
+}
+
+function mostrarAvatar(avatar, nome) {
+    avatar.textContent = iniciais(nome);
+    avatar.className = `avatar avatar-tom-${tomDoAvatar(nome)}`;
 }
 
 function focarProdutoLivre() {
@@ -202,9 +208,52 @@ function mudarQuantidade(item, passo) {
     recalcularTotais();
 }
 
+const desfazer = formulario.querySelector('[data-desfazer]');
+const tempoParaDesfazer = 6000;
+let removido = null;
+let temporizadorDoDesfazer;
+
+desfazer.querySelector('[data-acao=desfazer-remocao]').addEventListener('click', desfazerRemocao);
+
+function oferecerDesfazer(item, posicao) {
+    removido = { item, posicao };
+    desfazer.hidden = false;
+    clearTimeout(temporizadorDoDesfazer);
+    temporizadorDoDesfazer = setTimeout(esconderDesfazer, tempoParaDesfazer);
+}
+
+function esconderDesfazer() {
+    if (desfazer.matches(':focus-within, :hover')) {
+        temporizadorDoDesfazer = setTimeout(esconderDesfazer, 1000);
+        return;
+    }
+
+    desfazer.hidden = true;
+    removido = null;
+}
+
+function desfazerRemocao() {
+    if (!removido) {
+        return;
+    }
+
+    const linhas = areaDosItens.querySelectorAll('[data-item]');
+    areaDosItens.insertBefore(removido.item, linhas[removido.posicao] ?? null);
+    renumerarItens();
+    recalcularTotais();
+    removido.item.querySelector('[data-campo=Quantidade]').focus();
+    removido = null;
+    desfazer.hidden = true;
+}
+
 function removerItem(item) {
+    const posicao = [...areaDosItens.querySelectorAll('[data-item]')].indexOf(item);
     const proximo = item.nextElementSibling ?? item.previousElementSibling;
     item.remove();
+    if (!estaEmBranco(item)) {
+        oferecerDesfazer(item, posicao);
+    }
+
     const foco = proximo ? proximo.querySelector('[data-campo=ProdutoNome]') : adicionarItem();
 
     renumerarItens();
@@ -258,6 +307,7 @@ function recalcularTotais() {
         const valor = lerDecimal(item.querySelector('[data-campo=ValorUnitario]').value) ?? 0;
         const quantidade = lerInteiro(item.querySelector('[data-campo=Quantidade]').value) ?? 0;
         const subtotalEmCentavos = emCentavos(valor) * quantidade;
+        item.querySelector('[data-acao=menos]').disabled = quantidade <= 1;
 
         item.querySelector('[data-campo=Subtotal]').textContent = formatarMoeda(subtotalEmCentavos / 100);
         totalEmCentavos += subtotalEmCentavos;

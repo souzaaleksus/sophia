@@ -97,7 +97,7 @@
     align-items: start;
     display: grid;
     gap: 0.75rem;
-    grid-template-columns: 1.5rem minmax(0, 1fr) 8rem 6.5rem 8rem 2.25rem;
+    grid-template-columns: 1.5rem minmax(0, 1fr) 8.5rem 9.5rem 7rem 2.75rem;
 }
 
 .caixa-cabecalho-dos-itens::before {
@@ -151,15 +151,16 @@
 }
 
 .caixa-remover {
+    align-items: center;
     background: transparent;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--raio-pequeno);
     color: var(--cor-texto-suave);
-    font-size: 1.4rem;
-    height: 2.35rem;
-    line-height: 1;
+    display: inline-flex;
+    height: 44px;
+    justify-content: center;
     transition: background-color 0.15s ease, color 0.15s ease;
-    width: 2.25rem;
+    width: 44px;
 }
 
 .caixa-remover:hover {
@@ -197,13 +198,47 @@
     border: 1px solid var(--cor-borda-campo);
     border-radius: var(--raio-pequeno);
     color: var(--cor-primaria);
-    display: none;
+    display: block;
     flex: none;
     font-size: 1.25rem;
     font-weight: 600;
     line-height: 1;
     min-height: 44px;
     width: 44px;
+}
+
+.botao-quantidade:disabled {
+    background: transparent;
+    color: var(--cor-texto-suave);
+    opacity: 0.55;
+}
+
+.quantidade-com-botoes input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+    text-align: center;
+}
+
+.quantidade-com-botoes input[type=number]::-webkit-inner-spin-button,
+.quantidade-com-botoes input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.caixa-desfazer {
+    align-items: center;
+    background: var(--cor-realce);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-pequeno);
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+    margin-top: 0.75rem;
+    padding: 0.4rem 0.4rem 0.4rem 0.9rem;
+}
+
+.caixa-desfazer[hidden] {
+    display: none;
 }
 
 .botao-quantidade:active {
@@ -318,10 +353,6 @@
     .caixa-fechamento .caixa-dica-de-teclado,
     .caixa-fechamento > .btn-link {
         display: none;
-    }
-
-    .botao-quantidade {
-        display: block;
     }
 
     .caixa-remover {
