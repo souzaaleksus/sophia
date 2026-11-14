@@ -3,7 +3,7 @@ using System.Resources;
 
 namespace Sophia.Domain.Recursos;
 
-internal static class Mensagens
+public static class Mensagens
 {
     private static readonly CultureInfo PortuguesDoBrasil = CultureInfo.GetCultureInfo("pt-BR");
     private static readonly ResourceManager Textos = new(typeof(Mensagens));
@@ -52,6 +52,9 @@ internal static class Mensagens
 
     public static string NomeAcimaDoTamanho(int tamanhoMaximo) =>
         string.Format(PortuguesDoBrasil, Ler(nameof(NomeAcimaDoTamanho)), tamanhoMaximo);
+
+    public static string QuantidadeAcimaDoMaximo(int quantidadeMaxima) =>
+        string.Format(PortuguesDoBrasil, Ler(nameof(QuantidadeAcimaDoMaximo)), quantidadeMaxima.ToString("N0", PortuguesDoBrasil));
 
     private static string Ler(string chave) =>
         Textos.GetString(chave, PortuguesDoBrasil) ?? throw new MissingManifestResourceException(chave);

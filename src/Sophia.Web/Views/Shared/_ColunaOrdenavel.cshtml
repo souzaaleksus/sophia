@@ -3,6 +3,6 @@
 <th scope="col" class="@Model.Classe" aria-sort="@Model.Sentido">
     <a class="coluna-ordenavel" asp-all-route-data="@Model.RotaDoClique()">
         @Model.Rotulo
-        <svg class="icone" aria-hidden="true"><use href="@(Model.Ativa ? (Model.Decrescente ? "#icone-ordem-decrescente" : "#icone-ordem-crescente") : "#icone-ordem")" /></svg>
+        <svg class="icone" aria-hidden="true"><use href="@Model.Icone" /></svg>
     </a>
 </th>

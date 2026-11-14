@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using Microsoft.Extensions.Localization;
 
 namespace Sophia.Web.Apoio;
 
@@ -24,8 +23,6 @@ public sealed class DataBrasileiraAttribute : ValidationAttribute
             return ValidationResult.Success;
         }
 
-        var textos = validationContext.GetService(typeof(IStringLocalizer<Textos>)) as IStringLocalizer<Textos>;
-        var mensagem = textos?[ErrorMessageString].Value ?? ErrorMessageString;
-        return new ValidationResult(mensagem, [validationContext.MemberName ?? string.Empty]);
+        return new ValidationResult(FormatErrorMessage(validationContext.DisplayName), [validationContext.MemberName ?? string.Empty]);
     }
 }

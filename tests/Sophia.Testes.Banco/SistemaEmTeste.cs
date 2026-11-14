@@ -6,6 +6,8 @@ using Sophia.Application.Clientes;
 using Sophia.Application.Painel;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
+using Sophia.Domain.Clientes;
+using Sophia.Domain.Produtos;
 using Sophia.Infrastructure;
 using Sophia.Infrastructure.Persistencia;
 
@@ -47,9 +49,9 @@ public sealed class SistemaEmTeste : IDisposable
         set => Tempo.SetUtcNow(new DateTimeOffset(value.ToDateTime(new TimeOnly(12, 0)), HorarioDeBrasilia));
     }
 
-    public IClienteServico Clientes => Resolver<IClienteServico>();
+    public IServicoDeCadastro<ClienteDto, DadosCliente> Clientes => Resolver<IServicoDeCadastro<ClienteDto, DadosCliente>>();
 
-    public IProdutoServico Produtos => Resolver<IProdutoServico>();
+    public IServicoDeCadastro<ProdutoDto, DadosProduto> Produtos => Resolver<IServicoDeCadastro<ProdutoDto, DadosProduto>>();
 
     public IVendaServico Vendas => Resolver<IVendaServico>();
 

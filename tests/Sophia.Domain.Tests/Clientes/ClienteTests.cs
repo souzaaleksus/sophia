@@ -111,6 +111,7 @@ public sealed class ClienteTests
     [InlineData("1234")]
     [InlineData("98765-4321")]
     [InlineData("119876543210")]
+    [InlineData("(11) 98765-432\u0661")]
     public void Recusa_telefone_sem_ddd_ou_com_digitos_a_mais(string telefone)
     {
         var resultado = Cliente.Criar(DadosValidos() with { Telefone = telefone }, Hoje);

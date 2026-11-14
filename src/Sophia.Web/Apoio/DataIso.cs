@@ -20,50 +20,18 @@ public static class DataIso
             context.Metadata.UnderlyingOrModelType == typeof(DateOnly) ? new Ligador() : null;
     }
 
-    private sealed class Ligador : IModelBinder
+    private sealed class Ligador : LigadorDeTexto
     {
-        public Task BindModelAsync(ModelBindingContext bindingContext)
+        protected override object? Interpretar(ModelBindingContext contexto, string texto, out string? recusa)
         {
-            var valor = bindingContext.ValueProvider.GetValue(bindingContext.ModelName);
-            if (valor != ValueProviderResult.None)
+            if (DateOnly.TryParseExact(texto, Formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out var data))
             {
-                bindingContext.ModelState.SetModelValue(bindingContext.ModelName, valor);
-                Ligar(bindingContext, valor.FirstValue);
+                recusa = null;
+                return data;
             }
 
-            return Task.CompletedTask;
-        }
-
-        private static void Ligar(ModelBindingContext contexto, string? texto)
-        {
-            if (string.IsNullOrWhiteSpace(texto))
-            {
-                ExigirSeObrigatorio(contexto);
-            }
-            else if (DateOnly.TryParseExact(texto, Formato, CultureInfo.InvariantCulture, DateTimeStyles.None, out var data))
-            {
-                contexto.Result = ModelBindingResult.Success(data);
-            }
-            else
-            {
-                Recusar(contexto, texto);
-            }
-        }
-
-        private static void ExigirSeObrigatorio(ModelBindingContext contexto)
-        {
-            if (!contexto.ModelMetadata.IsReferenceOrNullableType)
-            {
-                var mensagem = contexto.ModelMetadata.ModelBindingMessageProvider.ValueMustNotBeNullAccessor(contexto.ModelMetadata.GetDisplayName());
-                contexto.ModelState.TryAddModelError(contexto.ModelName, mensagem);
-            }
-        }
-
-        private static void Recusar(ModelBindingContext contexto, string texto)
-        {
-            var metadados = contexto.ModelMetadata;
-            var mensagem = metadados.ModelBindingMessageProvider.AttemptedValueIsInvalidAccessor(texto, metadados.GetDisplayName());
-            contexto.ModelState.TryAddModelError(contexto.ModelName, mensagem);
+            recusa = ValorInvalido(contexto, texto);
+            return null;
         }
     }
 }

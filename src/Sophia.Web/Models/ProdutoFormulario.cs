@@ -1,20 +1,22 @@
 using System.ComponentModel.DataAnnotations;
 using Sophia.Application.Produtos;
 using Sophia.Domain.Produtos;
+using Sophia.Domain.Recursos;
+using Sophia.Web.Apoio;
 
 namespace Sophia.Web.Models;
 
-public sealed class ProdutoFormulario
+public sealed class ProdutoFormulario : IFormularioDeCadastro<DadosProduto>
 {
     public int? Id { get; set; }
 
     [Display(Name = "campo.nome")]
-    [Required(ErrorMessage = "validacao.nome-obrigatorio")]
-    [StringLength(Produto.TamanhoMaximoNome, ErrorMessage = "validacao.nome-tamanho")]
+    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.NomeObrigatorio))]
+    [TamanhoDoNome(Produto.TamanhoMaximoNome)]
     public string? Nome { get; set; }
 
     [Display(Name = "campo.valor-unitario")]
-    [Required(ErrorMessage = "validacao.valor-obrigatorio")]
+    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.ValorUnitarioObrigatorio))]
     public decimal? ValorUnitario { get; set; }
 
     public bool EhNovo => Id is null;

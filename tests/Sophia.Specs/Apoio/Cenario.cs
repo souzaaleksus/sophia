@@ -6,6 +6,8 @@ using Sophia.Application.Painel;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
 using Sophia.Domain;
+using Sophia.Domain.Clientes;
+using Sophia.Domain.Produtos;
 using Sophia.Testes.Banco;
 
 namespace Sophia.Specs.Apoio;
@@ -14,7 +16,7 @@ public sealed partial class Cenario : IDisposable
 {
     public static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
-    private readonly SistemaEmTeste _sistema = new(Ganchos.Banco, new DateOnly(2026, 11, 13));
+    private SistemaEmTeste _sistema = new(Ganchos.Banco, new DateOnly(2026, 11, 13));
 
     public DateOnly Hoje
     {
@@ -22,9 +24,9 @@ public sealed partial class Cenario : IDisposable
         set => _sistema.Hoje = value;
     }
 
-    public IClienteServico Clientes => _sistema.Clientes;
+    public IServicoDeCadastro<ClienteDto, DadosCliente> Clientes => _sistema.Clientes;
 
-    public IProdutoServico Produtos => _sistema.Produtos;
+    public IServicoDeCadastro<ProdutoDto, DadosProduto> Produtos => _sistema.Produtos;
 
     public IVendaServico Vendas => _sistema.Vendas;
 
@@ -52,6 +54,13 @@ public sealed partial class Cenario : IDisposable
 
     public async Task<ProdutoDto> ProdutoChamadoAsync(string nome) =>
         (await Produtos.ListarAsync(new ConsultaDeLista(Busca: nome))).Pagina.Itens.Single(p => p.Nome == nome);
+
+    public void UsarParametros(ParametrosDoSophia parametros)
+    {
+        var hoje = _sistema.Hoje;
+        _sistema.Dispose();
+        _sistema = new SistemaEmTeste(Ganchos.Banco, hoje, parametros);
+    }
 
     public void Dispose() => _sistema.Dispose();
 

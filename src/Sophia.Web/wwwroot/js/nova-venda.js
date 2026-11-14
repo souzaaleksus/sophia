@@ -20,7 +20,10 @@ const linhas = criarLinhas({
     movimentoReduzido,
     aoMudar: () => recalcularTotais(),
     aoRemover: (item, posicao) => desfazer.oferecer(item, posicao),
-    aoSomar: (produto, linha) => anunciar(configuracao.textoProdutoSomado.replace('{produto}', () => produto.nome).replace('{linha}', () => linha)),
+    aoSomar: (produto, linha, noMaximo) => anunciar(
+        (noMaximo ? configuracao.textoProdutoNoMaximo : configuracao.textoProdutoSomado)
+            .replace('{produto}', () => produto.nome)
+            .replace('{linha}', () => linha)),
 });
 const cliente = criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, () => linhas.focarLivre());
 
@@ -59,8 +62,6 @@ window.addEventListener('beforeunload', evento => {
         evento.returnValue = '';
     }
 });
-
-formulario.dataset.pronto = 'true';
 
 function recalcularTotais() {
     const itens = [...formulario.querySelectorAll('[data-itens] [data-item]')];

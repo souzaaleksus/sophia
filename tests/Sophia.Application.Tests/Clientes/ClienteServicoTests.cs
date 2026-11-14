@@ -15,7 +15,7 @@ public sealed class ClienteServicoTests(BancoDeTestes banco) : IAsyncLifetime, I
 
     private readonly SistemaEmTeste _sistema = new(banco, Hoje);
 
-    private IClienteServico Servico => _sistema.Clientes;
+    private IServicoDeCadastro<ClienteDto, DadosCliente> Servico => _sistema.Clientes;
 
     public Task InitializeAsync() => banco.LimparAsync();
 

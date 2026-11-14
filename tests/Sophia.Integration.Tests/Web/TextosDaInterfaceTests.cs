@@ -35,6 +35,29 @@ public sealed partial class TextosDaInterfaceTests
         vazios.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData("Sophia.Domain")]
+    [InlineData("Sophia.Application")]
+    public void Nenhum_texto_da_interface_repete_uma_mensagem_de_outra_camada(string projeto)
+    {
+        var daCamada = TextosDoRecurso(Path.Combine(ProjetoWeb.Parent!.FullName, projeto, "Recursos", "Mensagens.resx"))
+            .Select(texto => SemMarcadores(texto.Valor))
+            .ToHashSet(StringComparer.Ordinal);
+
+        var repetidos = TextosDoRecurso(Path.Combine(ProjetoWeb.FullName, "Recursos", "Textos.resx"))
+            .Where(texto => daCamada.Contains(SemMarcadores(texto.Valor)))
+            .Select(texto => texto.Chave);
+
+        repetidos.Should().BeEmpty("a interface usa a mensagem da camada que a define, sem copiar o texto");
+    }
+
+    private static IEnumerable<(string Chave, string Valor)> TextosDoRecurso(string arquivo) =>
+        XDocument.Load(arquivo).Root!
+            .Elements("data")
+            .Select(dado => (dado.Attribute("name")!.Value, dado.Element("value")?.Value ?? string.Empty));
+
+    private static string SemMarcadores(string texto) => Marcador().Replace(texto, "{}");
+
     private static HashSet<string> ChavesDoRecurso() =>
         XDocument.Load(Path.Combine(ProjetoWeb.FullName, "Recursos", "Textos.resx")).Root!
             .Elements("data")
@@ -60,6 +83,9 @@ public sealed partial class TextosDaInterfaceTests
 
         return new DirectoryInfo(Path.Combine(pasta!.FullName, "src", "Sophia.Web"));
     }
+
+    [GeneratedRegex(@"\{[0-9]+\}")]
+    private static partial Regex Marcador();
 
     [GeneratedRegex(@"(?:\bT|\btextos)\[""(?<chave>[a-z0-9.-]+)""|(?:Name|ErrorMessage) = ""(?<chave>[a-z0-9-]+\.[a-z0-9.-]+)""")]
     private static partial Regex UsoDeChave();

@@ -4,6 +4,8 @@ namespace Sophia.Application;
 
 public sealed class ParametrosDoSophia
 {
+    public const int QuantidadeMaximaAceita = 999_999;
+
     [Range(1, 200)]
     public int TamanhoDaPagina { get; init; } = 25;
 
@@ -21,4 +23,7 @@ public sealed class ParametrosDoSophia
 
     [Range(2, 90)]
     public int DiasDoAtalhoDePeriodo { get; init; } = 7;
+
+    [Range(1, QuantidadeMaximaAceita)]
+    public int QuantidadeMaximaPorItem { get; init; } = 99_999;
 }

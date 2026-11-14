@@ -1,30 +1,31 @@
 using System.ComponentModel.DataAnnotations;
 using Sophia.Application.Clientes;
 using Sophia.Domain.Clientes;
+using Sophia.Domain.Recursos;
 using Sophia.Web.Apoio;
 
 namespace Sophia.Web.Models;
 
-public sealed class ClienteFormulario
+public sealed class ClienteFormulario : IFormularioDeCadastro<DadosCliente>
 {
     public int? Id { get; set; }
 
     [Display(Name = "campo.cpf")]
-    [Required(ErrorMessage = "validacao.cpf-obrigatorio")]
+    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.CpfObrigatorio))]
     public string? Cpf { get; set; }
 
     [Display(Name = "campo.nome")]
-    [Required(ErrorMessage = "validacao.nome-obrigatorio")]
-    [StringLength(Cliente.TamanhoMaximoNome, ErrorMessage = "validacao.nome-tamanho")]
+    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.NomeObrigatorio))]
+    [TamanhoDoNome(Cliente.TamanhoMaximoNome)]
     public string? Nome { get; set; }
 
     [Display(Name = "campo.data-de-nascimento")]
-    [DataBrasileira(ErrorMessage = "validacao.nascimento-invalido")]
+    [DataBrasileira(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.DataDeNascimentoInvalida))]
     public string? DataNascimento { get; set; }
 
     [Display(Name = "campo.email")]
-    [EmailAddress(ErrorMessage = "validacao.email-invalido")]
-    [StringLength(Cliente.TamanhoMaximoEmail, ErrorMessage = "validacao.email-invalido")]
+    [EmailAddress(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.EmailInvalido))]
+    [StringLength(Cliente.TamanhoMaximoEmail, ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.EmailInvalido))]
     public string? Email { get; set; }
 
     [Display(Name = "campo.telefone")]

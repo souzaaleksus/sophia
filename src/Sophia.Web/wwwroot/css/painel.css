@@ -34,9 +34,9 @@
     letter-spacing: -0.01em;
     line-height: 1.15;
     margin-top: 0.35rem;
+    overflow-wrap: anywhere;
     text-align: right;
     text-shadow: 0 0 10px color-mix(in srgb, var(--cor-visor-texto) 18%, transparent);
-    white-space: nowrap;
 }
 
 .visor-moeda {
@@ -92,7 +92,7 @@
     font-variant-numeric: tabular-nums;
     font-weight: 700;
     line-height: 1.2;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .indicador-detalhe {

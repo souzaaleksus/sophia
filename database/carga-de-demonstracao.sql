@@ -4,8 +4,8 @@ GO
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-IF DB_NAME() <> N'Sophia'
-    THROW 50001, N'Execute este script no banco Sophia (sqlcmd -d Sophia).', 1;
+IF DB_ID() <= 4 OR OBJECT_ID(N'dbo.VendaItens', N'U') IS NULL
+    THROW 50001, N'Execute este script no banco criado por create-database.sql (sqlcmd -d <nome do banco>).', 1;
 
 IF EXISTS (SELECT 1 FROM dbo.Clientes) OR EXISTS (SELECT 1 FROM dbo.Produtos) OR EXISTS (SELECT 1 FROM dbo.Vendas)
 BEGIN

@@ -103,7 +103,7 @@ public sealed class PoliticaDeConteudoTests(AplicacaoEmExecucao aplicacao) : IAs
         var semVenda = await AlturaDaBarraAsync(dias.Nth(5));
         anteontem.Should().BeGreaterThan(hoje);
         (hoje / anteontem).Should().BeApproximately(43.90 / 56.70, 0.05);
-        semVenda.Should().BeInRange(1, 3);
+        semVenda.Should().Be(0);
 
         var trilhos = _pagina.GetByTestId("mais-vendidos").Locator(".ranking-trilho");
         var primeiro = await LarguraPreenchidaAsync(trilhos.Nth(0));

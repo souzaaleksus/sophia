@@ -72,6 +72,9 @@
   <data name="QuantidadeNaoPositiva" xml:space="preserve">
     <value>A quantidade deve ser maior que zero.</value>
   </data>
+  <data name="QuantidadeAcimaDoMaximo" xml:space="preserve">
+    <value>A quantidade aceita no máximo {0} por item.</value>
+  </data>
   <data name="FalhaSemErros" xml:space="preserve">
     <value>Uma falha precisa de ao menos um erro.</value>
   </data>

@@ -243,6 +243,10 @@
     white-space: nowrap;
 }
 
+td.valor {
+    white-space: normal;
+}
+
 .numero {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;

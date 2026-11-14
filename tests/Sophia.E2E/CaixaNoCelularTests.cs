@@ -51,6 +51,33 @@ public sealed class CaixaNoCelularTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         }
     }
 
+    [Theory]
+    [InlineData(375)]
+    [InlineData(360)]
+    [InlineData(768)]
+    public async Task Valor_e_quantidade_da_linha_aparecem_inteiros_mesmo_com_a_barra_de_rolagem(int largura)
+    {
+        var celular = await aplicacao.NovaPaginaAsync(largura, 667);
+        try
+        {
+            var caixa = new Caixa(celular);
+            await celular.GotoAsync("/Vendas/Nova");
+            await caixa.LancarAsync(0, "Caneta", "Caneta azul", "99999");
+            var valor = caixa.Linha(0).GetByLabel("Valor unitário");
+            await valor.FillAsync("12.345,67");
+
+            foreach (var campo in new[] { valor, caixa.QuantidadeDaLinha(0) })
+            {
+                var cortado = await campo.EvaluateAsync<int>("campo => { campo.scrollLeft = 0; return campo.scrollWidth - campo.clientWidth; }");
+                cortado.Should().BeLessThanOrEqualTo(0, $"o que foi digitado em {await campo.GetAttributeAsync("data-campo")} aparece inteiro em {largura} px");
+            }
+        }
+        finally
+        {
+            await celular.Context.CloseAsync();
+        }
+    }
+
     [Fact]
     public async Task Sem_rolar_o_total_e_o_botao_de_finalizar_aparecem_inteiros()
     {

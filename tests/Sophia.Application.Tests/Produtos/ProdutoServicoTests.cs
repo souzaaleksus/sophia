@@ -15,7 +15,7 @@ public sealed class ProdutoServicoTests(BancoDeTestes banco) : IAsyncLifetime, I
 
     private readonly SistemaEmTeste _sistema = new(banco, Hoje);
 
-    private IProdutoServico Servico => _sistema.Produtos;
+    private IServicoDeCadastro<ProdutoDto, DadosProduto> Servico => _sistema.Produtos;
 
     public Task InitializeAsync() => banco.LimparAsync();
 
@@ -42,6 +42,40 @@ public sealed class ProdutoServicoTests(BancoDeTestes banco) : IAsyncLifetime, I
 
         resultado.Erros.Should().ContainSingle()
             .Which.Should().Be(new Erro("Nome", "Já existe um produto com este nome."));
+    }
+
+    [Fact]
+    public async Task Recusa_nome_que_so_difere_no_acento()
+    {
+        await Servico.CadastrarAsync(new DadosProduto("Café Torrado", 32m));
+
+        var resultado = await Servico.CadastrarAsync(new DadosProduto("Cafe Torrado", 30m));
+
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("Nome", "Já existe um produto com este nome."));
+    }
+
+    [Fact]
+    public async Task Recusa_alteracao_para_o_nome_de_outro_produto_escrito_sem_acento()
+    {
+        await Servico.CadastrarAsync(new DadosProduto("Café Torrado", 32m));
+        var cha = (await Servico.CadastrarAsync(new DadosProduto("Chá Mate", 9m))).Valor;
+
+        var resultado = await Servico.AlterarAsync(cha, new DadosProduto("CAFE TORRADO", 9m));
+
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("Nome", "Já existe um produto com este nome."));
+    }
+
+    [Fact]
+    public async Task Corrige_o_acento_do_proprio_nome()
+    {
+        var id = (await Servico.CadastrarAsync(new DadosProduto("Cafe Torrado", 32m))).Valor;
+
+        var resultado = await Servico.AlterarAsync(id, new DadosProduto("Café Torrado", 32m));
+
+        resultado.Sucesso.Should().BeTrue();
+        (await Servico.ObterAsync(id))!.Nome.Should().Be("Café Torrado");
     }
 
     [Fact]

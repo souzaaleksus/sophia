@@ -1,11 +1,11 @@
 @model NovaVendaFormulario
+@inject Sophia.Application.ParametrosDoSophia Parametros
 @{
     ViewData["Title"] = T["vendas.nova-venda"].Value;
     var hoje = (DateOnly)ViewData["Hoje"]!;
     var clienteEscolhido = Model.ClienteId is not null;
     var erroDosItens = ViewData.ModelState.PrimeiroErro("Itens");
-    var itensLancados = Model.Itens.Where(item => item.ProdutoId is not null).ToList();
-    var totalDaVenda = Model.Itens.Sum(item => (item.Quantidade ?? 0) * (item.ValorUnitario ?? 0));
+    var totalDaVenda = Model.Total();
 
     void LinhaDoItem(int indice, ItemDaVendaFormulario item, bool comErros)
     {
@@ -40,7 +40,7 @@
                 <div class="quantidade-com-botoes">
                     <button type="button" class="botao-quantidade" data-acao="menos" aria-label="@T["caixa.diminuir"]">&minus;</button>
                     <input id="item-@indice-Quantidade" name="Itens[@indice].Quantidade" value="@Valor("Quantidade", Formato.Inteiro(item.Quantidade))"
-                           type="number" min="1" max="@int.MaxValue" step="1" class="form-control valor" inputmode="numeric"
+                           type="number" min="1" max="@Parametros.QuantidadeMaximaPorItem" step="1" class="form-control valor" inputmode="numeric"
                            data-campo="Quantidade" />
                     <button type="button" class="botao-quantidade" data-acao="mais" aria-label="@T["caixa.aumentar"]">+</button>
                 </div>
@@ -48,7 +48,7 @@
             </div>
             <div class="campo caixa-subtotal">
                 <span class="caixa-rotulo">@T["campo.subtotal"]</span>
-                <output data-testid="subtotal" data-campo="Subtotal">@Formato.Moeda((item.Quantidade ?? 0) * (item.ValorUnitario ?? 0))</output>
+                <output data-testid="subtotal" data-campo="Subtotal">@(item.Subtotal() is { } subtotal ? Formato.QuebrarNoMilhar(Formato.Moeda(subtotal)) : null)</output>
             </div>
             <button type="button" class="caixa-remover" data-acao="remover-item" aria-label="@T["caixa.remover"]" title="@T["caixa.remover"]">
                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
@@ -86,6 +86,10 @@
       data-texto-cadastrar-cliente="@T["caixa.cadastrar-cliente"]"
       data-texto-produto-nao-encontrado="@T["produtos.nenhum"]"
       data-texto-produto-somado="@T["caixa.produto-somado"]"
+      data-texto-produto-no-maximo="@T["caixa.produto-no-maximo"]"
+      data-texto-valor-invalido="@T["validacao.valor-invalido"]"
+      data-texto-valor-com-mais-de-duas-casas="@Sophia.Domain.Recursos.Mensagens.ValorUnitarioComMaisDeDuasCasas"
+      data-texto-valor-acima-do-permitido="@T["binder.numero-acima-do-permitido-no-campo", T["campo.valor-unitario"].Value]"
       data-texto-item="@T["venda.itens-singular"]"
       data-texto-itens="@T["venda.itens-plural"]"
       data-texto-unidade="@T["vendas.unidades-singular"]"
@@ -177,10 +181,10 @@
     <div class="caixa-fechamento">
         <section class="visor" aria-labelledby="titulo-do-visor">
             <h2 class="visor-rotulo" id="titulo-do-visor">@T["venda.total"]</h2>
-            <output class="visor-valor" data-testid="total-da-venda" aria-live="polite"><span class="visor-moeda">@T["geral.moeda"]</span> <span data-visor="valor">@Formato.Numero(totalDaVenda)</span></output>
+            <output class="visor-valor" data-testid="total-da-venda" aria-live="polite"><span class="visor-moeda">@T["geral.moeda"]</span> <span data-visor="valor">@Formato.QuebrarNoMilhar(Formato.Numero(totalDaVenda))</span></output>
             <p class="visor-detalhe">
-                <span data-testid="itens-da-venda">@Formato.Quantidade(itensLancados.Count, T["venda.itens-singular"], T["venda.itens-plural"])</span>
-                <span data-testid="unidades-da-venda">@Formato.Quantidade(itensLancados.Sum(item => item.Quantidade ?? 0), T["vendas.unidades-singular"], T["vendas.unidades-plural"])</span>
+                <span data-testid="itens-da-venda">@Formato.Quantidade(Model.Lancados.Count(), T["venda.itens-singular"], T["venda.itens-plural"])</span>
+                <span data-testid="unidades-da-venda">@Formato.Quantidade(Model.UnidadesLancadas(), T["vendas.unidades-singular"], T["vendas.unidades-plural"])</span>
             </p>
         </section>
 

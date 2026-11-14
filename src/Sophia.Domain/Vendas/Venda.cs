@@ -30,12 +30,12 @@ public sealed class Venda
     private HashSet<(int ProdutoId, int Quantidade, decimal ValorUnitario)> ConteudoDosItens() =>
         _itens.Select(item => (item.ProdutoId, item.Quantidade, item.ValorUnitario)).ToHashSet();
 
-    public static Resultado<Venda> Registrar(DadosVenda dados, DateOnly hoje)
+    public static Resultado<Venda> Registrar(DadosVenda dados, DateOnly hoje, int quantidadeMaximaPorItem)
     {
         var erros = new List<Erro>();
         ValidarData(dados.Data, hoje, erros);
         ValidarCliente(dados.ClienteId, erros);
-        var itens = ValidarItens(dados.Itens, erros);
+        var itens = ValidarItens(dados.Itens, quantidadeMaximaPorItem, erros);
 
         if (erros.Count > 0)
         {
@@ -72,7 +72,7 @@ public sealed class Venda
         }
     }
 
-    private static List<ItemVenda> ValidarItens(IReadOnlyList<DadosItemVenda> itens, List<Erro> erros)
+    private static List<ItemVenda> ValidarItens(IReadOnlyList<DadosItemVenda> itens, int quantidadeMaxima, List<Erro> erros)
     {
         if (itens.Count == 0)
         {
@@ -84,7 +84,7 @@ public sealed class Venda
         var produtosLancados = new HashSet<int>();
         for (var linha = 0; linha < itens.Count; linha++)
         {
-            var item = ValidarItem(itens[linha], linha, produtosLancados, erros);
+            var item = ValidarItem(itens[linha], new LinhaDaVenda(linha, quantidadeMaxima, produtosLancados), erros);
             if (item is not null)
             {
                 validos.Add(item);
@@ -94,16 +94,13 @@ public sealed class Venda
         return validos;
     }
 
-    private static ItemVenda? ValidarItem(
-        DadosItemVenda dados,
-        int linha,
-        HashSet<int> produtosLancados,
-        List<Erro> erros)
+    private static ItemVenda? ValidarItem(DadosItemVenda dados, LinhaDaVenda linha, List<Erro> erros)
     {
         var errosAntes = erros.Count;
-        ValidarProduto(dados.ProdutoId, linha, produtosLancados, erros);
+        ValidarProduto(dados.ProdutoId, linha.Numero, linha.ProdutosLancados, erros);
         ValidarQuantidade(dados.Quantidade, linha, erros);
-        var valorUnitario = RegrasComuns.ValidarValorUnitario(dados.ValorUnitario, nameof(DadosItemVenda.ValorUnitario), linha, erros);
+        var valorUnitario = RegrasComuns.ValidarValorUnitario(
+            dados.ValorUnitario, nameof(DadosItemVenda.ValorUnitario), linha.Numero, erros);
 
         return erros.Count == errosAntes
             ? new ItemVenda(dados.ProdutoId!.Value, dados.Quantidade!.Value, valorUnitario!.Value)
@@ -122,15 +119,21 @@ public sealed class Venda
         }
     }
 
-    private static void ValidarQuantidade(int? quantidade, int linha, List<Erro> erros)
+    private static void ValidarQuantidade(int? quantidade, LinhaDaVenda linha, List<Erro> erros)
     {
-        if (quantidade is null)
+        string? problema = quantidade switch
         {
-            erros.Add(new Erro(nameof(DadosItemVenda.Quantidade), Mensagens.QuantidadeObrigatoria, linha));
-        }
-        else if (quantidade <= 0)
+            null => Mensagens.QuantidadeObrigatoria,
+            <= 0 => Mensagens.QuantidadeNaoPositiva,
+            _ when quantidade > linha.QuantidadeMaxima => Mensagens.QuantidadeAcimaDoMaximo(linha.QuantidadeMaxima),
+            _ => null,
+        };
+
+        if (problema is not null)
         {
-            erros.Add(new Erro(nameof(DadosItemVenda.Quantidade), Mensagens.QuantidadeNaoPositiva, linha));
+            erros.Add(new Erro(nameof(DadosItemVenda.Quantidade), problema, linha.Numero));
         }
     }
+
+    private sealed record LinhaDaVenda(int Numero, int QuantidadeMaxima, HashSet<int> ProdutosLancados);
 }

@@ -28,7 +28,10 @@
             <div class="input-group">
                 <span class="input-group-text">@T["geral.moeda"]</span>
                 <input asp-for="ValorUnitario" type="text" class="form-control valor" inputmode="decimal"
-                       autocomplete="off" aria-required="true" placeholder="0,00" value="@ValorTentado.Ou(ViewData.ModelState, nameof(Model.ValorUnitario), Formato.Numero(Model.ValorUnitario))" />
+                       autocomplete="off" aria-required="true" placeholder="0,00"
+                       data-val-number="@T["validacao.valor-invalido"]"
+                       data-val-maximo="@T["binder.numero-acima-do-permitido-no-campo", T["campo.valor-unitario"].Value]"
+                       value="@ValorTentado.Ou(ViewData.ModelState, nameof(Model.ValorUnitario), Formato.Numero(Model.ValorUnitario))" />
             </div>
             <span class="campo-dica">@T["produtos.dica-valor"]</span>
             <span asp-validation-for="ValorUnitario" class="erro"></span>

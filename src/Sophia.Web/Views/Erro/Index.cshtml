@@ -1,6 +1,22 @@
 @model int
+@using Microsoft.AspNetCore.Diagnostics
 @{
     var naoEncontrado = Model == StatusCodes.Status404NotFound;
+    var metodo = PaginaDeErro.MetodoOriginal(Context);
+    var pedidoInvalido = Model == StatusCodes.Status400BadRequest;
+    var consultaInvalida = pedidoInvalido && (HttpMethods.IsGet(metodo) || HttpMethods.IsHead(metodo));
+    var envioInvalido = pedidoInvalido && !consultaInvalida;
+    var caminho = Context.Features.Get<IStatusCodeReExecuteFeature>()?.OriginalPath
+        ?? Context.Features.Get<IExceptionHandlerPathFeature>()?.Path
+        ?? Context.Request.Path.Value;
+    var area = AreaDoEndereco.De(caminho);
+    var (destino, rotuloDoDestino) = area switch
+    {
+        AreaDoEndereco.Clientes => (AreaDoEndereco.Clientes, T["erro.ir-para-os-clientes"]),
+        AreaDoEndereco.Produtos => (AreaDoEndereco.Produtos, T["erro.ir-para-os-produtos"]),
+        AreaDoEndereco.Vendas => (AreaDoEndereco.Vendas, T["erro.ir-para-as-vendas"]),
+        _ => (AreaDoEndereco.Painel, T["erro.ir-para-o-painel"]),
+    };
     ViewData["Title"] = naoEncontrado ? T["erro.nao-encontrada"].Value : T["erro.algo-deu-errado"].Value;
 }
 
@@ -11,9 +27,21 @@
     {
         <p>@T["erro.nao-existe"]</p>
     }
+    else if (consultaInvalida && area == AreaDoEndereco.Painel)
+    {
+        <p>@T["erro.endereco-invalido-no-painel"]</p>
+    }
+    else if (consultaInvalida)
+    {
+        <p>@T["erro.endereco-invalido"]</p>
+    }
+    else if (envioInvalido)
+    {
+        <p>@T["erro.envio-nao-conferido"]</p>
+    }
     else
     {
         <p>@T["erro.tente-de-novo"]</p>
     }
-    <a class="btn btn-primary" asp-controller="Vendas" asp-action="Index">@T["erro.ir-para-as-vendas"]</a>
+    <a class="btn btn-primary" asp-controller="@destino" asp-action="Index">@rotuloDoDestino</a>
 </div>

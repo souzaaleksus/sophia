@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Sophia.Integration.Tests.Apoio;
 using Sophia.Testes.Banco;
 
@@ -21,6 +22,9 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
         (await ContarAsync("Clientes")).Should().Be(320);
         (await ContarAsync("Vendas")).Should().BeGreaterThan(1000);
         (await ContarAsync("VendaItens")).Should().BeGreaterThan(await ContarAsync("Vendas"));
+        (await banco.ConsultarAsync("SELECT CAST(MAX(Quantidade) AS VARCHAR(10)) FROM dbo.VendaItens"))
+            .Select(maior => int.Parse(maior, System.Globalization.CultureInfo.InvariantCulture))
+            .Should().ContainSingle().Which.Should().BeLessThanOrEqualTo(new Sophia.Application.ParametrosDoSophia().QuantidadeMaximaPorItem);
     }
 
     [Fact]
@@ -34,6 +38,17 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
         (await ContarAsync("Produtos")).Should().Be(1);
         (await ContarAsync("Clientes")).Should().Be(0);
         (await ContarAsync("Vendas")).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Fora_de_um_banco_criado_pelo_script_recusa_sem_gravar_nada()
+    {
+        await using var vazio = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_SemTabelas");
+
+        var carregar = () => BancoAvulso.ExecutarScriptAsync(vazio.TextoDeConexao, Carga);
+
+        (await carregar.Should().ThrowAsync<SqlException>()).Which.Number.Should().Be(50001);
+        (await vazio.ConsultarAsync("SELECT name FROM sys.tables")).Should().BeEmpty();
     }
 
     private async Task<int> ContarAsync(string tabela) =>

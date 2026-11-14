@@ -18,8 +18,7 @@ public sealed class Caixa(IPage pagina)
 
     public ILocator Linha(int indice) => Itens.Nth(indice);
 
-    public Task ProntoAsync() =>
-        Expect(pagina.Locator("#nova-venda")).ToHaveAttributeAsync("data-pronto", "true");
+    public Task ProntoAsync() => pagina.WaitForLoadStateAsync(LoadState.Load);
 
     public ILocator ProdutoDaLinha(int indice) =>
         Linha(indice).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true });

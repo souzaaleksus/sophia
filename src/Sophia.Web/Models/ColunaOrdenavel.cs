@@ -18,6 +18,13 @@ public sealed record ColunaOrdenavel(
         (true, false) => "ascending",
     };
 
+    public string Icone => (Ativa, Decrescente) switch
+    {
+        (false, _) => "#icone-ordem",
+        (true, true) => "#icone-ordem-decrescente",
+        (true, false) => "#icone-ordem-crescente",
+    };
+
     public Dictionary<string, string> RotaDoClique()
     {
         var proxima = Ativa && !Decrescente ? $"-{Ordem}" : Ordem;

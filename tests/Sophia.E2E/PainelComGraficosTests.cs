@@ -53,6 +53,23 @@ public sealed class PainelComGraficosTests(AplicacaoEmExecucao aplicacao) : IAsy
     }
 
     [Fact]
+    public async Task Dia_com_venda_pequena_tem_barra_visivel_e_dia_sem_venda_nao_tem_barra()
+    {
+        var hoje = Cadastro.Hoje;
+        await _cadastro.VendaAsync(hoje, _maria, new DadosItemVenda(_caderno, 1000, 18.90m));
+        await _cadastro.VendaAsync(hoje.AddDays(-3), _maria, new DadosItemVenda(_lapis, 1, 0.10m));
+
+        await _pagina.GotoAsync("/");
+
+        var dias = _pagina.GetByTestId("grafico-ultimos-dias").Locator("[data-dia]");
+        var comVendaPequena = await AlturaDaBarraAsync(dias.Nth(3));
+        var semVenda = await AlturaDaBarraAsync(dias.Nth(4));
+        comVendaPequena.Should().BeGreaterThanOrEqualTo(6, "um dia com venda precisa de barra à vista, por menor que seja");
+        semVenda.Should().Be(0, "um dia sem venda fica só com a linha de base");
+        (await AlturaDaBarraAsync(dias.Nth(6))).Should().BeGreaterThan(comVendaPequena);
+    }
+
+    [Fact]
     public async Task Os_mais_vendidos_vem_da_maior_quantidade_para_a_menor_com_nome_e_quantidade()
     {
         var hoje = Cadastro.Hoje;
@@ -67,6 +84,10 @@ public sealed class PainelComGraficosTests(AplicacaoEmExecucao aplicacao) : IAsy
         await DeveMostrarAsync(itens.Nth(1), "Lápis preto", 5);
         await DeveMostrarAsync(itens.Nth(2), "Caderno 96 folhas", 4);
     }
+
+    private static async Task<double> AlturaDaBarraAsync(ILocator dia) =>
+        await dia.Locator(".barra").EvaluateAsync<double>(
+            "barra => [...barra.querySelectorAll('rect')].reduce((maior, retangulo) => Math.max(maior, barra.getBoundingClientRect().bottom - retangulo.getBoundingClientRect().top), 0)");
 
     private static async Task DeveMostrarAsync(ILocator item, string nome, int quantidade)
     {
