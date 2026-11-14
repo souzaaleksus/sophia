@@ -63,6 +63,7 @@ internal sealed class ItemVendaConfiguracao : IEntityTypeConfiguration<ItemVenda
         item.ToTable("VendaItens", tabela =>
         {
             tabela.HasCheckConstraint("CK_VendaItens_Quantidade_Positiva", "Quantidade > 0");
+            tabela.HasCheckConstraint("CK_VendaItens_QuantidadeMaxima", "Quantidade <= 999999");
             tabela.HasCheckConstraint("CK_VendaItens_ValorUnitario_Positivo", "ValorUnitario > 0");
         });
 

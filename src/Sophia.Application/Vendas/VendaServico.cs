@@ -41,7 +41,7 @@ public sealed class VendaServico(
 
     public async Task<Resultado<int>> RegistrarAsync(DadosVenda dados, CancellationToken cancelamento = default)
     {
-        var registro = Venda.Registrar(dados, relogio.Hoje);
+        var registro = Venda.Registrar(dados, relogio.Hoje, parametros.QuantidadeMaximaPorItem);
         if (!registro.Sucesso)
         {
             return Resultado.Falha<int>(registro.Erros);

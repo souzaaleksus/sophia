@@ -13,6 +13,11 @@ Funcionalidade: Cadastro de produtos
     Quando eu cadastrar o produto "caneta azul" com valor unitário de "3,00"
     Então o cadastro é recusado com a mensagem "Já existe um produto com este nome." no campo "Nome"
 
+  Cenário: Não aceitar dois produtos cujo nome só difere no acento
+    Dado que existe o produto "Café Torrado" de R$ 32,00
+    Quando eu cadastrar o produto "Cafe Torrado" com valor unitário de "30,00"
+    Então o cadastro é recusado com a mensagem "Já existe um produto com este nome." no campo "Nome"
+
   Esquema do Cenário: Recusar dados inválidos
     Quando eu cadastrar o produto "<Nome>" com valor unitário de "<Valor>"
     Então o cadastro é recusado com a mensagem "<Mensagem>" no campo "<Campo>"

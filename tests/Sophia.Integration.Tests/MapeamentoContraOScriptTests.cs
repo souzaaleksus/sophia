@@ -47,6 +47,23 @@ public sealed class MapeamentoContraOScriptTests(BancoDeTestes banco)
         RestricoesDoModelo(ModeloCompleto(contexto)).Should().BeEquivalentTo(doScript);
     }
 
+    [Fact]
+    public async Task O_agrupamento_das_colunas_de_texto_do_mapeamento_e_o_do_script()
+    {
+        await using var contexto = banco.NovoContexto();
+        var padraoDoBanco = (await banco.ConsultarAsync(
+            "SELECT CONVERT(NVARCHAR(128), DATABASEPROPERTYEX(DB_NAME(), 'Collation'))")).Single();
+
+        var doScript = await banco.ConsultarAsync("""
+            SELECT CONCAT(t.name, '.', c.name, '=', c.collation_name)
+            FROM sys.columns c
+            JOIN sys.tables t ON t.object_id = c.object_id
+            WHERE c.collation_name IS NOT NULL
+            """);
+
+        AgrupamentosDoModelo(ModeloCompleto(contexto), padraoDoBanco).Should().BeEquivalentTo(doScript);
+    }
+
     private static IModel ModeloCompleto(DbContext contexto) => contexto.GetService<IDesignTimeModel>().Model;
 
     private static IEnumerable<string> IndicesDoModelo(IModel modelo) =>
@@ -55,6 +72,16 @@ public sealed class MapeamentoContraOScriptTests(BancoDeTestes banco)
     private static IEnumerable<string> RestricoesDoModelo(IModel modelo) =>
         modelo.GetEntityTypes().SelectMany(entidade =>
             entidade.GetCheckConstraints().Select(restricao => $"{entidade.GetTableName()}.{restricao.Name}"));
+
+    private static IEnumerable<string> AgrupamentosDoModelo(IModel modelo, string padraoDoBanco) =>
+        modelo.GetEntityTypes().SelectMany(entidade =>
+        {
+            var tabela = StoreObjectIdentifier.Table(entidade.GetTableName()!, entidade.GetSchema());
+            return entidade.GetProperties()
+                .Where(propriedade => propriedade.GetColumnType(tabela) is { } tipo && tipo.Contains("char", StringComparison.OrdinalIgnoreCase))
+                .Select(propriedade =>
+                    $"{tabela.Name}.{propriedade.GetColumnName(tabela)}={propriedade.GetCollation() ?? padraoDoBanco}");
+        });
 
     private static string DescreverIndice(IEntityType entidade, IIndex indice)
     {

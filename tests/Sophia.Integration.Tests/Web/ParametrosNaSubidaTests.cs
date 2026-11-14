@@ -12,7 +12,12 @@ public sealed class ParametrosNaSubidaTests
     [Fact]
     public async Task Os_valores_da_secao_sophia_chegam_aos_servicos()
     {
-        using var aplicacao = Montar(new() { ["Sophia:TamanhoDaPagina"] = "10", ["Sophia:SugestoesNaBusca"] = "3" });
+        using var aplicacao = Montar(new()
+        {
+            ["Sophia:TamanhoDaPagina"] = "10",
+            ["Sophia:SugestoesNaBusca"] = "3",
+            ["Sophia:QuantidadeMaximaPorItem"] = "500",
+        });
 
         await aplicacao.StartAsync();
 
@@ -20,6 +25,7 @@ public sealed class ParametrosNaSubidaTests
         {
             TamanhoDaPagina = 10,
             SugestoesNaBusca = 3,
+            QuantidadeMaximaPorItem = 500,
         });
         await aplicacao.StopAsync();
     }
@@ -42,6 +48,8 @@ public sealed class ParametrosNaSubidaTests
     [InlineData("UltimasVendasNoPainel", "-5")]
     [InlineData("SugestoesNaBusca", "500")]
     [InlineData("DiasDoAtalhoDePeriodo", "1")]
+    [InlineData("QuantidadeMaximaPorItem", "0")]
+    [InlineData("QuantidadeMaximaPorItem", "1000000")]
     public async Task Valor_fora_da_faixa_impede_a_subida(string parametro, string valor)
     {
         using var aplicacao = Montar(new() { [$"Sophia:{parametro}"] = valor });

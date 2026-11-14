@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Sophia.Infrastructure.Persistencia;
@@ -6,14 +5,14 @@ using Xunit;
 
 namespace Sophia.Testes.Banco;
 
-public sealed partial class BancoDeTestes : IAsyncLifetime
+public sealed class BancoDeTestes : IAsyncLifetime
 {
     private const string ServidorPadrao =
         @"Server=.\SQLEXPRESS;Integrated Security=true;TrustServerCertificate=true";
 
     private static readonly string[] TabelasNaOrdemDasChaves = ["VendaItens", "Vendas", "Produtos", "Clientes"];
 
-    private readonly string _nome = $"Sophia_Testes_{Guid.NewGuid():N}";
+    private BancoAvulso? _banco;
 
     public string TextoDeConexao { get; private set; } = string.Empty;
 
@@ -24,29 +23,16 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        _banco = await BancoAvulso.CriarVazioAsync(Servidor);
+        TextoDeConexao = new SqlConnectionStringBuilder(Servidor) { InitialCatalog = _banco.Nome }.ConnectionString;
         await ExecutarScriptAsync();
-        TextoDeConexao = new SqlConnectionStringBuilder(Servidor) { InitialCatalog = _nome }.ConnectionString;
     }
 
-    public async Task ExecutarScriptAsync()
-    {
-        var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "create-database.sql"));
-        script = script.Replace("[Sophia]", $"[{_nome}]", StringComparison.Ordinal)
-            .Replace("N'Sophia'", $"N'{_nome}'", StringComparison.Ordinal);
-
-        await using var conexao = new SqlConnection(Servidor);
-        await conexao.OpenAsync();
-        foreach (var lote in SeparadorDeLotes().Split(script).Where(l => !string.IsNullOrWhiteSpace(l)))
-        {
-            await using var comando = new SqlCommand(lote, conexao);
-            await comando.ExecuteNonQueryAsync();
-        }
-    }
+    public Task<IReadOnlyList<string>> ExecutarScriptAsync() => BancoAvulso.ExecutarScriptAsync(TextoDeConexao);
 
     public async Task ExecutarComoOSqlcmdAsync(string arquivo)
     {
         var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, arquivo));
-        script = script.Replace("N'Sophia'", $"N'{_nome}'", StringComparison.Ordinal);
 
         await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(TextoDeConexao) { Pooling = false }.ConnectionString);
         await conexao.OpenAsync();
@@ -55,7 +41,7 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
             await padraoDoSqlcmd.ExecuteNonQueryAsync();
         }
 
-        foreach (var lote in SeparadorDeLotes().Split(script).Where(l => !string.IsNullOrWhiteSpace(l)))
+        foreach (var lote in Lotes.Separar(script))
         {
             await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 120 };
             await comando.ExecuteNonQueryAsync();
@@ -73,11 +59,10 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
     public async Task DisposeAsync()
     {
         SqlConnection.ClearAllPools();
-        await using var conexao = new SqlConnection(Servidor);
-        await conexao.OpenAsync();
-        var apagar = $"ALTER DATABASE [{_nome}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE [{_nome}];";
-        await using var comando = new SqlCommand(apagar, conexao);
-        await comando.ExecuteNonQueryAsync();
+        if (_banco is not null)
+        {
+            await _banco.DisposeAsync();
+        }
     }
 
     public SophiaDbContext NovoContexto() =>
@@ -113,7 +98,4 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
 
         return linhas;
     }
-
-    [GeneratedRegex(@"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
-    private static partial Regex SeparadorDeLotes();
 }

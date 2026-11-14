@@ -131,6 +131,19 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task O_nome_do_produto_e_unico_sem_diferenciar_acentos()
+    {
+        await CadastrarProdutoAsync("Café Torrado", 32m);
+
+        await using var contexto = banco.NovoContexto();
+        (await new ProdutoRepositorio(contexto).ExisteComNomeAsync("Cafe Torrado", excetoId: null)).Should().BeTrue();
+        var gravarDeNovo = () => CadastrarProdutoAsync("CAFE TORRADO", 30m);
+
+        (await gravarDeNovo.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.ValorDuplicado);
+    }
+
+    [Fact]
     public async Task Grava_a_venda_com_itens_e_le_resumo_e_detalhe()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
@@ -229,6 +242,27 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Restricao_que_o_mapeamento_nao_conhece_nao_vira_conflito_mesmo_com_nome_de_chave_estrangeira()
+    {
+        await banco.ExecutarAsync(
+            "ALTER TABLE dbo.Produtos ADD CONSTRAINT FK_Produtos_ForaDoMapeamento CHECK (ValorUnitario < 1000);");
+        try
+        {
+            await using var contexto = banco.NovoContexto();
+            new ProdutoRepositorio(contexto).Adicionar(Produto.Criar(new DadosProduto("Notebook", 5000m)).Valor);
+
+            var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
+
+            (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
+                .WithInnerException<SqlException>().Which.Message.Should().Contain("FK_Produtos_ForaDoMapeamento");
+        }
+        finally
+        {
+            await banco.ExecutarAsync("ALTER TABLE dbo.Produtos DROP CONSTRAINT FK_Produtos_ForaDoMapeamento;");
+        }
+    }
+
+    [Fact]
     public async Task O_indice_unico_da_chave_de_registro_barra_a_segunda_gravacao()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
@@ -321,13 +355,18 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
         var caneta = await CadastrarProdutoAsync("Caneta azul", 0.01m);
-        await RegistrarVendaAsync(maria, [new(caneta, 1_500_000_000, 0.01m)], data: new DateOnly(2026, 11, 2));
-        await RegistrarVendaAsync(maria, [new(caneta, 1_000_000_000, 0.01m)], data: Hoje);
+        await banco.ExecutarAsync($"""
+            INSERT INTO dbo.Vendas (Data, ClienteId)
+            SELECT TOP (2148) IIF(ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) % 2 = 0, '2026-11-02', '2026-11-13'), {maria}
+            FROM sys.all_objects a CROSS JOIN sys.all_objects b;
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario)
+            SELECT Id, {caneta}, 999999, 0.01 FROM dbo.Vendas;
+            """);
 
         await using var contexto = banco.NovoContexto();
         var doMes = await new ConsultasDoPainel(contexto).MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 5);
 
-        doMes.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul", 2_500_000_000, 25_000_000m));
+        doMes.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul", 2_147_997_852, 21_479_978.52m));
     }
 
     [Fact]
@@ -526,7 +565,7 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         DateOnly? data = null)
     {
         await using var contexto = banco.NovoContexto();
-        var venda = Venda.Registrar(new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje).Valor;
+        var venda = Venda.Registrar(new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje, new ParametrosDoSophia().QuantidadeMaximaPorItem).Valor;
         new VendaRepositorio(contexto).Adicionar(venda);
         await new UnidadeDeTrabalho(contexto).SalvarAsync();
         return venda.Id;

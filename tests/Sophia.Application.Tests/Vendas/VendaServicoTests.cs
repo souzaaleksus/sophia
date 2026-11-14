@@ -81,6 +81,28 @@ public sealed class VendaServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDi
     }
 
     [Fact]
+    public async Task Quantidade_acima_do_maximo_padrao_por_item_e_recusada_sem_gravar()
+    {
+        var resultado = await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caneta, 100_000, 2.50m)]));
+
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("Quantidade", "A quantidade aceita no máximo 99.999 por item.", 0));
+        (await PrimeiraPaginaAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task O_maximo_por_item_vem_dos_parametros_do_sophia()
+    {
+        using var sistema = new SistemaEmTeste(banco, Hoje, new ParametrosDoSophia { QuantidadeMaximaPorItem = 50 });
+        var itens = new DadosItemVenda[] { new(_caneta, 50, 2.50m), new(_caderno, 51, 18.90m) };
+
+        var resultado = await sistema.Vendas.RegistrarAsync(new DadosVenda(Hoje, _maria, itens));
+
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("Quantidade", "A quantidade aceita no máximo 50 por item.", 1));
+    }
+
+    [Fact]
     public async Task Regras_do_dominio_chegam_ao_chamador()
     {
         var resultado = await Servico.RegistrarAsync(new DadosVenda(Hoje.AddDays(1), _maria, []));

@@ -15,6 +15,7 @@ public sealed class ParametrosDoSophiaTests
             UltimasVendasNoPainel = 5,
             SugestoesNaBusca = 8,
             DiasDoAtalhoDePeriodo = 7,
+            QuantidadeMaximaPorItem = 99_999,
         });
     }
 
@@ -37,6 +38,8 @@ public sealed class ParametrosDoSophiaTests
     [InlineData(nameof(ParametrosDoSophia.SugestoesNaBusca), 51)]
     [InlineData(nameof(ParametrosDoSophia.DiasDoAtalhoDePeriodo), 1)]
     [InlineData(nameof(ParametrosDoSophia.DiasDoAtalhoDePeriodo), 91)]
+    [InlineData(nameof(ParametrosDoSophia.QuantidadeMaximaPorItem), 0)]
+    [InlineData(nameof(ParametrosDoSophia.QuantidadeMaximaPorItem), 1_000_000)]
     public void Valor_fora_da_faixa_e_recusado_apontando_o_parametro(string parametro, int valor)
     {
         var parametros = new ParametrosDoSophia();
@@ -47,9 +50,16 @@ public sealed class ParametrosDoSophiaTests
     }
 
     [Theory]
-    [InlineData(1, 2, 1, 1, 1, 2)]
-    [InlineData(200, 31, 50, 50, 50, 90)]
-    public void As_pontas_da_faixa_sao_aceitas(int pagina, int dias, int maisVendidos, int ultimas, int sugestoes, int atalho)
+    [InlineData(1, 2, 1, 1, 1, 2, 1)]
+    [InlineData(200, 31, 50, 50, 50, 90, 999_999)]
+    public void As_pontas_da_faixa_sao_aceitas(
+        int pagina,
+        int dias,
+        int maisVendidos,
+        int ultimas,
+        int sugestoes,
+        int atalho,
+        int quantidadeMaxima)
     {
         var parametros = new ParametrosDoSophia
         {
@@ -59,6 +69,7 @@ public sealed class ParametrosDoSophiaTests
             UltimasVendasNoPainel = ultimas,
             SugestoesNaBusca = sugestoes,
             DiasDoAtalhoDePeriodo = atalho,
+            QuantidadeMaximaPorItem = quantidadeMaxima,
         };
 
         Validar(parametros).Should().BeEmpty();

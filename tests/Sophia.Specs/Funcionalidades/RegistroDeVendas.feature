@@ -84,6 +84,28 @@ Funcionalidade: Registro de vendas
       | 0          | 2,50  | Itens[0].Quantidade    | A quantidade deve ser maior que zero.     |
       | 1          | 0,00  | Itens[0].ValorUnitario | O valor unitário deve ser maior que zero. |
 
+  Cenário: Quantidade acima do máximo por item é recusada
+    Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 100000     | 2,50          |
+    Então a venda é recusada com a mensagem "A quantidade aceita no máximo 99.999 por item." no campo "Itens[0].Quantidade"
+    E existem 0 vendas registradas
+
+  Cenário: A quantidade no máximo por item é aceita
+    Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 99999      | 2,50          |
+    Então a venda é registrada
+    E o total da venda é "249.997,50"
+
+  Cenário: O máximo por item segue o parâmetro da loja
+    Dado que a quantidade máxima por item é 50
+    Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto           | Quantidade | ValorUnitario |
+      | Caneta azul       | 50         | 2,50          |
+      | Caderno 96 folhas | 51         | 18,90         |
+    Então a venda é recusada com a mensagem "A quantidade aceita no máximo 50 por item." no campo "Itens[1].Quantidade"
+
   Cenário: Não lançar o mesmo produto duas vezes
     Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
       | Produto     | Quantidade | ValorUnitario |

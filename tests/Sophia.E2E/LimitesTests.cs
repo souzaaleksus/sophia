@@ -24,19 +24,28 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
     public async Task Venda_com_mais_unidades_que_cabem_num_inteiro_abre_no_detalhe_e_no_painel()
     {
         var maria = await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
-        var caneta = await _cadastro.ProdutoAsync("Caneta azul", 0.01m);
-        var lapis = await _cadastro.ProdutoAsync("Lápis preto", 0.01m);
-        var venda = await _cadastro.VendaAsync(Cadastro.Hoje, maria,
-            new DadosItemVenda(caneta, 1_500_000_000, 0.01m), new DadosItemVenda(lapis, 1_000_000_000, 0.01m));
-        await _cadastro.VendaAsync(Cadastro.Hoje, maria, new DadosItemVenda(caneta, 1_000_000_000, 0.01m));
+        await aplicacao.Banco.ExecutarAsync($"""
+            INSERT INTO dbo.Produtos (Nome, ValorUnitario)
+            SELECT TOP (2200) CONCAT(N'Produto ', FORMAT(ROW_NUMBER() OVER (ORDER BY (SELECT NULL)), '0000')), 0.01
+            FROM sys.all_objects a CROSS JOIN sys.all_objects b;
+            INSERT INTO dbo.Vendas (Data, ClienteId) SELECT '{Cadastro.Hoje:yyyy-MM-dd}', {maria} FROM dbo.Produtos;
+            DECLARE @primeiraVenda INT = (SELECT MIN(Id) FROM dbo.Vendas);
+            DECLARE @primeiroProduto INT = (SELECT MIN(Id) FROM dbo.Produtos);
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario)
+            SELECT @primeiraVenda, Id, 999999, 0.01 FROM dbo.Produtos;
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario)
+            SELECT Id, @primeiroProduto, 999999, 0.01 FROM dbo.Vendas WHERE Id <> @primeiraVenda;
+            """);
+        var venda = int.Parse((await aplicacao.Banco.ConsultarAsync("SELECT CAST(MIN(Id) AS VARCHAR(10)) FROM dbo.Vendas")).Single(),
+            System.Globalization.CultureInfo.InvariantCulture);
 
         var detalhe = await _pagina.GotoAsync($"/Vendas/Detalhe/{venda}");
         detalhe!.Status.Should().Be(200);
-        await Expect(_pagina.GetByText("2.500.000.000 unidades")).ToBeVisibleAsync();
+        await Expect(_pagina.GetByText("2.199.997.800 unidades")).ToBeVisibleAsync();
 
         var painel = await _pagina.GotoAsync("/");
         painel!.Status.Should().Be(200);
-        await Expect(_pagina.GetByTestId("mais-vendido").First).ToContainTextAsync("2.500.000.000 unidades");
+        await Expect(_pagina.GetByTestId("mais-vendido").First).ToContainTextAsync("2.199.997.800 unidades");
     }
 
     [Theory]

@@ -14,7 +14,7 @@ public sealed partial class Cenario : IDisposable
 {
     public static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
-    private readonly SistemaEmTeste _sistema = new(Ganchos.Banco, new DateOnly(2026, 11, 13));
+    private SistemaEmTeste _sistema = new(Ganchos.Banco, new DateOnly(2026, 11, 13));
 
     public DateOnly Hoje
     {
@@ -52,6 +52,13 @@ public sealed partial class Cenario : IDisposable
 
     public async Task<ProdutoDto> ProdutoChamadoAsync(string nome) =>
         (await Produtos.ListarAsync(new ConsultaDeLista(Busca: nome))).Pagina.Itens.Single(p => p.Nome == nome);
+
+    public void UsarParametros(ParametrosDoSophia parametros)
+    {
+        var hoje = _sistema.Hoje;
+        _sistema.Dispose();
+        _sistema = new SistemaEmTeste(Ganchos.Banco, hoje, parametros);
+    }
 
     public void Dispose() => _sistema.Dispose();
 
