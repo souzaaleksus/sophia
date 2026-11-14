@@ -247,7 +247,8 @@ no Linux/WSL).
    O Compose sobe três serviços, nesta ordem:
 
    1. `banco`: SQL Server 2022 Express;
-   2. `criar-banco`: executa `database/create-database.sql` e termina;
+   2. `criar-banco`: executa `database/create-database.sql`, aplica os
+      [dados de demonstração](#dados-de-demonstração) se o banco estiver vazio e termina;
    3. `web`: a aplicação, que só sobe depois que o banco foi criado.
 
 2. Acompanhe até a aplicação ficar pronta (a primeira vez leva alguns minutos, por causa do
@@ -269,6 +270,9 @@ no Linux/WSL).
 A senha padrão do usuário `sa` serve só para avaliação local: em qualquer outro uso, defina a
 variável `SOPHIA_SENHA_DO_BANCO`. O SQL Server fica acessível apenas nesta máquina, na porta
 `14333`, para quem quiser consultar o banco.
+
+Para subir com o banco vazio, sem os dados de demonstração, defina
+`SOPHIA_DADOS_DE_DEMONSTRACAO=nao` (no ambiente ou no arquivo `.env`) antes do primeiro `up`.
 
 ### Caminho B — Local, com .NET 8 e SQL Server Express
 
@@ -309,22 +313,21 @@ Pré-requisitos:
 
 4. Abra http://localhost:5080. Para parar, `Ctrl+C` no terminal.
 
-### Dados de demonstração (opcional)
+### Dados de demonstração
 
 O script `database/carga-de-demonstracao.sql` enche um banco **vazio** com uma loja de
 informática: 97 produtos (catálogo de um sistema de pedidos), 320 clientes com CPF válido e cerca
 de 1.450 vendas nos últimos 120 dias, com datas calculadas a partir do dia em que a carga roda, para
-o painel e os gráficos terem movimento. Se o banco já tiver dados, o script recusa e não grava nada.
+o painel e os gráficos terem movimento. Se o banco já tiver dados, o script avisa e não grava nada.
+
+No Docker a carga roda por padrão, na subida. No caminho local, rode-a depois de criar o banco:
 
 ```powershell
 sqlcmd -S .\SQLEXPRESS -E -C -d Sophia -i database/carga-de-demonstracao.sql
 ```
 
-No Docker, com a pilha no ar:
-
-```bash
-docker compose run --rm --entrypoint /opt/mssql-tools18/bin/sqlcmd criar-banco -S banco -U sa -P "Sophia#Vendas2026" -C -d Sophia -i /scripts/carga-de-demonstracao.sql
-```
+No Docker, para carregar num banco que subiu vazio (com `SOPHIA_DADOS_DE_DEMONSTRACAO=nao`), troque
+a variável para `sim` e rode `docker compose up -d criar-banco`.
 
 ### Primeira venda, para conferir que está tudo certo
 
@@ -360,7 +363,7 @@ dotnet test
 | `Sophia.Domain.Tests` | unidade | 94 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
 | `Sophia.Application.Tests` | aplicação | 160 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
 | `Sophia.Specs` | BDD (Gherkin) | 74 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 44 | script do banco, mapeamento do EF, índices, consultas, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
+| `Sophia.Integration.Tests` | integração | 46 | script do banco, carga de demonstração, mapeamento do EF, índices, consultas, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
 | `Sophia.E2E` | tela | 137 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, no navegador | SQL Server e Chromium |
 
 Os testes da aplicação, os cenários BDD, os de integração e os de tela criam um banco

@@ -43,6 +43,25 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
         }
     }
 
+    public async Task ExecutarComoOSqlcmdAsync(string arquivo)
+    {
+        var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, arquivo));
+        script = script.Replace("N'Sophia'", $"N'{_nome}'", StringComparison.Ordinal);
+
+        await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(TextoDeConexao) { Pooling = false }.ConnectionString);
+        await conexao.OpenAsync();
+        await using (var padraoDoSqlcmd = new SqlCommand("SET QUOTED_IDENTIFIER OFF;", conexao))
+        {
+            await padraoDoSqlcmd.ExecuteNonQueryAsync();
+        }
+
+        foreach (var lote in SeparadorDeLotes().Split(script).Where(l => !string.IsNullOrWhiteSpace(l)))
+        {
+            await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 120 };
+            await comando.ExecuteNonQueryAsync();
+        }
+    }
+
     public async Task ExecutarAsync(string sql)
     {
         await using var conexao = new SqlConnection(TextoDeConexao);

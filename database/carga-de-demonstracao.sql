@@ -1,11 +1,17 @@
-﻿SET NOCOUNT ON;
+﻿SET QUOTED_IDENTIFIER ON;
+GO
+
+SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
 IF DB_NAME() <> N'Sophia'
     THROW 50001, N'Execute este script no banco Sophia (sqlcmd -d Sophia).', 1;
 
 IF EXISTS (SELECT 1 FROM dbo.Clientes) OR EXISTS (SELECT 1 FROM dbo.Produtos) OR EXISTS (SELECT 1 FROM dbo.Vendas)
-    THROW 50002, N'A carga de demonstração só roda em banco vazio: este banco já tem cadastros ou vendas.', 1;
+BEGIN
+    PRINT N'Carga de demonstração ignorada: o banco já tem cadastros ou vendas, e nada foi gravado.';
+    RETURN;
+END;
 
 BEGIN TRANSACTION;
 

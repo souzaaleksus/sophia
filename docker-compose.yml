@@ -25,9 +25,19 @@ services:
         condition: service_healthy
     environment:
       MSSQL_SA_PASSWORD: ${SOPHIA_SENHA_DO_BANCO:-Sophia#Vendas2026}
+      SOPHIA_DADOS_DE_DEMONSTRACAO: ${SOPHIA_DADOS_DE_DEMONSTRACAO:-sim}
     volumes:
       - ./database:/scripts:ro
-    entrypoint: ["/bin/bash", "-c", "/opt/mssql-tools18/bin/sqlcmd -S banco -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -b -i /scripts/create-database.sql"]
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+        sqlcmd() { /opt/mssql-tools18/bin/sqlcmd -S banco -U sa -P "$$MSSQL_SA_PASSWORD" -C -b "$$@"; }
+        sqlcmd -i /scripts/create-database.sql
+        if [ "$$SOPHIA_DADOS_DE_DEMONSTRACAO" = "sim" ]; then
+          sqlcmd -d Sophia -i /scripts/carga-de-demonstracao.sql
+        fi
     restart: "no"
 
   web:
