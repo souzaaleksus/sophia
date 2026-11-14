@@ -88,8 +88,8 @@ public class AplicacaoEmExecucao : IAsyncLifetime
     private Process IniciarAplicacao()
     {
         var pastaDoProjetoWeb = PastaDoProjetoWeb();
-        var configuracao = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
-        var dll = Path.Combine(pastaDoProjetoWeb, "bin", configuracao, "net8.0", "Sophia.Web.dll");
+        var pastaDoTeste = new DirectoryInfo(AppContext.BaseDirectory);
+        var dll = Path.Combine(pastaDoProjetoWeb, "bin", pastaDoTeste.Parent!.Name, pastaDoTeste.Name, "Sophia.Web.dll");
 
         var inicio = new ProcessStartInfo("dotnet", [dll, "--urls", Endereco])
         {

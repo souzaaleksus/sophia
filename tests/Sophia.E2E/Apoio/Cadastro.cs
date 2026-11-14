@@ -113,7 +113,7 @@ public sealed class Cadastro(BancoDeTestes banco)
         return $"{texto[..3]}.{texto[3..6]}.{texto[6..9]}-{texto[9..]}";
     }
 
-    private static int DigitoVerificador(IReadOnlyList<int> digitos)
+    private static int DigitoVerificador(List<int> digitos)
     {
         var soma = 0;
         for (var posicao = 0; posicao < digitos.Count; posicao++)

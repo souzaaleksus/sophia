@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Restaurar
         run: dotnet restore Sophia.sln
@@ -54,7 +54,7 @@ jobs:
         run: dotnet build Sophia.sln --no-restore -c Release
 
       - name: Instalar o navegador dos testes de tela
-        run: pwsh tests/Sophia.E2E/bin/Release/net8.0/playwright.ps1 install --with-deps chromium
+        run: pwsh tests/Sophia.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Testes de unidade e BDD
         run: |
