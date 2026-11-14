@@ -113,7 +113,7 @@ public sealed partial class Cliente
     [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
     private static partial Regex FormatoDeEmail();
 
-    [GeneratedRegex(@"^[\d\s()\-]+$")]
+    [GeneratedRegex(@"^[0-9\s()\-]+$")]
     private static partial Regex FormatoDeTelefone();
 
     private sealed record DadosValidos(Cpf? Cpf, string? Nome, DateOnly? DataNascimento, string? Email, string? Telefone);
