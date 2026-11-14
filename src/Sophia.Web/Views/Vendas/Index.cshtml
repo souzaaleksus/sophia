@@ -100,7 +100,7 @@ else
                         <td>
                             <div class="destaque">@venda.ClienteNome</div>
                             <div class="secundario numero">@venda.ClienteCpf</div>
-                            <div class="secundario numero apenas-no-celular">@Formato.Data(venda.Data)</div>
+                            <div class="secundario numero apenas-no-celular">@T["vendas.numero-e-data", venda.Id, Formato.Data(venda.Data)]</div>
                         </td>
                         <td class="valor coluna-opcional">@venda.QuantidadeDeItens</td>
                         <td class="valor destaque">@Formato.QuebrarNoMilhar(Formato.Moeda(venda.Total))</td>

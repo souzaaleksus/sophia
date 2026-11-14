@@ -311,6 +311,26 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         (await _pagina.ContentAsync()).Should().NotContain("\"errors\"");
     }
 
+    [Fact]
+    public async Task No_celular_a_lista_de_vendas_mostra_o_numero_da_venda_na_linha()
+    {
+        var cadastro = new Cadastro(aplicacao.Banco);
+        var vendas = await cadastro.VendasAsync(1);
+        var celular = await aplicacao.NovaPaginaAsync(375, 667, toque: true);
+        try
+        {
+            await celular.GotoAsync("/Vendas");
+
+            await Expect(celular.GetByRole(AriaRole.Columnheader, new() { Name = "Nº" })).ToBeHiddenAsync();
+            var linha = celular.Locator("main table tbody tr").First;
+            await Expect(linha.GetByText($"nº {vendas[0]}, {Cadastro.Hoje.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}")).ToBeVisibleAsync();
+        }
+        finally
+        {
+            await celular.Context.CloseAsync();
+        }
+    }
+
     [GeneratedRegex("^(ascending|descending)$")]
     private static partial Regex AscendenteOuDescendente();
 }
