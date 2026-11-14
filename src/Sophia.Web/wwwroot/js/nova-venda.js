@@ -60,7 +60,7 @@ window.addEventListener('beforeunload', evento => {
     }
 });
 
-formulario.dataset.pronto = 'true';
+formulario.removeAttribute('aria-busy');
 
 function recalcularTotais() {
     const itens = [...formulario.querySelectorAll('[data-itens] [data-item]')];

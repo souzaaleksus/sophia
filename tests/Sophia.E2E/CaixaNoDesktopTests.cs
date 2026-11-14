@@ -25,6 +25,20 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
 
     [Fact]
+    public async Task O_caixa_nasce_ocupado_para_o_leitor_de_tela_e_fica_livre_quando_os_eventos_estao_ligados()
+    {
+        using var http = new HttpClient();
+        var html = await http.GetStringAsync(new Uri($"{aplicacao.Endereco}/Vendas/Nova"));
+        html.Should().MatchRegex(@"<form[^>]*id=""nova-venda""[^>]*aria-busy=""true""");
+
+        await _pagina.GotoAsync("/Vendas/Nova");
+
+        var formulario = _pagina.Locator("#nova-venda");
+        await Expect(formulario).Not.ToHaveAttributeAsync("aria-busy", "true");
+        (await formulario.GetAttributeAsync("data-pronto")).Should().BeNull("o sinal de pronto serve ao leitor de tela, não só ao teste");
+    }
+
+    [Fact]
     public async Task Trocar_o_produto_de_uma_linha_por_um_ja_lancado_soma_na_existente_e_libera_a_linha()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
