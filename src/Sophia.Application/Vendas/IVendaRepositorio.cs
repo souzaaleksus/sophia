@@ -7,6 +7,8 @@ public interface IVendaRepositorio
 {
     Task<IReadOnlyList<VendaResumoDto>> ListarAsync(int? limite = null, CancellationToken cancelamento = default);
 
+    Task<Pagina<VendaResumoDto>> ListarPaginaAsync(int numero, int tamanho, CancellationToken cancelamento = default);
+
     Task<VendaDetalheDto?> ObterDetalheAsync(int id, CancellationToken cancelamento = default);
 
     Task<ResumoDoPeriodo> ResumirAsync(DateOnly inicio, DateOnly fim, CancellationToken cancelamento = default);

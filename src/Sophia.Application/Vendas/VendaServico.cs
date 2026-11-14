@@ -13,10 +13,17 @@ public sealed class VendaServico(
     IUnidadeDeTrabalho unidadeDeTrabalho,
     IRelogio relogio) : IVendaServico
 {
+    public const int TamanhoDaPagina = 25;
+
     public DateOnly DataSugerida() => relogio.Hoje;
 
-    public Task<IReadOnlyList<VendaResumoDto>> ListarAsync(CancellationToken cancelamento = default) =>
-        vendas.ListarAsync(cancelamento: cancelamento);
+    public async Task<Pagina<VendaResumoDto>> ListarAsync(int pagina, CancellationToken cancelamento = default)
+    {
+        var encontrada = await vendas.ListarPaginaAsync(Math.Max(1, pagina), TamanhoDaPagina, cancelamento);
+        return encontrada.Numero > encontrada.TotalDePaginas
+            ? await vendas.ListarPaginaAsync(encontrada.TotalDePaginas, TamanhoDaPagina, cancelamento)
+            : encontrada;
+    }
 
     public Task<VendaDetalheDto?> ObterAsync(int id, CancellationToken cancelamento = default) =>
         vendas.ObterDetalheAsync(id, cancelamento);

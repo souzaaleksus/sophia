@@ -8,8 +8,8 @@ namespace Sophia.Web.Controllers;
 public sealed class VendasController(IVendaServico vendas) : Controller
 {
     [HttpGet]
-    public async Task<IActionResult> Index(CancellationToken cancelamento) =>
-        View(await vendas.ListarAsync(cancelamento));
+    public async Task<IActionResult> Index(int pagina = 1, CancellationToken cancelamento = default) =>
+        View(await vendas.ListarAsync(pagina, cancelamento));
 
     [HttpGet]
     public IActionResult Nova() => ExibirNovaVenda(new NovaVendaFormulario

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Sophia.Application;
 using Sophia.Application.Painel;
 using Sophia.Application.Vendas;
+using Sophia.Domain.Clientes;
 using Sophia.Domain.Vendas;
 
 namespace Sophia.Infrastructure.Persistencia;
@@ -9,30 +11,27 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
 {
     public async Task<IReadOnlyList<VendaResumoDto>> ListarAsync(int? limite = null, CancellationToken cancelamento = default)
     {
-        var consulta = (
-                from venda in contexto.Vendas
-                join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
-                orderby venda.Data descending, venda.Id descending
-                select new
-                {
-                    venda.Id,
-                    venda.Data,
-                    cliente.Cpf,
-                    cliente.Nome,
-                    QuantidadeDeItens = venda.Itens.Count(),
-                    Total = venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario),
-                });
-
+        var consulta = ResumosDasMaisRecentesParaAsMaisAntigas();
         if (limite is { } quantidade)
         {
             consulta = consulta.Take(quantidade);
         }
 
-        var vendas = await consulta.ToListAsync(cancelamento);
+        return ParaDtos(await consulta.ToListAsync(cancelamento));
+    }
 
-        return vendas
-            .Select(v => new VendaResumoDto(v.Id, v.Data, v.Cpf.Formatado, v.Nome, v.QuantidadeDeItens, v.Total))
-            .ToList();
+    public async Task<Pagina<VendaResumoDto>> ListarPaginaAsync(
+        int numero,
+        int tamanho,
+        CancellationToken cancelamento = default)
+    {
+        var total = await contexto.Vendas.CountAsync(cancelamento);
+        var linhas = await ResumosDasMaisRecentesParaAsMaisAntigas()
+            .Skip((numero - 1) * tamanho)
+            .Take(tamanho)
+            .ToListAsync(cancelamento);
+
+        return new Pagina<VendaResumoDto>(ParaDtos(linhas), numero, tamanho, total);
     }
 
     public async Task<VendaDetalheDto?> ObterDetalheAsync(int id, CancellationToken cancelamento = default)
@@ -141,4 +140,23 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
             .FirstOrDefaultAsync(cancelamento);
 
     public void Adicionar(Venda venda) => contexto.Vendas.Add(venda);
+
+    private static List<VendaResumoDto> ParaDtos(IEnumerable<LinhaDeResumo> linhas) =>
+        linhas
+            .Select(v => new VendaResumoDto(v.Id, v.Data, v.Cpf.Formatado, v.Nome, v.QuantidadeDeItens, v.Total))
+            .ToList();
+
+    private IQueryable<LinhaDeResumo> ResumosDasMaisRecentesParaAsMaisAntigas() =>
+        from venda in contexto.Vendas
+        join cliente in contexto.Clientes on venda.ClienteId equals cliente.Id
+        orderby venda.Data descending, venda.Id descending
+        select new LinhaDeResumo(
+            venda.Id,
+            venda.Data,
+            cliente.Cpf,
+            cliente.Nome,
+            venda.Itens.Count(),
+            venda.Itens.Sum(i => i.Quantidade * i.ValorUnitario));
+
+    private sealed record LinhaDeResumo(int Id, DateOnly Data, Cpf Cpf, string Nome, int QuantidadeDeItens, decimal Total);
 }
