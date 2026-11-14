@@ -241,6 +241,35 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(_pagina.GetByLabel("Data da venda")).ToBeFocusedAsync();
     }
 
+    [Fact]
+    public async Task Quantidade_acima_do_limite_avisa_o_maximo_e_mantem_o_que_foi_digitado()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "3000000000");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("max", "2147483647");
+
+        await _caixa.Finalizar.ClickAsync();
+
+        await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("Quantidade aceita no máximo 2.147.483.647.");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("3000000000");
+        (await new Cadastro(aplicacao.Banco).QuantidadeDeVendasAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Valor_invalido_na_linha_volta_com_o_que_foi_digitado_e_o_aviso()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await _caixa.Linha(0).GetByLabel("Valor unitário").FillAsync("2,5x");
+
+        await _caixa.Finalizar.ClickAsync();
+
+        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("O valor \"2,5x\" não é válido para Valor unitário.");
+        await Expect(_caixa.Linha(0).GetByLabel("Valor unitário")).ToHaveValueAsync("2,5x");
+    }
+
     private ILocator BotaoDaLinha(int linha, string nome) =>
         _caixa.Linha(linha).GetByRole(AriaRole.Button, new() { Name = nome, Exact = true });
 

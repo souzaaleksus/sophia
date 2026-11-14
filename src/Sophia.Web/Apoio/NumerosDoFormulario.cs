@@ -6,7 +6,7 @@ public static class NumerosDoFormulario
 {
     public static IServiceCollection AdicionarNumerosDoBrasil(this IServiceCollection servicos)
     {
-        servicos.Configure<MvcOptions>(opcoes => opcoes.UsarDecimaisPtBr());
+        servicos.Configure<MvcOptions>(opcoes => opcoes.UsarDecimaisPtBr().UsarInteirosNoLimite());
         return servicos;
     }
 }

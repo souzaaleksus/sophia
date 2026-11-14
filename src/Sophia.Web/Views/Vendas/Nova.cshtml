@@ -10,6 +10,7 @@
     void LinhaDoItem(int indice, ItemDaVendaFormulario item, bool comErros)
     {
         string? ErroDe(string campo) => comErros ? ViewData.ModelState.PrimeiroErro($"Itens[{indice}].{campo}") : null;
+        string Valor(string campo, string formatado) => comErros ? ValorTentado.Ou(ViewData.ModelState, $"Itens[{indice}].{campo}", formatado) : formatado;
 
         <div class="caixa-item" data-testid="item-da-venda" data-item>
             <div class="campo caixa-produto">
@@ -28,7 +29,7 @@
                 <label class="form-label caixa-rotulo" for="item-@indice-ValorUnitario">@T["campo.valor-unitario"]</label>
                 <div class="input-group">
                     <span class="input-group-text">@T["geral.moeda"]</span>
-                    <input id="item-@indice-ValorUnitario" name="Itens[@indice].ValorUnitario" value="@Formato.Numero(item.ValorUnitario)"
+                    <input id="item-@indice-ValorUnitario" name="Itens[@indice].ValorUnitario" value="@Valor("ValorUnitario", Formato.Numero(item.ValorUnitario))"
                            type="text" class="form-control valor" inputmode="decimal" autocomplete="off"
                            placeholder="@T["caixa.valor-vazio"]" data-campo="ValorUnitario" />
                 </div>
@@ -38,8 +39,8 @@
                 <label class="form-label caixa-rotulo" for="item-@indice-Quantidade">@T["campo.quantidade"]</label>
                 <div class="quantidade-com-botoes">
                     <button type="button" class="botao-quantidade" data-acao="menos" aria-label="@T["caixa.diminuir"]">&minus;</button>
-                    <input id="item-@indice-Quantidade" name="Itens[@indice].Quantidade" value="@item.Quantidade"
-                           type="number" min="1" step="1" class="form-control valor" inputmode="numeric"
+                    <input id="item-@indice-Quantidade" name="Itens[@indice].Quantidade" value="@Valor("Quantidade", Formato.Inteiro(item.Quantidade))"
+                           type="number" min="1" max="@int.MaxValue" step="1" class="form-control valor" inputmode="numeric"
                            data-campo="Quantidade" />
                     <button type="button" class="botao-quantidade" data-acao="mais" aria-label="@T["caixa.aumentar"]">+</button>
                 </div>

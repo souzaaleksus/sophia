@@ -88,6 +88,19 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         (await new Cadastro(aplicacao.Banco).QuantidadeDeProdutosAsync()).Should().Be(0);
     }
 
+    [Fact]
+    public async Task Valor_recusado_pelo_servidor_volta_com_o_que_foi_digitado()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("2,5x");
+
+        await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O valor \"2,5x\" não é válido para Valor unitário.");
+        await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("2,5x");
+    }
+
     private async Task CadastrarAsync(string nome, string valor)
     {
         await _pagina.GotoAsync("/Produtos/Novo");
