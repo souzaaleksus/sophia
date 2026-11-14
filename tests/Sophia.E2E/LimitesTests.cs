@@ -136,7 +136,6 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
     [InlineData("/Produtos/Editar/abc")]
     [InlineData("/Produtos/Excluir/abc")]
     [InlineData("/Vendas/Detalhe/abc")]
-    [InlineData("/Erro?codigo=abc")]
     public async Task Endereco_com_identificador_invalido_mostra_a_pagina_de_erro(string endereco)
     {
         var resposta = await _pagina.GotoAsync(endereco);
@@ -145,6 +144,37 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
         await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Algo deu errado");
         await Expect(_pagina.Locator("main")).ToContainTextAsync("O endereço tem um valor que não foi entendido. Volte à lista e tente de novo.");
         await Expect(_pagina.Locator("main")).Not.ToContainTextAsync("em instantes");
+    }
+
+    [Fact]
+    public async Task Endereco_invalido_fora_das_listas_manda_voltar_ao_painel_e_nao_a_lista()
+    {
+        var resposta = await _pagina.GotoAsync("/Erro?codigo=abc");
+
+        resposta!.Status.Should().Be(400);
+        await Expect(_pagina.Locator("main")).ToContainTextAsync("O endereço tem um valor que não foi entendido. Volte ao painel e tente de novo.");
+        await Expect(_pagina.Locator("main")).Not.ToContainTextAsync("lista");
+        await Expect(_pagina.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Ir para o painel", Exact = true })).ToHaveAttributeAsync("href", "/");
+    }
+
+    [Fact]
+    public async Task Envio_de_formulario_que_nao_passa_na_conferencia_pede_para_recarregar_e_nao_fala_do_endereco()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("2,50");
+        await _pagina.Locator("input[name=__RequestVerificationToken]").EvaluateAsync("campo => campo.value = 'token-de-outra-sessao'");
+
+        var resposta = await _pagina.RunAndWaitForResponseAsync(
+            () => _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync(),
+            resposta => resposta.Request.Method == "POST");
+
+        resposta.Status.Should().Be(400);
+        await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Algo deu errado");
+        await Expect(_pagina.Locator("main")).ToContainTextAsync("Não foi possível conferir o envio do formulário. Recarregue a página e tente de novo.");
+        await Expect(_pagina.Locator("main")).Not.ToContainTextAsync("endereço");
+        await Expect(_pagina.Locator("main").GetByRole(AriaRole.Link, new() { Name = "Ir para os produtos", Exact = true })).ToHaveAttributeAsync("href", "/Produtos");
+        (await new Cadastro(aplicacao.Banco).QuantidadeDeProdutosAsync()).Should().Be(0);
     }
 
     [Theory]

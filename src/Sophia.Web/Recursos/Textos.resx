@@ -261,6 +261,12 @@
   <data name="erro.endereco-invalido" xml:space="preserve">
     <value>O endereço tem um valor que não foi entendido. Volte à lista e tente de novo.</value>
   </data>
+  <data name="erro.endereco-invalido-no-painel" xml:space="preserve">
+    <value>O endereço tem um valor que não foi entendido. Volte ao painel e tente de novo.</value>
+  </data>
+  <data name="erro.envio-nao-conferido" xml:space="preserve">
+    <value>Não foi possível conferir o envio do formulário. Recarregue a página e tente de novo.</value>
+  </data>
   <data name="erro.ir-para-as-vendas" xml:space="preserve">
     <value>Ir para as vendas</value>
   </data>
