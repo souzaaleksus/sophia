@@ -1,4 +1,4 @@
-# Sophia — controle de vendas
+# Sophia — Controle de Venda
 
 Aplicação web para o controle de vendas a clientes, em **ASP.NET Core MVC (.NET 8)**, **C#** e
 **SQL Server**, com cadastro de clientes, produtos e vendas.
