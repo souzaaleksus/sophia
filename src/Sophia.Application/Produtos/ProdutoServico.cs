@@ -17,7 +17,7 @@ public sealed class ProdutoServico(
 
     public async Task<Lista<ProdutoDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default)
     {
-        var termo = Aparar(consulta.Busca);
+        var termo = Texto.Aparar(consulta.Busca);
         var ordem = Ordenacao.Interpretar(consulta.Ordem, OrdemPadrao);
         var pagina = await Paginacao.RecortarAsync(
             consulta.Pagina,
@@ -31,7 +31,7 @@ public sealed class ProdutoServico(
         int limite,
         CancellationToken cancelamento = default)
     {
-        var encontrados = await produtos.ListarAsync(Aparar(trechoDoNome), limite, cancelamento);
+        var encontrados = await produtos.ListarAsync(Texto.Aparar(trechoDoNome), limite, cancelamento);
         return encontrados.Select(ProdutoDto.De).ToList();
     }
 
@@ -98,9 +98,6 @@ public sealed class ProdutoServico(
         produtos.Remover(produto);
         return await SalvarAsync(cancelamento);
     }
-
-    private static string? Aparar(string? trechoDoNome) =>
-        string.IsNullOrWhiteSpace(trechoDoNome) ? null : trechoDoNome.Trim();
 
     private async Task<Resultado> SalvarAsync(CancellationToken cancelamento)
     {

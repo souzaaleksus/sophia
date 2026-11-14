@@ -45,6 +45,17 @@ public sealed class ProdutoServicoTests(BancoDeTestes banco) : IAsyncLifetime, I
     }
 
     [Fact]
+    public async Task Recusa_nome_repetido_com_espacos_a_mais_entre_as_palavras()
+    {
+        await Servico.CadastrarAsync(new DadosProduto("Caderno Universitário", 18.90m));
+
+        var resultado = await Servico.CadastrarAsync(new DadosProduto("Caderno  Universitário", 18.90m));
+
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("Nome", "Já existe um produto com este nome."));
+    }
+
+    [Fact]
     public async Task Converte_a_violacao_de_unicidade_do_banco_na_mesma_mensagem()
     {
         _sistema.AntesDoProximoSalvamento(async () =>

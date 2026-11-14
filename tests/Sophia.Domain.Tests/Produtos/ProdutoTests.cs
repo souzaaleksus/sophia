@@ -15,6 +15,17 @@ public sealed class ProdutoTests
     }
 
     [Theory]
+    [InlineData("Caderno  Universitário")]
+    [InlineData(" Caderno 	 Universitário ")]
+    [InlineData("Caderno  Universitário")]
+    public void Junta_os_espacos_repetidos_dentro_do_nome(string nome)
+    {
+        var resultado = Produto.Criar(new DadosProduto(nome, 1m));
+
+        resultado.Valor.Nome.Should().Be("Caderno Universitário");
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
