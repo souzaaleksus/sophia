@@ -57,6 +57,29 @@ public sealed class PoliticaDeConteudoTests(AplicacaoEmExecucao aplicacao) : IAs
         await Expect(_pagina.Locator("html")).ToHaveAttributeAsync("data-bs-theme", escuro ? "dark" : "light");
     }
 
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/Vendas/Nova")]
+    [InlineData("/Clientes/Novo")]
+    public async Task A_tela_carrega_tudo_do_proprio_endereco_inclusive_a_fonte(string caminho)
+    {
+        var externos = new List<string>();
+        _pagina.Request += (_, requisicao) =>
+        {
+            if (!requisicao.Url.StartsWith(aplicacao.Endereco, StringComparison.Ordinal)
+                && !requisicao.Url.Contains("kaspersky", StringComparison.OrdinalIgnoreCase))
+            {
+                externos.Add(requisicao.Url);
+            }
+        };
+
+        await _pagina.GotoAsync(caminho);
+        await _pagina.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+        externos.Should().BeEmpty();
+        (await _pagina.EvaluateAsync<bool>("() => document.fonts.check('600 16px Poppins')")).Should().BeTrue("a fonte da marca vem do próprio Sophia");
+    }
+
     [Fact]
     public async Task O_detalhe_da_venda_e_a_busca_do_caixa_nao_violam_a_politica()
     {

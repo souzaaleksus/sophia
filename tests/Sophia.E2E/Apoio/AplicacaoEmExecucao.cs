@@ -9,8 +9,6 @@ namespace Sophia.E2E.Apoio;
 
 public class AplicacaoEmExecucao : IAsyncLifetime
 {
-    private const string FontesExternas = "https://fonts.googleapis.com/**";
-
     private readonly BancoDeTestes _banco = new();
     private readonly IReadOnlyDictionary<string, string> _configuracao;
     private readonly ConcurrentQueue<string> _saidaDaAplicacao = new();
@@ -84,7 +82,6 @@ public class AplicacaoEmExecucao : IAsyncLifetime
         opcoes.Locale = "pt-BR";
         opcoes.TimezoneId = "America/Sao_Paulo";
         var contexto = await Navegador.NewContextAsync(opcoes);
-        await contexto.RouteAsync(FontesExternas, rota => rota.FulfillAsync(new() { Status = 200, ContentType = "text/css", Body = string.Empty }));
         return await contexto.NewPageAsync();
     }
 

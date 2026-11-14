@@ -19,8 +19,8 @@ public sealed class CabecalhosDeSegurancaTests(AplicacaoEmExecucao aplicacao)
         Cabecalho(resposta, "X-Content-Type-Options").Should().Be("nosniff");
         Cabecalho(resposta, "X-Frame-Options").Should().Be("DENY");
         Cabecalho(resposta, "Content-Security-Policy").Should().Be(
-            "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; " +
-            "font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; " +
+            "default-src 'self'; script-src 'self'; style-src 'self'; " +
+            "font-src 'self'; img-src 'self' data:; connect-src 'self'; " +
             "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'");
         Cabecalho(resposta, "Referrer-Policy").Should().Be("strict-origin-when-cross-origin");
     }

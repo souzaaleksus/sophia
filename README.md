@@ -166,7 +166,7 @@ para compilar, testar ou rodar.
 | Web | ASP.NET Core MVC · Razor | Pedido no enunciado. As páginas chegam prontas do servidor, então a tela funciona antes de qualquer JavaScript, e o framework já entrega validação do modelo, proteção contra envio forjado (antiforgery), localização e página de erro. |
 | Interface | Bootstrap 5.3 · CSS próprio por área · JavaScript puro em módulos ES | O Bootstrap dá grade, formulários e o tema escuro (`data-bs-theme`) prontos e já cuidados em acessibilidade. O CSS próprio, dividido por área em `wwwroot/css`, aplica a identidade da Sophia. O JavaScript roda direto no navegador, sem npm nem bundler na aplicação: o que precisa de interação (caixa, busca enquanto digita, diálogo) é pequeno demais para justificar um framework. |
 | Validação no navegador | jQuery Validation · validação discreta do ASP.NET Core | É o par que transforma as regras (`DataAnnotations`) do modelo em validação no navegador, com as mesmas mensagens do servidor. O jQuery entra só por causa dele, e só nas telas com formulário de cadastro. |
-| Tipografia e ícones | Poppins (Google Fonts) · ícones Lucide em sprite SVG | A Poppins é a fonte da identidade da Sophia e tem algarismos tabulares, que alinham os valores em coluna. Os ícones Lucide (licença ISC) ficam num sprite SVG da própria página: uma requisição a menos e cor herdada do texto, inclusive no tema escuro. |
+| Tipografia e ícones | Poppins (arquivos próprios em `wwwroot/fontes`, licença OFL) · ícones Lucide em sprite SVG | A Poppins é a fonte da identidade da Sophia e tem algarismos tabulares, que alinham os valores em coluna. Os arquivos ficam no próprio Sophia: a tela não depende da internet nem consulta o Google a cada página. Os ícones Lucide (licença ISC) ficam num sprite SVG da própria página: uma requisição a menos e cor herdada do texto, inclusive no tema escuro. |
 | Acesso a dados | Entity Framework Core 8 | Consultas tipadas e sempre parametrizadas (nada de SQL montado com texto do usuário), projeção direta para os DTOs da tela e tradução da violação de índice único para a mensagem do negócio. Sem migrations: o enunciado pede o script, e ele é a única fonte do esquema. |
 | Banco de dados | SQL Server Express (2019 ou mais novo local, 2022 no Docker) | Edição gratuita do SQL Server. O mesmo script T-SQL roda no local e no contêiner, e recursos como o índice único filtrado garantem regras do negócio, como a RN25, no próprio banco. |
 | Testes de unidade e de serviço | xUnit · FluentAssertions 6 | O xUnit é o padrão do ecossistema .NET, com fixtures que compartilham um banco por coleção de testes. O FluentAssertions faz a falha dizer o esperado e o encontrado em forma de frase. A versão 6 tem licença Apache 2.0; a 8 passou a ser paga para uso comercial. |
@@ -518,7 +518,7 @@ Caminho de uma venda:
   pelo EF com parâmetros; o Razor codifica toda saída e o JavaScript só escreve na página por
   `textContent`. Toda resposta leva `X-Content-Type-Options`, `X-Frame-Options`,
   `Referrer-Policy` e uma política de conteúdo (CSP) que só aceita script, estilo, imagem e
-  conexão do próprio endereço, mais as fontes do Google: nenhum script ou estilo embutido no
+  conexão do próprio endereço, inclusive a fonte: nenhum script ou estilo embutido no
   HTML, e por isso as barras do painel são SVG com a medida em atributo. As somas de unidades
   usam inteiro de 64 bits, para uma quantidade digitada com zeros a mais não derrubar o painel.
 - **Fora do escopo, de propósito:** autenticação, HTTPS e cancelamento de venda. A estrutura em camadas
