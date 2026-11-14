@@ -28,7 +28,7 @@ public sealed class BancoDeTestes : IAsyncLifetime
         await ExecutarScriptAsync();
     }
 
-    public Task ExecutarScriptAsync() => BancoAvulso.ExecutarScriptAsync(TextoDeConexao);
+    public Task<IReadOnlyList<string>> ExecutarScriptAsync() => BancoAvulso.ExecutarScriptAsync(TextoDeConexao);
 
     public async Task ExecutarComoOSqlcmdAsync(string arquivo)
     {

@@ -342,13 +342,18 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
         var caneta = await CadastrarProdutoAsync("Caneta azul", 0.01m);
-        await RegistrarVendaAsync(maria, [new(caneta, 1_500_000_000, 0.01m)], data: new DateOnly(2026, 11, 2));
-        await RegistrarVendaAsync(maria, [new(caneta, 1_000_000_000, 0.01m)], data: Hoje);
+        await banco.ExecutarAsync($"""
+            INSERT INTO dbo.Vendas (Data, ClienteId)
+            SELECT TOP (2148) IIF(ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) % 2 = 0, '2026-11-02', '2026-11-13'), {maria}
+            FROM sys.all_objects a CROSS JOIN sys.all_objects b;
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario)
+            SELECT Id, {caneta}, 999999, 0.01 FROM dbo.Vendas;
+            """);
 
         await using var contexto = banco.NovoContexto();
         var doMes = await new ConsultasDoPainel(contexto).MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 5);
 
-        doMes.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul", 2_500_000_000, 25_000_000m));
+        doMes.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul", 2_147_997_852, 21_479_978.52m));
     }
 
     [Fact]
@@ -547,7 +552,7 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         DateOnly? data = null)
     {
         await using var contexto = banco.NovoContexto();
-        var venda = Venda.Registrar(new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje).Valor;
+        var venda = Venda.Registrar(new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje, new ParametrosDoSophia().QuantidadeMaximaPorItem).Valor;
         new VendaRepositorio(contexto).Adicionar(venda);
         await new UnidadeDeTrabalho(contexto).SalvarAsync();
         return venda.Id;

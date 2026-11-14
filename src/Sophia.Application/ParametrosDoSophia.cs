@@ -21,4 +21,7 @@ public sealed class ParametrosDoSophia
 
     [Range(2, 90)]
     public int DiasDoAtalhoDePeriodo { get; init; } = 7;
+
+    [Range(1, 999_999)]
+    public int QuantidadeMaximaPorItem { get; init; } = 99_999;
 }

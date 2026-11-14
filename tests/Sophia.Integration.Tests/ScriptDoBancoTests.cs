@@ -9,6 +9,12 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
 {
     private const string Tabelas = "SELECT name FROM sys.tables ORDER BY name";
 
+    private const string UmaVendaSemItens = """
+        INSERT INTO dbo.Clientes (Cpf, Nome) VALUES ('52998224725', N'Maria Santos');
+        INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Caneta azul', 2.50), (N'Caderno', 18.90);
+        INSERT INTO dbo.Vendas (Data, ClienteId) VALUES ('2026-11-13', 1);
+        """;
+
     [Fact]
     public async Task Cria_as_quatro_tabelas()
     {
@@ -140,6 +146,50 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
             .Should().Equal(BancoAvulso.AgrupamentoDoSophia);
     }
 
+    [Fact]
+    public async Task O_banco_barra_quantidade_acima_do_teto_da_faixa_do_parametro()
+    {
+        await banco.LimparAsync();
+        await banco.ExecutarAsync(UmaVendaSemItens);
+
+        await banco.ExecutarAsync("INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 1, 999999, 2.50);");
+        var acimaDoTeto = () => banco.ExecutarAsync(
+            "INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 2, 1000000, 2.50);");
+
+        (await acimaDoTeto.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("CK_VendaItens_QuantidadeMaxima");
+        await banco.LimparAsync();
+    }
+
+    [Fact]
+    public async Task Atualiza_banco_sem_o_teto_da_quantidade_criando_a_restricao()
+    {
+        await banco.ExecutarAsync("ALTER TABLE dbo.VendaItens DROP CONSTRAINT CK_VendaItens_QuantidadeMaxima;");
+        (await RestricaoDoTetoAsync(banco.ConsultarAsync)).Should().BeEmpty();
+
+        await banco.ExecutarScriptAsync();
+
+        (await RestricaoDoTetoAsync(banco.ConsultarAsync)).Should().Equal("([Quantidade]<=(999999))");
+    }
+
+    [Fact]
+    public async Task Banco_com_item_acima_do_teto_so_avisa_e_segue_sem_a_restricao()
+    {
+        await using var antigo = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Antiga");
+        await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+        await antigo.ConsultarAsync($"""
+            ALTER TABLE dbo.VendaItens DROP CONSTRAINT CK_VendaItens_QuantidadeMaxima;
+            {UmaVendaSemItens}
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 1, 2000000, 2.50);
+            SELECT N'pronto';
+            """);
+
+        var avisos = await BancoAvulso.ExecutarScriptAsync(antigo.TextoDeConexao);
+
+        avisos.Should().Contain(aviso => aviso.Contains("CK_VendaItens_QuantidadeMaxima", StringComparison.Ordinal));
+        (await RestricaoDoTetoAsync(antigo.ConsultarAsync)).Should().BeEmpty();
+        (await antigo.ConsultarAsync("SELECT CAST(Quantidade AS VARCHAR(10)) FROM dbo.VendaItens")).Should().Equal("2000000");
+    }
+
     private Task<List<string>> ColunaDaChaveAsync() =>
         banco.ConsultarAsync("""
             SELECT CONCAT(TYPE_NAME(system_type_id), ':', CAST(is_nullable AS INT))
@@ -152,5 +202,11 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
             SELECT CONCAT(CAST(is_unique AS INT), ':', CAST(has_filter AS INT), ':', filter_definition)
             FROM sys.indexes
             WHERE object_id = OBJECT_ID(N'dbo.Vendas') AND name = N'UQ_Vendas_ChaveDeRegistro'
+            """);
+
+    private static Task<List<string>> RestricaoDoTetoAsync(Func<string, Task<List<string>>> consultar) =>
+        consultar("""
+            SELECT definition FROM sys.check_constraints
+            WHERE parent_object_id = OBJECT_ID(N'dbo.VendaItens') AND name = N'CK_VendaItens_QuantidadeMaxima'
             """);
 }

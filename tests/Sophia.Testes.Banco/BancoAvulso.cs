@@ -54,15 +54,19 @@ public sealed class BancoAvulso : IAsyncDisposable
         return (bool)(await comando.ExecuteScalarAsync())!;
     }
 
-    public static async Task ExecutarScriptAsync(string textoDeConexao, string arquivo = "create-database.sql")
+    public static async Task<IReadOnlyList<string>> ExecutarScriptAsync(string textoDeConexao, string arquivo = "create-database.sql")
     {
+        var avisos = new List<string>();
         await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(textoDeConexao) { Pooling = false }.ConnectionString);
+        conexao.InfoMessage += (_, mensagem) => avisos.Add(mensagem.Message);
         await conexao.OpenAsync();
         foreach (var lote in Lotes.Separar(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, arquivo))))
         {
             await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 120 };
             await comando.ExecuteNonQueryAsync();
         }
+
+        return avisos;
     }
 
     public async Task<List<string>> ConsultarAsync(string sql)

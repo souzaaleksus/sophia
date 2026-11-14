@@ -1,4 +1,5 @@
 using Reqnroll;
+using Sophia.Application;
 using Sophia.Application.Vendas;
 using Sophia.Domain.Vendas;
 using Sophia.Specs.Apoio;
@@ -11,6 +12,12 @@ public sealed class PassosDeVendas(Cenario cenario)
     private readonly Guid _chaveDoFormulario = Guid.NewGuid();
     private DateOnly _dataSugerida;
     private int[] _idsDosEnvios = [];
+
+    [Given("que a quantidade máxima por item é {int}")]
+    public void DadoQueAQuantidadeMaximaPorItemE(int maximo)
+    {
+        cenario.UsarParametros(new ParametrosDoSophia { QuantidadeMaximaPorItem = maximo });
+    }
 
     [When("eu iniciar uma nova venda")]
     public void QuandoEuIniciarUmaNovaVenda()

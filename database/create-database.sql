@@ -110,9 +110,20 @@ BEGIN
             REFERENCES dbo.Produtos (Id) ON DELETE NO ACTION,
         CONSTRAINT UQ_VendaItens_Venda_Produto UNIQUE (VendaId, ProdutoId),
         CONSTRAINT CK_VendaItens_Quantidade_Positiva CHECK (Quantidade > 0),
+        CONSTRAINT CK_VendaItens_QuantidadeMaxima CHECK (Quantidade <= 999999),
         CONSTRAINT CK_VendaItens_ValorUnitario_Positivo CHECK (ValorUnitario > 0)
     );
 
     CREATE NONCLUSTERED INDEX IX_VendaItens_ProdutoId ON dbo.VendaItens (ProdutoId);
+END';
+
+EXEC @noBanco N'
+IF OBJECT_ID(N''dbo.CK_VendaItens_QuantidadeMaxima'', N''C'') IS NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM dbo.VendaItens WHERE Quantidade > 999999)
+        PRINT N''Aviso: há itens de venda com quantidade acima de 999.999, e a restrição CK_VendaItens_QuantidadeMaxima não foi criada. Corrija esses itens e rode o script de novo.'';
+    ELSE
+        ALTER TABLE dbo.VendaItens WITH CHECK
+            ADD CONSTRAINT CK_VendaItens_QuantidadeMaxima CHECK (Quantidade <= 999999);
 END';
 GO
