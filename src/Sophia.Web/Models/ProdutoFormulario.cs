@@ -4,7 +4,7 @@ using Sophia.Domain.Produtos;
 
 namespace Sophia.Web.Models;
 
-public sealed class ProdutoFormulario
+public sealed class ProdutoFormulario : IFormularioDeCadastro<DadosProduto>
 {
     public int? Id { get; set; }
 

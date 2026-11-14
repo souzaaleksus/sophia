@@ -5,7 +5,7 @@ using Sophia.Web.Apoio;
 
 namespace Sophia.Web.Models;
 
-public sealed class ClienteFormulario
+public sealed class ClienteFormulario : IFormularioDeCadastro<DadosCliente>
 {
     public int? Id { get; set; }
 
