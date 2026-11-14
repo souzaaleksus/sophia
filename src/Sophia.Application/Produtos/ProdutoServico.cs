@@ -99,16 +99,6 @@ public sealed class ProdutoServico(
         return await SalvarAsync(cancelamento);
     }
 
-    private async Task<Resultado> SalvarAsync(CancellationToken cancelamento)
-    {
-        try
-        {
-            await unidadeDeTrabalho.SalvarAsync(cancelamento);
-            return Resultado.Ok();
-        }
-        catch (ConflitoAoSalvarException conflito)
-        {
-            return Resultado.Falha(conflito.Tipo == TipoDeConflito.ValorDuplicado ? NomeDuplicado : JaVendido);
-        }
-    }
+    private Task<Resultado> SalvarAsync(CancellationToken cancelamento) =>
+        unidadeDeTrabalho.SalvarCadastroAsync(NomeDuplicado, JaVendido, cancelamento);
 }

@@ -100,16 +100,6 @@ public sealed class ClienteServico(
         return await SalvarAsync(cancelamento);
     }
 
-    private async Task<Resultado> SalvarAsync(CancellationToken cancelamento)
-    {
-        try
-        {
-            await unidadeDeTrabalho.SalvarAsync(cancelamento);
-            return Resultado.Ok();
-        }
-        catch (ConflitoAoSalvarException conflito)
-        {
-            return Resultado.Falha(conflito.Tipo == TipoDeConflito.ValorDuplicado ? CpfDuplicado : PossuiVendas);
-        }
-    }
+    private Task<Resultado> SalvarAsync(CancellationToken cancelamento) =>
+        unidadeDeTrabalho.SalvarCadastroAsync(CpfDuplicado, PossuiVendas, cancelamento);
 }
