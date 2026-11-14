@@ -19,6 +19,8 @@ public sealed class BuscaDeClienteTests
     [Theory]
     [InlineData("maria", "maria")]
     [InlineData("  João Lima ", "João Lima")]
+    [InlineData("Maria  Silva", "Maria Silva")]
+    [InlineData(" Maria \t Silva ", "Maria Silva")]
     public void Termo_com_letras_busca_pelo_nome(string termo, string trecho)
     {
         var busca = BuscaDeCliente.Interpretar(termo);

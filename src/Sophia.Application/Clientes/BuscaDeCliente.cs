@@ -1,3 +1,4 @@
+using Sophia.Domain;
 using Sophia.Domain.Clientes;
 
 namespace Sophia.Application.Clientes;
@@ -6,8 +7,8 @@ public sealed record BuscaDeCliente(string? TrechoDoNome, string? InicioDoCpf)
 {
     public static BuscaDeCliente Interpretar(string? termo)
     {
-        var aparado = termo?.Trim();
-        if (string.IsNullOrEmpty(aparado))
+        var aparado = Texto.Aparar(termo);
+        if (aparado is null)
         {
             return new BuscaDeCliente(null, null);
         }

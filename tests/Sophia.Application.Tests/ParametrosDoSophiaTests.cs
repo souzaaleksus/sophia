@@ -27,7 +27,7 @@ public sealed class ParametrosDoSophiaTests
     [Theory]
     [InlineData(nameof(ParametrosDoSophia.TamanhoDaPagina), 0)]
     [InlineData(nameof(ParametrosDoSophia.TamanhoDaPagina), 201)]
-    [InlineData(nameof(ParametrosDoSophia.DiasNoGrafico), 0)]
+    [InlineData(nameof(ParametrosDoSophia.DiasNoGrafico), 1)]
     [InlineData(nameof(ParametrosDoSophia.DiasNoGrafico), 32)]
     [InlineData(nameof(ParametrosDoSophia.MaisVendidosNoPainel), 0)]
     [InlineData(nameof(ParametrosDoSophia.MaisVendidosNoPainel), 51)]
@@ -47,7 +47,7 @@ public sealed class ParametrosDoSophiaTests
     }
 
     [Theory]
-    [InlineData(1, 1, 1, 1, 1, 2)]
+    [InlineData(1, 2, 1, 1, 1, 2)]
     [InlineData(200, 31, 50, 50, 50, 90)]
     public void As_pontas_da_faixa_sao_aceitas(int pagina, int dias, int maisVendidos, int ultimas, int sugestoes, int atalho)
     {

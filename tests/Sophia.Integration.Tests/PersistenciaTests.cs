@@ -1,3 +1,5 @@
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Sophia.Application;
 using Sophia.Application.Abstracoes;
 using Sophia.Application.Clientes;
@@ -50,6 +52,17 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
             .Should().Equal("João Lima");
         (await repositorio.ListarAsync(BuscaDeCliente.Interpretar(null), 1)).Select(c => c.Nome)
             .Should().Equal("João Lima");
+    }
+
+    [Fact]
+    public async Task A_busca_de_clientes_pelo_nome_junta_os_espacos_repetidos_do_termo()
+    {
+        await CadastrarClienteAsync("529.982.247-25", "Maria Silva");
+
+        await using var contexto = banco.NovoContexto();
+        var encontrados = await new ClienteRepositorio(contexto).ListarAsync(BuscaDeCliente.Interpretar("Maria  Silva"), null);
+
+        encontrados.Select(c => c.Nome).Should().Equal("Maria Silva");
     }
 
     [Fact]
@@ -199,6 +212,20 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
 
         (await gravar.Should().ThrowAsync<ConflitoAoSalvarException>())
             .Which.Tipo.Should().Be(TipoDeConflito.ReferenciaInexistente);
+    }
+
+    [Fact]
+    public async Task Restricao_de_verificacao_violada_por_fora_do_dominio_nao_vira_conflito_de_referencia()
+    {
+        await using var contexto = banco.NovoContexto();
+        var produto = Produto.Criar(new DadosProduto("Caneta azul", 2.50m)).Valor;
+        new ProdutoRepositorio(contexto).Adicionar(produto);
+        contexto.Entry(produto).Property(p => p.ValorUnitario).CurrentValue = -1m;
+
+        var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
+
+        (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
+            .WithInnerException<SqlException>().Which.Message.Should().Contain("CK_Produtos_ValorUnitario_Positivo");
     }
 
     [Fact]
