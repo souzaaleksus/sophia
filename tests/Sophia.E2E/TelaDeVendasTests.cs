@@ -226,7 +226,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await Expect(_pagina.GetByTestId("unidades-da-venda")).ToHaveTextAsync("12 unidades");
     }
 
-    private ILocator Linha(int indice) =>_pagina.GetByTestId("item-da-venda").Nth(indice);
+    private ILocator Linha(int indice) => _pagina.GetByTestId("item-da-venda").Nth(indice);
 
     private ILocator ComboboxDeCliente() => _pagina.GetByRole(AriaRole.Combobox, new() { Name = "Cliente", Exact = true });
 

@@ -12,3 +12,5 @@ playwright-report/
 Teste-pratico-aspnet-mvc.pdf
 .playwright-mcp/
 *.feature.cs
+
+node_modules/
