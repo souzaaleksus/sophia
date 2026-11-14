@@ -1,4 +1,5 @@
 import { buscarJson, criarAutocompletar } from '../autocompletar.js';
+import { limparErro } from '../comum/erros.js';
 import { formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from '../formato.js';
 
 const camposDaLinha = ['ProdutoId', 'ProdutoNome', 'ValorUnitario', 'Quantidade'];
@@ -82,9 +83,9 @@ class Linhas {
             aoEscolher: produto => this.#escolherProduto(item, produto),
         });
 
-        campoDe(item, 'ValorUnitario').addEventListener('input', this.#aoMudar);
+        campoDe(item, 'ValorUnitario').addEventListener('input', () => this.#corrigido(item, ['ValorUnitario']));
         campoDe(item, 'ValorUnitario').addEventListener('blur', () => arredondarValor(item));
-        campoDe(item, 'Quantidade').addEventListener('input', this.#aoMudar);
+        campoDe(item, 'Quantidade').addEventListener('input', () => this.#corrigido(item, ['Quantidade']));
         campoDe(item, 'Quantidade').addEventListener('keydown', evento => this.#abrirProximaComEnter(evento));
         item.querySelector('[data-acao=menos]').addEventListener('click', evento => this.#mudarQuantidade(item, -1, evento.detail === 0));
         item.querySelector('[data-acao=mais]').addEventListener('click', () => this.#mudarQuantidade(item, 1));
@@ -121,6 +122,12 @@ class Linhas {
         }
 
         selecionar(campoDe(item, 'Quantidade'));
+        this.#corrigido(item, camposDaLinha);
+    }
+
+    #corrigido(item, campos) {
+        campos.forEach(nome => limparErro(item, campoDe(item, nome).name));
+        limparErro(this.#area.closest('form'), 'Itens');
         this.#aoMudar();
     }
 
@@ -129,15 +136,16 @@ class Linhas {
         quantidade.value = (lerInteiro(quantidade.value) ?? 0) + 1;
         camposDaLinha.forEach(nome => {
             campoDe(item, nome).value = '';
+            limparErro(item, campoDe(item, nome).name);
         });
         selecionar(quantidade);
-        this.#aoMudar();
+        this.#corrigido(existente, ['Quantidade']);
     }
 
     #mudarQuantidade(item, passo, peloTeclado = false) {
         const campo = campoDe(item, 'Quantidade');
         campo.value = Math.max(1, (lerInteiro(campo.value) ?? 0) + passo);
-        this.#aoMudar();
+        this.#corrigido(item, ['Quantidade']);
         if (peloTeclado && item.querySelector('[data-acao=menos]').disabled) {
             campo.focus();
         }

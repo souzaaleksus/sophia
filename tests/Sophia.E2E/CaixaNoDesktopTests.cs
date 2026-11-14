@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Sophia.E2E.Apoio;
 using static Microsoft.Playwright.Assertions;
@@ -150,6 +151,46 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Venda registrada.");
         await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" })).ToContainTextAsync("R$ 12,50");
         await Expect(_pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 25,00");
+    }
+
+    [Fact]
+    public async Task Escolher_o_cliente_e_lancar_o_produto_tiram_os_erros_resolvidos_sem_novo_envio()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.Finalizar.ClickAsync();
+        var erroDoCliente = _pagina.Locator("[data-valmsg-for=ClienteId]");
+        var erroDosItens = _pagina.GetByText("Lance ao menos um produto na venda.");
+        await Expect(erroDoCliente).ToHaveTextAsync("Selecione o cliente.");
+        await Expect(erroDosItens).ToBeVisibleAsync();
+
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+
+        await Expect(erroDoCliente).ToBeEmptyAsync();
+        await Expect(erroDosItens).ToBeVisibleAsync();
+
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+
+        await Expect(erroDosItens).ToBeHiddenAsync();
+        await Expect(_pagina.GetByRole(AriaRole.Alert)).ToHaveCountAsync(0);
+    }
+
+    [Fact]
+    public async Task Corrigir_a_quantidade_da_linha_tira_o_erro_e_a_marca_de_invalido()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", string.Empty);
+        await _caixa.Finalizar.ClickAsync();
+        var erroDaQuantidade = _caixa.Linha(0).Locator("[data-erro=Quantidade]");
+        await Expect(erroDaQuantidade).Not.ToBeEmptyAsync();
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("aria-invalid", "true");
+        await _caixa.ProntoAsync();
+
+        await _caixa.QuantidadeDaLinha(0).FillAsync("2");
+
+        await Expect(erroDaQuantidade).ToBeEmptyAsync();
+        await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-describedby", new Regex("erro-"));
     }
 
     private ILocator BotaoDaLinha(int linha, string nome) =>

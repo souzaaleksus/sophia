@@ -1,4 +1,5 @@
 import { buscarJson, criarAutocompletar } from '../autocompletar.js';
+import { limparErro } from '../comum/erros.js';
 import { iniciais, tomDoAvatar } from '../formato.js';
 
 export function criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, aoEscolher) {
@@ -29,6 +30,7 @@ export function criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, a
         mostrarAvatar(parte('avatar'), cliente.nome);
         busca.hidden = true;
         escolhido.hidden = false;
+        limparErro(formulario, 'ClienteId');
     }
 
     function buscarOutro() {
