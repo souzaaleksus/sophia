@@ -5,6 +5,7 @@ Aplicação web para o controle de vendas a clientes, em **ASP.NET Core MVC (.NE
 
 - [Especificação](#especificação)
 - [Como executar](#como-executar)
+- [Guia do usuário](docs/guia-do-usuario.md): como operar o sistema, com as telas
 - [Testes](#testes)
 - [Arquitetura](#arquitetura)
 - [Decisões](#decisões)
@@ -192,45 +193,113 @@ criaria duas fontes para o mesmo dado.
 
 ## Como executar
 
-### Opção 1 — Docker (não precisa instalar .NET nem SQL Server)
+Roteiro do zero até a primeira venda. Escolha **um** dos dois caminhos: Docker (nada para
+instalar além do Docker) ou local (.NET 8 e SQL Server Express na máquina).
+
+### Passo 0 — Baixar o código
 
 ```bash
-docker compose up --build
+git clone https://github.com/souzaaleksus/sophia.git
+cd sophia
 ```
 
-Abra http://localhost:8080. O Compose sobe três serviços, nesta ordem:
+### Caminho A — Docker
 
-1. `banco` — SQL Server 2022 Express;
-2. `criar-banco` — roda `database/create-database.sql` e termina;
-3. `web` — a aplicação, que só sobe depois que o banco foi criado.
+Pré-requisito: Docker com o plugin Compose (Docker Desktop no Windows/macOS ou Docker Engine
+no Linux/WSL).
+
+1. Suba a aplicação e o banco:
+
+   ```bash
+   docker compose up -d --build
+   ```
+
+   O Compose sobe três serviços, nesta ordem:
+
+   1. `banco`: SQL Server 2022 Express;
+   2. `criar-banco`: executa `database/create-database.sql` e termina;
+   3. `web`: a aplicação, que só sobe depois que o banco foi criado.
+
+2. Acompanhe até a aplicação ficar pronta (a primeira vez leva alguns minutos, por causa do
+   download das imagens):
+
+   ```bash
+   docker compose ps
+   docker compose logs -f web
+   ```
+
+   Quando aparecer `Now listening on: http://[::]:8080`, ela está no ar. Para sair dos logs,
+   use `Ctrl+C` (a aplicação continua rodando).
+
+3. Abra http://localhost:8080.
+
+4. Para parar: `docker compose down`. Os dados ficam no volume `dados-do-banco` e voltam na
+   próxima subida. Para começar do zero, use `docker compose down -v`.
 
 A senha padrão do usuário `sa` serve só para avaliação local: em qualquer outro uso, defina a
 variável `SOPHIA_SENHA_DO_BANCO`. O SQL Server fica acessível apenas nesta máquina, na porta
 `14333`, para quem quiser consultar o banco.
 
-### Opção 2 — Visual Studio ou linha de comando, com SQL Server Express local
+### Caminho B — Local, com .NET 8 e SQL Server Express
 
-Pré-requisitos: .NET 8 SDK e SQL Server Express (instância `.\SQLEXPRESS`).
+Pré-requisitos:
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (`dotnet --version` deve
+  mostrar 8.x);
+- SQL Server Express com a instância `.\SQLEXPRESS` (qualquer edição 2019 ou mais nova);
+- `sqlcmd` ou o SQL Server Management Studio (SSMS), para rodar o script.
 
 1. Crie o banco com o script entregue:
 
-   ```bash
+   ```powershell
    sqlcmd -S .\SQLEXPRESS -E -C -i database/create-database.sql
    ```
 
-   No SSMS, basta abrir o arquivo e executar (F5).
+   No SSMS, abra `database/create-database.sql` e execute (F5). O script pode ser rodado de
+   novo sem apagar nada: ele só cria o que ainda não existe.
 
-2. Rode a aplicação:
+2. Confira se a conexão aponta para a sua instância. Ela fica em
+   `src/Sophia.Web/appsettings.json`:
+
+   ```json
+   "Sophia": "Server=.\SQLEXPRESS;Database=Sophia;Integrated Security=true;TrustServerCertificate=true"
+   ```
+
+   Para outra instância, troque ali ou defina a variável de ambiente
+   `ConnectionStrings__Sophia`.
+
+3. Rode a aplicação:
 
    ```bash
    dotnet run --project src/Sophia.Web
    ```
 
-   Ou abra `Sophia.sln` no Visual Studio e execute o projeto `Sophia.Web`.
-   A aplicação abre em http://localhost:5080.
+   Ou abra `Sophia.sln` no Visual Studio, marque `Sophia.Web` como projeto de inicialização e
+   pressione F5.
 
-A conexão fica em `src/Sophia.Web/appsettings.json` (`ConnectionStrings:Sophia`). Para outra
-instância, troque ali ou use a variável de ambiente `ConnectionStrings__Sophia`.
+4. Abra http://localhost:5080. Para parar, `Ctrl+C` no terminal.
+
+### Primeira venda, para conferir que está tudo certo
+
+O passo a passo completo, com as telas, está no [Guia do usuário](docs/guia-do-usuario.md).
+
+1. **Clientes → Novo cliente**: informe nome e CPF (por exemplo `529.982.247-25`) e salve.
+   Tente cadastrar o mesmo CPF de novo: o sistema recusa com a mensagem no campo.
+2. **Produtos → Novo produto**: cadastre dois produtos com valor unitário.
+3. **Nova venda** (ou `F2` na tela de venda): busque o cliente pelo nome ou pelo CPF.
+4. Lance os produtos (`F4`), ajuste as quantidades e veja o subtotal de cada item e o total
+   da venda no visor.
+5. Finalize (`Ctrl+Enter`). A venda aparece no **Painel** e em **Vendas**, com o detalhe dos
+   itens.
+
+### Se algo não subir
+
+| Sintoma | Causa provável | O que fazer |
+|---|---|---|
+| `A network-related or instance-specific error` | instância diferente de `.\SQLEXPRESS` ou serviço parado | inicie o serviço `SQL Server (SQLEXPRESS)` ou ajuste `ConnectionStrings__Sophia` |
+| `Cannot open database "Sophia"` | o script não foi executado | rode o passo 1 do Caminho B |
+| `address already in use` na porta 5080 ou 8080 | outra aplicação usa a porta | `dotnet run --project src/Sophia.Web --urls http://localhost:5090` ou troque a porta no `docker-compose.yml` |
+| `web` não sobe no Docker | o `criar-banco` terminou com erro (por exemplo, senha fraca em `SOPHIA_SENHA_DO_BANCO`) | `docker compose logs criar-banco`; a senha precisa de 8+ caracteres com maiúscula, minúscula, número e símbolo |
 
 ---
 
@@ -332,6 +401,7 @@ Caminho de uma venda:
 
 ```
 database/create-database.sql      script completo do banco
+docs/guia-do-usuario.md           guia de operação, com as telas em docs/imagens
 src/Sophia.Domain                 regras de negócio
 src/Sophia.Application            casos de uso
 src/Sophia.Infrastructure         EF Core e SQL Server
