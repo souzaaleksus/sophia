@@ -26,6 +26,12 @@
     <link rel="stylesheet" href="~/css/cupom.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/listas.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
+    <link rel="modulepreload" href="~/js/comum/mascaras.js" />
+    <link rel="modulepreload" href="~/js/comum/imprimir.js" />
+    <link rel="modulepreload" href="~/js/comum/tema.js" />
+    <link rel="modulepreload" href="~/js/comum/avisos.js" />
+    <link rel="modulepreload" href="~/js/comum/foco-no-erro.js" />
+    <link rel="modulepreload" href="~/js/comum/trava-de-envio.js" />
 </head>
 <body>
     <partial name="_Icones" />
