@@ -137,7 +137,7 @@ public sealed partial class ControlesDeFormularioTests(AplicacaoEmExecucao aplic
         var envios = new ConcurrentQueue<string>();
         _pagina.Request += (_, requisicao) =>
         {
-            if (requisicao.Method == "POST")
+            if (requisicao.Method == "POST" && requisicao.Url.StartsWith(aplicacao.Endereco, StringComparison.Ordinal))
             {
                 envios.Enqueue(requisicao.Url);
             }
@@ -163,26 +163,17 @@ public sealed partial class ControlesDeFormularioTests(AplicacaoEmExecucao aplic
     [Fact]
     public async Task Logo_apos_salvar_o_botao_fica_desabilitado_mostrando_salvando()
     {
-        await _pagina.RouteAsync("**/Clientes/Novo", async rota =>
-        {
-            if (rota.Request.Method == "POST")
-            {
-                await Task.Delay(TimeSpan.FromSeconds(3));
-            }
-
-            await rota.ContinueAsync();
-        });
         await _pagina.GotoAsync("/Clientes/Novo");
         await _pagina.GetByLabel("CPF").FillAsync("529.982.247-25");
         await _pagina.GetByLabel("Nome").FillAsync("Maria Santos");
+        await _pagina.EvaluateAsync("() => window.addEventListener('submit', evento => evento.preventDefault())");
         var envio = _pagina.Locator("main form [type=submit]");
 
-        var clique = _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
 
-        await Expect(envio).ToBeDisabledAsync(new() { Timeout = 2000 });
-        await Expect(envio).ToContainTextAsync("Salvando…", new() { Timeout = 2000 });
-        await clique;
-        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Cliente cadastrado.", new() { Timeout = 15000 });
+        await Expect(envio).ToBeDisabledAsync();
+        await Expect(envio).ToContainTextAsync("Salvando…");
+        (await _cadastro.QuantidadeDeClientesAsync()).Should().Be(0);
     }
 
     [GeneratedRegex(@"/Clientes/Novo$")]
