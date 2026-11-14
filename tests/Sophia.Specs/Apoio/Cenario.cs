@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Sophia.Application;
 using Sophia.Application.Clientes;
 using Sophia.Application.Painel;
@@ -9,7 +10,7 @@ using Sophia.Testes.Banco;
 
 namespace Sophia.Specs.Apoio;
 
-public sealed class Cenario : IDisposable
+public sealed partial class Cenario : IDisposable
 {
     public static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
@@ -41,6 +42,11 @@ public sealed class Cenario : IDisposable
 
     public static string? Texto(string? texto) => string.IsNullOrEmpty(texto) ? null : texto;
 
+    public static Erro ErroNoCampo(string campo, string mensagem) =>
+        CampoDeItem().Match(campo) is { Success: true } item
+            ? new Erro(item.Groups["campo"].Value, mensagem, int.Parse(item.Groups["linha"].Value, CultureInfo.InvariantCulture))
+            : new Erro(campo, mensagem);
+
     public async Task<ClienteDto> ClienteChamadoAsync(string nome) =>
         (await Clientes.ListarAsync(new ConsultaDeLista(Busca: nome))).Pagina.Itens.Single(c => c.Nome == nome);
 
@@ -48,4 +54,7 @@ public sealed class Cenario : IDisposable
         (await Produtos.ListarAsync(new ConsultaDeLista(Busca: nome))).Pagina.Itens.Single(p => p.Nome == nome);
 
     public void Dispose() => _sistema.Dispose();
+
+    [GeneratedRegex(@"^Itens\[(?<linha>\d+)\]\.(?<campo>\w+)$")]
+    private static partial Regex CampoDeItem();
 }

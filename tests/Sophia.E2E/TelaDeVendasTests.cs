@@ -120,6 +120,21 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
     }
 
     [Fact]
+    public async Task Produto_excluido_antes_de_finalizar_e_apontado_na_linha_do_item()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await EscolherClienteAsync("Maria", "Maria Santos");
+        await LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await LancarAsync(1, "Cader", "Caderno 96 folhas", "1");
+        await aplicacao.Banco.ExecutarAsync("DELETE FROM dbo.Produtos WHERE Nome = N'Caderno 96 folhas'");
+
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Finalizar venda" }).ClickAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for='Itens[1].ProdutoId']")).ToHaveTextAsync("Produto não encontrado.");
+        await Expect(_pagina.Locator("[data-valmsg-for='Itens[0].ProdutoId']")).ToBeEmptyAsync();
+    }
+
+    [Fact]
     public async Task Lista_a_venda_registrada()
     {
         await _pagina.GotoAsync("/Vendas/Nova");

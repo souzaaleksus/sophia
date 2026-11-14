@@ -11,7 +11,7 @@ public sealed class ProdutoServico(
     ParametrosDoSophia parametros) : IProdutoServico
 {
     private static readonly Ordenacao<ColunaDeProdutos> OrdemPadrao = new(ColunaDeProdutos.Nome, Decrescente: false);
-    private static readonly Erro NomeDuplicado = new("Nome", Mensagens.NomeDeProdutoDuplicado);
+    private static readonly Erro NomeDuplicado = new(nameof(DadosProduto.Nome), Mensagens.NomeDeProdutoDuplicado);
     private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ProdutoNaoEncontrado);
     private static readonly Erro JaVendido = new(string.Empty, Mensagens.ProdutoJaVendido);
 

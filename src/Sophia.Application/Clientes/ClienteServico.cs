@@ -12,7 +12,7 @@ public sealed class ClienteServico(
     ParametrosDoSophia parametros) : IClienteServico
 {
     private static readonly Ordenacao<ColunaDeClientes> OrdemPadrao = new(ColunaDeClientes.Nome, Decrescente: false);
-    private static readonly Erro CpfDuplicado = new("Cpf", Mensagens.CpfDuplicado);
+    private static readonly Erro CpfDuplicado = new(nameof(DadosCliente.Cpf), Mensagens.CpfDuplicado);
     private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ClienteNaoEncontrado);
     private static readonly Erro PossuiVendas = new(string.Empty, Mensagens.ClientePossuiVendas);
 

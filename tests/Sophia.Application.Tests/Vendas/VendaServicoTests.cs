@@ -77,7 +77,7 @@ public sealed class VendaServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDi
             new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m), new(999, 1, 1m)]));
 
         resultado.Erros.Should().ContainSingle()
-            .Which.Should().Be(new Erro("Itens[1].ProdutoId", "Produto não encontrado."));
+            .Which.Should().Be(new Erro("ProdutoId", "Produto não encontrado.", 1));
     }
 
     [Fact]
