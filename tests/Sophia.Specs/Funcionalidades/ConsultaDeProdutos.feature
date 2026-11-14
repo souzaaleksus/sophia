@@ -31,6 +31,11 @@ Funcionalidade: Consulta de produtos
     Então vejo 10 produtos, de "Produto 20" a "Produto 29"
     E estou na página 1 de 1, com os produtos 1 a 10 de 10
 
+  Cenário: A busca pelo nome não diferencia acentos nem maiúsculas
+    Dado que existe o produto "Açúcar cristal" de R$ 5,00
+    Quando eu buscar "acucar" na lista de produtos
+    Então vejo 1 produto, de "Açúcar cristal" a "Açúcar cristal"
+
   Esquema do Cenário: Página fora dos limites mostra a página válida mais próxima
     Quando eu consultar a página <Pedida> dos produtos
     Então estou na página <Mostrada> de 2, com os produtos <Primeiro> a <Ultimo> de 30

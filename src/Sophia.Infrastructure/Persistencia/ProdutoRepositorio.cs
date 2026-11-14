@@ -70,6 +70,8 @@ public sealed class ProdutoRepositorio(SophiaDbContext contexto) : IProdutoRepos
     private IQueryable<Produto> Filtrar(string? trechoDoNome)
     {
         var consulta = contexto.Produtos.AsNoTracking();
-        return trechoDoNome is null ? consulta : consulta.Where(p => p.Nome.Contains(trechoDoNome));
+        return trechoDoNome is null
+            ? consulta
+            : consulta.Where(p => EF.Functions.Collate(p.Nome, Agrupamento.SemAcentoNemCaixa).Contains(trechoDoNome));
     }
 }

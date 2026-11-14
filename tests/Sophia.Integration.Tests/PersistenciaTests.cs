@@ -53,6 +53,49 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_busca_de_clientes_pelo_nome_nao_diferencia_acentos()
+    {
+        await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        await CadastrarClienteAsync("111.444.777-35", "João Lima");
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ClienteRepositorio(contexto);
+        var busca = BuscaDeCliente.Interpretar("joao");
+
+        (await repositorio.ListarAsync(busca, null)).Select(c => c.Nome).Should().Equal("João Lima");
+        (await repositorio.ListarPaginaAsync(busca, new(ColunaDeClientes.Nome, Decrescente: false), 1, 25))
+            .Itens.Select(c => c.Nome).Should().Equal("João Lima");
+    }
+
+    [Fact]
+    public async Task A_busca_de_clientes_so_com_pontuacao_nao_traz_ninguem()
+    {
+        await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ClienteRepositorio(contexto);
+        var busca = BuscaDeCliente.Interpretar("-");
+
+        (await repositorio.ListarAsync(busca, null)).Should().BeEmpty();
+        (await repositorio.ListarPaginaAsync(busca, new(ColunaDeClientes.Nome, Decrescente: false), 1, 25))
+            .TotalDeItens.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task A_busca_de_produtos_pelo_nome_nao_diferencia_acentos()
+    {
+        await CadastrarProdutoAsync("Açúcar cristal", 5m);
+        await CadastrarProdutoAsync("Caneta azul", 2.50m);
+
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ProdutoRepositorio(contexto);
+
+        (await repositorio.ListarAsync("acucar", null)).Select(p => p.Nome).Should().Equal("Açúcar cristal");
+        (await repositorio.ListarPaginaAsync("ACUCAR", new(ColunaDeProdutos.Nome, Decrescente: false), 1, 25))
+            .Itens.Select(p => p.Nome).Should().Equal("Açúcar cristal");
+    }
+
+    [Fact]
     public async Task O_indice_unico_de_cpf_vira_conflito_de_valor_duplicado()
     {
         await CadastrarClienteAsync("529.982.247-25", "Maria Santos");

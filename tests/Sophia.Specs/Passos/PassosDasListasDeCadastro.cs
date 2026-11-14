@@ -65,6 +65,13 @@ public sealed class PassosDasListasDeCadastro(Cenario cenario)
         _nomes.Itens[^1].Should().Be(ultimo);
     }
 
+    [Then(@"^nenhum (?:cliente|produto) é encontrado$")]
+    public void EntaoNenhumEEncontrado()
+    {
+        _nomes!.Itens.Should().BeEmpty();
+        _nomes.TotalDeItens.Should().Be(0);
+    }
+
     [Then(@"^estou na página (\d+) de (\d+), com os (?:clientes|produtos) (\d+) a (\d+) de (\d+)$")]
     public void EntaoEstouNaPagina(int numero, int totalDePaginas, int primeiro, int ultimo, int total)
     {

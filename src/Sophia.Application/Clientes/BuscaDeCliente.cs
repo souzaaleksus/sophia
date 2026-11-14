@@ -4,8 +4,6 @@ namespace Sophia.Application.Clientes;
 
 public sealed record BuscaDeCliente(string? TrechoDoNome, string? InicioDoCpf)
 {
-    public bool FiltraAlgo => TrechoDoNome is not null || InicioDoCpf is not null;
-
     public static BuscaDeCliente Interpretar(string? termo)
     {
         var aparado = termo?.Trim();
@@ -14,12 +12,12 @@ public sealed record BuscaDeCliente(string? TrechoDoNome, string? InicioDoCpf)
             return new BuscaDeCliente(null, null);
         }
 
-        if (aparado.Any(char.IsLetter))
+        var digitos = Cpf.SomenteDigitos(aparado);
+        if (aparado.Any(char.IsLetter) || digitos.Length == 0)
         {
             return new BuscaDeCliente(aparado, null);
         }
 
-        var digitos = Cpf.SomenteDigitos(aparado);
-        return new BuscaDeCliente(null, digitos.Length > 0 ? digitos : null);
+        return new BuscaDeCliente(null, digitos);
     }
 }
