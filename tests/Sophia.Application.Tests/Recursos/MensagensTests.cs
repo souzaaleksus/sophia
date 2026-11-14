@@ -10,25 +10,14 @@ public sealed class MensagensTests
 {
     private const BindingFlags Publicos = BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly;
 
-    public static TheoryData<string> Membros()
+    [Fact]
+    public void Toda_mensagem_da_classe_e_lida_do_arquivo_de_recursos()
     {
-        var dados = new TheoryData<string>();
-        foreach (var nome in NomesDosMembros())
-        {
-            dados.Add(nome);
-        }
+        var semTexto = NomesDosMembros()
+            .Where(membro => Ler(membro) is not { } texto || string.IsNullOrWhiteSpace(texto) || texto.Contains("{0}", StringComparison.Ordinal))
+            .ToList();
 
-        return dados;
-    }
-
-    [Theory]
-    [MemberData(nameof(Membros))]
-    public void Toda_mensagem_da_classe_e_lida_do_arquivo_de_recursos(string membro)
-    {
-        var texto = Ler(membro);
-
-        texto.Should().NotBeNullOrWhiteSpace();
-        texto.Should().NotContain("{0}");
+        semTexto.Should().BeEmpty("toda mensagem precisa vir preenchida e formatada do arquivo de recursos");
     }
 
     [Fact]
