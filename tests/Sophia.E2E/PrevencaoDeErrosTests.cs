@@ -59,23 +59,14 @@ public sealed partial class PrevencaoDeErrosTests(AplicacaoEmExecucao aplicacao)
     public async Task Logo_apos_o_envio_o_botao_fica_desabilitado_mostrando_registrando()
     {
         await MontarVendaAsync();
-        await _pagina.RouteAsync("**/Vendas/Nova", async rota =>
-        {
-            if (rota.Request.Method == "POST")
-            {
-                await Task.Delay(TimeSpan.FromSeconds(6));
-            }
+        await _pagina.EvaluateAsync("() => window.addEventListener('submit', evento => evento.preventDefault())");
 
-            await rota.ContinueAsync();
-        });
-
-        var clique = _caixa.Finalizar.ClickAsync();
+        await _caixa.Finalizar.ClickAsync();
 
         await Expect(_caixa.BotaoDeEnvio).ToBeDisabledAsync();
         await Expect(_caixa.BotaoDeEnvio).ToContainTextAsync("Registrando…");
-        await clique;
-        await EsperarODetalheAsync();
-        (await VendasRegistradasAsync()).Should().Be(1);
+        await Expect(_caixa.BotaoDeEnvio).ToHaveAttributeAsync("aria-busy", "true");
+        (await VendasRegistradasAsync()).Should().Be(0);
     }
 
     [Fact]

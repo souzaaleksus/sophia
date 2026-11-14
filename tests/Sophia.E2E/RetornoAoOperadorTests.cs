@@ -26,19 +26,15 @@ public sealed partial class RetornoAoOperadorTests(AplicacaoEmExecucao aplicacao
     public async Task Enquanto_a_busca_de_cliente_demora_a_lista_mostra_buscando()
     {
         await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
-        await _pagina.RouteAsync("**/Clientes/Buscar**", async rota =>
-        {
-            await Task.Delay(800);
-            await rota.ContinueAsync();
-        });
         await _pagina.GotoAsync("/Vendas/Nova");
+        await Rede.DeixarLentaAsync(_pagina, TimeSpan.FromMilliseconds(800));
 
         await _caixa.ComboboxDeCliente.FillAsync("Maria");
 
-        var sugestoes = await _caixa.SugestoesDeAsync(_caixa.ComboboxDeCliente);
-        await Expect(sugestoes.GetByText("Buscando…")).ToBeVisibleAsync();
+        var buscaDeCliente = _pagina.Locator(".autocompletar").Filter(new() { Has = _caixa.ComboboxDeCliente });
+        await Expect(buscaDeCliente.GetByRole(AriaRole.Status)).ToHaveTextAsync("Buscando…");
         await Expect(_pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Maria Santos" })).ToBeVisibleAsync();
-        await Expect(sugestoes.GetByText("Buscando…")).ToHaveCountAsync(0);
+        await Expect(buscaDeCliente.GetByText("Buscando…")).ToHaveCountAsync(0);
     }
 
     [Fact]

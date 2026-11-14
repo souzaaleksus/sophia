@@ -38,12 +38,12 @@
 }
 
 <div class="graficos">
-    <section class="cartao grafico" aria-labelledby="titulo-ultimos-dias">
+    <section class="cartao grafico" aria-labelledby="titulo-ultimos-dias" data-testid="grafico-ultimos-dias">
         <div class="cabecalho-do-grafico">
             <h2 id="titulo-ultimos-dias">Últimos 7 dias</h2>
             <p class="grafico-resumo numero">@Formato.Moeda(totalDaSemana)</p>
         </div>
-        <ol class="barras" data-testid="grafico-ultimos-dias" aria-hidden="true">
+        <ol class="barras" aria-hidden="true">
             @foreach (var dia in Model.UltimosDias)
             {
                 var ehHoje = dia.Dia == Model.Hoje;
