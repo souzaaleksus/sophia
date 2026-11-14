@@ -47,10 +47,18 @@ function separarDecimal(texto) {
     return numero === null || Number(numero) >= limiteDoValor ? null : { numero, negativo };
 }
 
-export function reescreverDecimal(texto) {
+function casasDecimais(separado) {
+    return separado.numero.split('.')[1]?.length ?? 0;
+}
+
+export function temMaisDeDuasCasas(texto) {
     const separado = separarDecimal(texto);
-    const casas = separado?.numero.split('.')[1]?.length ?? 0;
-    return separado === null || casas > 2 ? null : formatarDecimalDeCentavos(lerCentavos(texto));
+    return separado !== null && casasDecimais(separado) > 2;
+}
+
+export function reescreverDecimal(texto) {
+    const centavos = lerCentavos(texto);
+    return centavos === null ? null : formatarDecimalDeCentavos(centavos);
 }
 
 export function lerDecimal(texto) {
@@ -65,13 +73,12 @@ export function lerDecimal(texto) {
 
 export function lerCentavos(texto) {
     const separado = separarDecimal(texto);
-    if (separado === null) {
+    if (separado === null || casasDecimais(separado) > 2) {
         return null;
     }
 
     const [inteiro, fracao = ''] = separado.numero.split('.');
-    const arredondamento = fracao.length > 2 && fracao[2] >= '5' ? 1n : 0n;
-    const centavos = BigInt(inteiro) * 100n + BigInt(fracao.padEnd(2, '0').slice(0, 2)) + arredondamento;
+    const centavos = BigInt(inteiro) * 100n + BigInt(fracao.padEnd(2, '0'));
     return separado.negativo ? -centavos : centavos;
 }
 

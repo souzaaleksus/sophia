@@ -1,6 +1,6 @@
 import { buscarJson, criarAutocompletar } from '../autocompletar.js';
 import { limparErro, mostrarErro } from '../comum/erros.js';
-import { escritaDecimalValida, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro } from '../formato.js';
+import { escritaDecimalValida, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro, temMaisDeDuasCasas } from '../formato.js';
 
 const camposDaLinha = ['ProdutoId', 'ProdutoNome', 'ValorUnitario', 'Quantidade'];
 
@@ -147,7 +147,9 @@ class Linhas {
 
     #somarNaLinhaExistente(item, existente, produto) {
         const quantidade = campoDe(existente, 'Quantidade');
-        quantidade.value = limitarQuantidade(quantidade, (lerInteiro(quantidade.value) ?? 0) + 1);
+        const atual = lerInteiro(quantidade.value) ?? 0;
+        const somada = limitarQuantidade(quantidade, atual + 1);
+        quantidade.value = somada;
         camposDaLinha.forEach(nome => {
             campoDe(item, nome).value = '';
             limparErro(item, campoDe(item, nome).name);
@@ -155,7 +157,7 @@ class Linhas {
         selecionar(quantidade);
         this.#corrigido(existente, ['Quantidade']);
         this.#destacar(existente);
-        this.#aoSomar(produto, this.todas().indexOf(existente) + 1);
+        this.#aoSomar(produto, this.todas().indexOf(existente) + 1, somada <= atual);
     }
 
     #mudarQuantidade(item, passo, peloTeclado = false) {
@@ -191,7 +193,11 @@ function avisoDoValor(texto, configuracao) {
         return configuracao.textoValorInvalido;
     }
 
-    return lerDecimal(texto) === null ? configuracao.textoValorAcimaDoPermitido : null;
+    if (lerDecimal(texto) === null) {
+        return configuracao.textoValorAcimaDoPermitido;
+    }
+
+    return temMaisDeDuasCasas(texto) ? configuracao.textoValorComMaisDeDuasCasas : null;
 }
 
 function limitarQuantidade(campo, quantidade) {

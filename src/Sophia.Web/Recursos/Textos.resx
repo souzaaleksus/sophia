@@ -117,6 +117,9 @@
   <data name="caixa.produto-removido" xml:space="preserve">
     <value>Produto removido.</value>
   </data>
+  <data name="caixa.produto-no-maximo" xml:space="preserve">
+    <value>{produto} já está na linha {linha} com a quantidade máxima por item; nada foi somado.</value>
+  </data>
   <data name="caixa.produto-somado" xml:space="preserve">
     <value>{produto} já estava na venda: quantidade somada na linha {linha}.</value>
   </data>

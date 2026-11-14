@@ -189,6 +189,45 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
     }
 
+    [Theory]
+    [InlineData("12,505")]
+    [InlineData("1.250,125")]
+    [InlineData("0,999")]
+    public async Task Valor_com_mais_de_duas_casas_avisa_como_o_servidor_e_fica_fora_do_total(string digitado)
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await _caixa.LancarAsync(1, "Caderno", "Caderno 96 folhas", "1");
+        var valor = _caixa.Linha(1).GetByLabel("Valor unitário");
+
+        await valor.FillAsync(digitado);
+        await valor.BlurAsync();
+
+        await Expect(_caixa.Linha(1).Locator("[data-erro=ValorUnitario]"))
+            .ToHaveTextAsync("O valor unitário aceita no máximo duas casas decimais.");
+        await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(valor).ToHaveValueAsync(digitado);
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 2,50");
+        await Expect(_caixa.Linha(1).GetByTestId("subtotal")).ToHaveTextAsync("R$ 0,00");
+    }
+
+    [Fact]
+    public async Task Lancar_de_novo_um_produto_cuja_linha_ja_esta_no_maximo_nao_soma_e_avisa()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "99999");
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
+
+        await _caixa.ProdutoDaLinha(1).FillAsync("Caneta");
+        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Caneta azul" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status).Filter(new() { HasText = "Caneta azul" }))
+            .ToHaveTextAsync("Caneta azul já está na linha 1 com a quantidade máxima por item; nada foi somado.");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("99999");
+        await Expect(_caixa.ProdutoDaLinha(1)).ToHaveValueAsync(string.Empty);
+        await Expect(_pagina.GetByRole(AriaRole.Status).Filter(new() { HasText = "somada" })).ToHaveCountAsync(0);
+    }
+
     [Fact]
     public async Task Valor_lido_como_milhar_e_reescrito_ao_sair_do_campo()
     {
