@@ -9,8 +9,7 @@
 }
 
 .aviso:empty,
-.validation-summary-valid,
-.aviso:empty {
+.validation-summary-valid {
     display: none;
 }
 

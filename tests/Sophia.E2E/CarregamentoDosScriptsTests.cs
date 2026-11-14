@@ -67,6 +67,7 @@ public sealed partial class CarregamentoDosScriptsTests(AplicacaoEmExecucao apli
 
     [Theory]
     [InlineData("/lib/jquery/dist/jquery.js")]
+    [InlineData("/lib/jquery/dist/jquery.min.map")]
     [InlineData("/lib/jquery-validation/dist/additional-methods.js")]
     [InlineData("/lib/jquery-validation/dist/additional-methods.min.js")]
     [InlineData("/lib/jquery-validation/dist/jquery.validate.js")]

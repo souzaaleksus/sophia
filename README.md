@@ -454,10 +454,12 @@ Caminho de uma venda:
   DTOs, sem carregar as entidades inteiras.
 - **CPF e telefone guardados só com os dígitos**, exibidos com máscara. A busca de cliente
   entende o termo: com letras, procura no nome; só com números, pelo começo do CPF; só com
-  pontuação, não encontra ninguém. A busca por nome, de cliente e de produto, ignora acentos e
-  maiúsculas ("joao" acha "João") sem mudar o agrupamento do banco: a consulta compara com
-  `Latin1_General_CI_AI`. Um CPF gravado direto no banco fora do dígito verificador é lido como
-  está, para as telas não caírem; ao alterar esse cliente, o cadastro exige um CPF válido.
+  pontuação, procura esse trecho no nome ("-" acha os nomes com hífen) em vez de listar todos.
+  Espaços repetidos no termo contam como um só. A busca por nome, de cliente e de produto,
+  ignora acentos e maiúsculas ("joao" acha "João") sem mudar o agrupamento do banco: a consulta
+  compara com `Latin1_General_CI_AI`. Um CPF gravado direto no banco fora do dígito verificador é
+  lido como está, para as telas não caírem; ao alterar esse cliente, o cadastro exige um CPF
+  válido.
 - **A data de hoje vem de um relógio injetável no fuso de Brasília**, e não do relógio do
   servidor. No contêiner o relógio é UTC, e uma venda às 22h sugeriria a data do dia seguinte.
 - **Front-end sem framework.** A tela de venda usa JavaScript puro em módulos, com
