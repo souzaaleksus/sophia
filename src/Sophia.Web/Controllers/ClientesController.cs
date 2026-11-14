@@ -12,11 +12,6 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var lista = await clientes.ListarAsync(consulta, cancelamento);
         ViewData["Busca"] = consulta.Busca;
         ViewData["Ordem"] = lista.Ordem;
@@ -60,11 +55,6 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Editar(int id, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var cliente = await clientes.ObterAsync(id, cancelamento);
         return cliente is null ? NotFound() : View("Formulario", ClienteFormulario.De(cliente));
     }
@@ -92,11 +82,6 @@ public sealed class ClientesController(IClienteServico clientes, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Excluir(int id, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var cliente = await clientes.ObterAsync(id, cancelamento);
         return cliente is null ? NotFound() : View(cliente);
     }

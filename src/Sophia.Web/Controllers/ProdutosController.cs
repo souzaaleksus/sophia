@@ -12,11 +12,6 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var lista = await produtos.ListarAsync(consulta, cancelamento);
         ViewData["Busca"] = consulta.Busca;
         ViewData["Ordem"] = lista.Ordem;
@@ -60,11 +55,6 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Editar(int id, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var produto = await produtos.ObterAsync(id, cancelamento);
         return produto is null ? NotFound() : View("Formulario", ProdutoFormulario.De(produto));
     }
@@ -92,11 +82,6 @@ public sealed class ProdutosController(IProdutoServico produtos, ParametrosDoSop
     [HttpGet]
     public async Task<IActionResult> Excluir(int id, CancellationToken cancelamento)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest();
-        }
-
         var produto = await produtos.ObterAsync(id, cancelamento);
         return produto is null ? NotFound() : View(produto);
     }
