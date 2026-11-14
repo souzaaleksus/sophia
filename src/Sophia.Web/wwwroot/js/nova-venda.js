@@ -60,8 +60,6 @@ window.addEventListener('beforeunload', evento => {
     }
 });
 
-formulario.removeAttribute('aria-busy');
-
 function recalcularTotais() {
     const itens = [...formulario.querySelectorAll('[data-itens] [data-item]')];
     const dados = itens.map(lerLinha);

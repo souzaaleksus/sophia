@@ -86,9 +86,20 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await Expect(campo).ToHaveAttributeAsync("aria-invalid", "true");
         await Expect(campo).ToHaveAccessibleDescriptionAsync(aviso);
-        await _pagina.EvaluateAsync("() => window.__semRecarregar = true");
+        var envios = 0;
+        _pagina.Request += (_, pedido) =>
+        {
+            if (pedido.Method == "POST" && new Uri(pedido.Url).AbsolutePath.Equals("/Clientes/Novo", StringComparison.OrdinalIgnoreCase))
+            {
+                Interlocked.Increment(ref envios);
+            }
+        };
+
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
-        (await _pagina.EvaluateAsync<bool>("() => window.__semRecarregar === true")).Should().BeTrue("o navegador segura o envio, sem ida ao servidor");
+
+        await Expect(campo).ToBeFocusedAsync();
+        await Expect(campo).ToHaveAccessibleDescriptionAsync(aviso);
+        Volatile.Read(ref envios).Should().Be(0, "o navegador segura o envio, sem ida ao servidor");
         (await new Cadastro(aplicacao.Banco).QuantidadeDeClientesAsync()).Should().Be(0);
     }
 
