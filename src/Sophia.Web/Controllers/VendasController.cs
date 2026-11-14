@@ -12,7 +12,11 @@ public sealed class VendasController(IVendaServico vendas) : Controller
         View(await vendas.ListarAsync(cancelamento));
 
     [HttpGet]
-    public IActionResult Nova() => ExibirNovaVenda(new NovaVendaFormulario { Data = vendas.DataSugerida() });
+    public IActionResult Nova() => ExibirNovaVenda(new NovaVendaFormulario
+    {
+        Chave = Guid.NewGuid(),
+        Data = vendas.DataSugerida(),
+    });
 
     [HttpPost]
     public async Task<IActionResult> Nova(NovaVendaFormulario formulario, CancellationToken cancelamento)

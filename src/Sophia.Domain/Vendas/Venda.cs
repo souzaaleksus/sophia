@@ -17,6 +17,8 @@ public sealed class Venda
 
     public int ClienteId { get; private set; }
 
+    public Guid? ChaveDeRegistro { get; private set; }
+
     public IReadOnlyCollection<ItemVenda> Itens => _itens.AsReadOnly();
 
     public decimal Total => _itens.Sum(item => item.Subtotal);
@@ -33,7 +35,12 @@ public sealed class Venda
             return Resultado.Falha<Venda>(erros);
         }
 
-        var venda = new Venda { Data = dados.Data!.Value, ClienteId = dados.ClienteId!.Value };
+        var venda = new Venda
+        {
+            Data = dados.Data!.Value,
+            ClienteId = dados.ClienteId!.Value,
+            ChaveDeRegistro = dados.Chave == Guid.Empty ? null : dados.Chave,
+        };
         venda._itens.AddRange(itens);
         return Resultado.Ok(venda);
     }

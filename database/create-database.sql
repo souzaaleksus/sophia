@@ -1,3 +1,8 @@
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ARITHABORT ON;
+GO
+
 IF DB_ID(N'Sophia') IS NULL
 BEGIN
     CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;
@@ -45,9 +50,10 @@ IF OBJECT_ID(N'dbo.Vendas', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.Vendas
     (
-        Id        INT  IDENTITY(1, 1) NOT NULL,
-        Data      DATE                NOT NULL,
-        ClienteId INT                 NOT NULL,
+        Id              INT              IDENTITY(1, 1) NOT NULL,
+        Data            DATE                            NOT NULL,
+        ClienteId       INT                             NOT NULL,
+        ChaveDeRegistro UNIQUEIDENTIFIER                NULL,
         CONSTRAINT PK_Vendas PRIMARY KEY CLUSTERED (Id),
         CONSTRAINT FK_Vendas_Clientes FOREIGN KEY (ClienteId)
             REFERENCES dbo.Clientes (Id) ON DELETE NO ACTION
@@ -55,6 +61,22 @@ BEGIN
 
     CREATE NONCLUSTERED INDEX IX_Vendas_ClienteId ON dbo.Vendas (ClienteId);
     CREATE NONCLUSTERED INDEX IX_Vendas_Data ON dbo.Vendas (Data DESC);
+END
+GO
+
+IF COL_LENGTH(N'dbo.Vendas', N'ChaveDeRegistro') IS NULL
+BEGIN
+    ALTER TABLE dbo.Vendas ADD ChaveDeRegistro UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Vendas') AND name = N'UQ_Vendas_ChaveDeRegistro')
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX UQ_Vendas_ChaveDeRegistro
+        ON dbo.Vendas (ChaveDeRegistro)
+        WHERE ChaveDeRegistro IS NOT NULL;
 END
 GO
 

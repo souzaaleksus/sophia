@@ -14,6 +14,11 @@ internal sealed class VendaConfiguracao : IEntityTypeConfiguration<Venda>
         venda.HasKey(v => v.Id);
         venda.Property(v => v.Data).HasColumnType("date");
         venda.Ignore(v => v.Total);
+        venda.Property(v => v.ChaveDeRegistro).HasColumnType("uniqueidentifier");
+        venda.HasIndex(v => v.ChaveDeRegistro)
+            .IsUnique()
+            .HasFilter("[ChaveDeRegistro] IS NOT NULL")
+            .HasDatabaseName("UQ_Vendas_ChaveDeRegistro");
 
         venda.HasOne<Cliente>()
             .WithMany()

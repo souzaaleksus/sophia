@@ -30,6 +30,11 @@ public sealed class VendaServico(
         }
 
         var venda = registro.Valor;
+        if (await JaRegistradaAsync(venda, cancelamento) is { } existente)
+        {
+            return Resultado.Ok(existente);
+        }
+
         var erros = await VerificarCadastrosAsync(venda, cancelamento);
         if (erros.Count > 0)
         {
@@ -37,9 +42,25 @@ public sealed class VendaServico(
         }
 
         vendas.Adicionar(venda);
-        await unidadeDeTrabalho.SalvarAsync(cancelamento);
+        try
+        {
+            await unidadeDeTrabalho.SalvarAsync(cancelamento);
+        }
+        catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.ValorDuplicado)
+        {
+            if (await JaRegistradaAsync(venda, cancelamento) is { } vencedora)
+            {
+                return Resultado.Ok(vencedora);
+            }
+
+            throw;
+        }
+
         return Resultado.Ok(venda.Id);
     }
+
+    private async Task<int?> JaRegistradaAsync(Venda venda, CancellationToken cancelamento) =>
+        venda.ChaveDeRegistro is { } chave ? await vendas.ObterIdPelaChaveAsync(chave, cancelamento) : null;
 
     private async Task<List<Erro>> VerificarCadastrosAsync(Venda venda, CancellationToken cancelamento)
     {

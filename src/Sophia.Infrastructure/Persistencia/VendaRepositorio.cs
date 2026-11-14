@@ -84,5 +84,11 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         return new ResumoDoPeriodo(quantidade, total ?? 0m);
     }
 
+    public Task<int?> ObterIdPelaChaveAsync(Guid chave, CancellationToken cancelamento = default) =>
+        contexto.Vendas
+            .Where(v => v.ChaveDeRegistro == chave)
+            .Select(v => (int?)v.Id)
+            .FirstOrDefaultAsync(cancelamento);
+
     public void Adicionar(Venda venda) => contexto.Vendas.Add(venda);
 }
