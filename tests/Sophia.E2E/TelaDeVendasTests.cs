@@ -233,24 +233,10 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
 
     private ILocator ProdutoDaLinha(int indice) => Linha(indice).GetByRole(AriaRole.Combobox, new() { Name = "Produto", Exact = true });
 
-    private async Task EscolherClienteAsync(string termo, string nome)
-    {
-        await ComboboxDeCliente().FillAsync(termo);
-        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = nome }).ClickAsync();
-        await Expect(_pagina.GetByTestId("cliente-escolhido")).ToContainTextAsync(nome);
-    }
+    private Task EscolherClienteAsync(string termo, string nome) => new Caixa(_pagina).EscolherClienteAsync(termo, nome);
 
-    private async Task LancarAsync(int linha, string termo, string produto, string quantidade)
-    {
-        if (await _pagina.GetByTestId("item-da-venda").CountAsync() <= linha)
-        {
-            await _pagina.GetByRole(AriaRole.Button, new() { Name = "Adicionar produto" }).ClickAsync();
-        }
-
-        await ProdutoDaLinha(linha).FillAsync(termo);
-        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto }).ClickAsync();
-        await Linha(linha).GetByLabel("Quantidade", new() { Exact = true }).FillAsync(quantidade);
-    }
+    private Task LancarAsync(int linha, string termo, string produto, string quantidade) =>
+        new Caixa(_pagina).LancarAsync(linha, termo, produto, quantidade);
 
     private async Task PrepararCadastrosAsync()
     {

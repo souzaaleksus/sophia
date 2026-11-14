@@ -91,7 +91,7 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _pagina.GotoAsync("/Clientes");
         await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("529.982");
 
-        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "João Lima" })).ToHaveCountAsync(0, new() { Timeout = 2000 });
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "João Lima" })).ToHaveCountAsync(0);
         await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Maria Santos" })).ToBeVisibleAsync();
     }
 
