@@ -136,7 +136,7 @@ total da venda.
 ![Detalhe da venda](imagens/10-detalhe-da-venda.png)
 
 - **Imprimir** gera uma versão da venda própria para papel;
-- **Nova venda** abre o caixa vazio para o próximo cliente.
+- o botão **Nova venda**, no topo, abre o caixa vazio para o próximo cliente.
 
 Os totais são sempre recalculados pelo sistema na gravação: o que fica registrado é a conta
 feita a partir dos itens.

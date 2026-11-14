@@ -29,10 +29,20 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
     public async Task A_pagina_inicial_leva_a_nova_venda_com_a_data_de_hoje()
     {
         await _pagina.GotoAsync("/");
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Nova venda" }).First.ClickAsync();
+        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Nova venda", Exact = true }).ClickAsync();
 
         var hoje = new RelogioDoSistema(TimeProvider.System, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo")).Hoje;
         await Expect(_pagina.GetByLabel("Data da venda")).ToHaveValueAsync(hoje.ToString("yyyy-MM-dd"));
+    }
+
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/Vendas")]
+    public async Task A_tela_tem_um_so_botao_de_nova_venda(string endereco)
+    {
+        await _pagina.GotoAsync(endereco);
+
+        await Expect(_pagina.GetByRole(AriaRole.Link, new() { Name = "Nova venda", Exact = true })).ToHaveCountAsync(1);
     }
 
     [Fact]
@@ -58,6 +68,7 @@ public sealed class TelaDeVendasTests(AplicacaoEmExecucao aplicacao) : IAsyncLif
         await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" })).ToContainTextAsync("R$ 25,00");
         await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caderno 96 folhas" })).ToContainTextAsync("R$ 37,80");
         await Expect(_pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 62,80");
+        await Expect(_pagina.GetByRole(AriaRole.Link, new() { Name = "Nova venda", Exact = true })).ToHaveCountAsync(1);
     }
 
     [Fact]
