@@ -1,0 +1,72 @@
+.pessoa {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+}
+
+.avatar {
+    border-radius: 50%;
+    display: grid;
+    flex: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    height: 2.25rem;
+    letter-spacing: 0.02em;
+    place-items: center;
+    width: 2.25rem;
+}
+
+.avatar-tom-0 {
+    background: var(--avatar-0-fundo);
+    color: var(--avatar-0-texto);
+}
+
+.avatar-tom-1 {
+    background: var(--avatar-1-fundo);
+    color: var(--avatar-1-texto);
+}
+
+.avatar-tom-2 {
+    background: var(--avatar-2-fundo);
+    color: var(--avatar-2-texto);
+}
+
+.avatar-tom-3 {
+    background: var(--avatar-3-fundo);
+    color: var(--avatar-3-texto);
+}
+
+.avatar-tom-4 {
+    background: var(--avatar-4-fundo);
+    color: var(--avatar-4-texto);
+}
+
+.contato {
+    overflow-wrap: anywhere;
+}
+
+.cliente-da-venda {
+    border-bottom: 1px dashed var(--cupom-linha);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 1rem;
+    padding: 1rem 0;
+}
+
+.cliente-da-venda .rotulo {
+    color: var(--cupom-texto-suave);
+    flex-basis: 100%;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.cliente-da-venda strong {
+    color: var(--cupom-titulo);
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.cliente-da-venda .numero {
+    align-self: center;
+    color: var(--cupom-texto-suave);
+}

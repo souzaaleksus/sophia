@@ -23,7 +23,7 @@ export default [
         },
     },
     {
-        files: ['src/Sophia.Web/wwwroot/js/site.js', 'src/Sophia.Web/wwwroot/js/validacao-pt-br.js'],
+        files: ['src/Sophia.Web/wwwroot/js/validacao-pt-br.js', 'src/Sophia.Web/wwwroot/js/tema-inicial.js'],
         languageOptions: { sourceType: 'script' },
     },
 ];

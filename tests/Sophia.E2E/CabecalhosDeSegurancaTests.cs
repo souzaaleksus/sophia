@@ -8,7 +8,7 @@ public sealed class CabecalhosDeSegurancaTests(AplicacaoEmExecucao aplicacao)
     [Theory]
     [InlineData("/")]
     [InlineData("/Vendas/Nova")]
-    [InlineData("/css/site.css")]
+    [InlineData("/css/base.css")]
     [InlineData("/endereco-que-nao-existe")]
     public async Task Toda_resposta_traz_os_cabecalhos_de_protecao(string caminho)
     {
