@@ -39,7 +39,7 @@ registrar as vendas.
 - **Vendido hoje**: o total vendido no dia e a quantidade de vendas;
 - **Vendido no mês** e **ticket médio** (o valor médio de cada venda no mês);
 - **Últimos 7 dias**: uma barra por dia, com o dia de hoje em destaque; passe o mouse numa barra
-  para ver o valor do dia;
+  para ver o valor do dia. Dia sem venda não tem barra, e mesmo uma venda pequena aparece;
 - **Mais vendidos do mês**: os cinco produtos com mais unidades vendidas;
 - **Últimas vendas**: as mais recentes, com **Ver** para o comprovante e **Ver todas** para a lista.
 
@@ -64,8 +64,8 @@ A lista mostra 25 clientes por página, com **Anterior** e **Próxima** no rodap
    | CPF | sim | digite só os números; a máscara `000.000.000-00` entra sozinha. O CPF é conferido ao sair do campo e não pode estar cadastrado para outro cliente |
    | Nome | sim | até 150 caracteres; é o nome que aparece na venda e no cupom |
    | Data de nascimento | não | digite só os números (`12051990` vira `12/05/1990`); não pode ser uma data futura |
-   | E-mail | não | precisa ter um formato válido, como `nome@exemplo.com.br` |
-   | Telefone | não | com DDD; a máscara entra sozinha |
+   | E-mail | não | precisa ter um formato válido, como `nome@exemplo.com.br`; o formulário confere ao sair do campo |
+   | Telefone | não | com DDD (10 ou 11 dígitos); a máscara entra sozinha e o formulário confere ao sair do campo |
 
 3. Clique em **Salvar**. Enquanto grava, o botão mostra **Salvando…**; depois, o aviso
    **Cliente cadastrado.** confirma.
@@ -91,8 +91,8 @@ ordenação por **Nome** ou **Valor unitário** e exclusão com confirmação.
 
 | Campo | Obrigatório | Observação |
 |---|---|---|
-| Nome | sim | não pode se repetir |
-| Valor unitário | sim | maior que zero, com até duas casas decimais: `1,75`, `1.250,00` ou `12.50` (ponto com uma ou duas casas também é decimal); formas ambíguas, como `1.2.3`, são recusadas |
+| Nome | sim | não pode se repetir; maiúsculas, acentos e espaços a mais não contam ("Cafe Torrado" repete "Café Torrado") |
+| Valor unitário | sim | maior que zero, com até duas casas decimais: `1,75`, `1.250,00` ou `12.50` (ponto com uma ou duas casas também é decimal); formas ambíguas, como `1.2.3`, são recusadas assim que você sai do campo. `12.505` é lido como doze mil quinhentos e cinco e o campo mostra `12.505,00` |
 
 ![Novo produto](imagens/06-novo-produto.png)
 
@@ -122,8 +122,9 @@ A tela de venda foi pensada para ser operada só pelo teclado, como um caixa.
 4. **Lance os produtos** (atalho `F4` ou o botão **Adicionar produto**):
    - digite parte do nome do produto e escolha na lista com `Enter`;
    - o **valor unitário** vem preenchido com o preço do cadastro e pode ser ajustado;
-   - informe a **quantidade** (ou use os botões **−** e **+**) e pressione `Enter`: o sistema
-     abre a próxima linha para o próximo produto.
+   - informe a **quantidade**, até 99.999 por item (ou use os botões **−** e **+**), e pressione
+     `Enter`: o sistema abre a próxima linha para o próximo produto;
+   - valor mal escrito avisa ao sair do campo: **Valor inválido. Use 12,50 ou 1.250,00.**
 5. Acompanhe os totais:
    - o **subtotal** de cada linha (quantidade × valor unitário);
    - o **Total da venda** no visor, com o número de itens e de unidades.
@@ -182,7 +183,8 @@ Todas as telas funcionam a partir de 360 pixels de largura, sem rolagem lateral.
 
 - o **total** e o botão **Finalizar venda** ficam numa barra fixa no rodapé, sempre visíveis;
 - a quantidade tem botões **−** e **+** grandes, próprios para o toque;
-- as listas mostram só as colunas essenciais; o resto aparece abaixo do nome.
+- as listas mostram só as colunas essenciais; o resto aparece abaixo do nome, inclusive o
+  número e a data da venda na lista de vendas.
 
 ## 8. Tema claro e escuro
 
@@ -225,6 +227,8 @@ Valem na tela de venda:
 | Selecione o produto. | a linha tem valor ou quantidade, mas não tem produto | escolha o produto na lista de sugestões |
 | A quantidade deve ser maior que zero. | quantidade zero ou vazia | informe a quantidade |
 | Quantidade aceita no máximo 2.147.483.647. | número grande demais, em geral zeros a mais | confira a quantidade |
+| A quantidade aceita no máximo 99.999 por item. | quantidade acima do máximo por item | confira a quantidade |
+| Valor inválido. Use 12,50 ou 1.250,00. | o valor não está num formato de número | escreva com vírgula nos centavos |
 | Quantidade deve ser maior que zero. | número negativo grande demais | confira a quantidade |
 | Valor unitário está acima do permitido. | valor com dígitos demais, em geral zeros a mais | confira o valor |
 | A data da venda não pode estar no futuro. | data depois de hoje | corrija a data |
