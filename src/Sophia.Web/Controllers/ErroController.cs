@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Sophia.Web.Controllers;
 
 [Route("Erro")]
+[IgnoreAntiforgeryToken]
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
 public sealed class ErroController : Controller
 {

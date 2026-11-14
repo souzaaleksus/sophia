@@ -24,9 +24,12 @@ public static class Formato
     public static string Percentual(decimal parte, decimal todo) =>
         todo <= 0 ? "0%" : (Math.Round(parte / todo * 100m, 1)).ToString("0.#", CultureInfo.InvariantCulture) + "%";
 
+    public static string PercentualRestante(decimal parte, decimal todo) =>
+        todo <= 0 ? "100%" : (100m - Math.Round(parte / todo * 100m, 1)).ToString("0.#", CultureInfo.InvariantCulture) + "%";
+
     public static string NomeDoMes(DateOnly data) => data.ToString("MMMM", PortuguesDoBrasil);
 
-    public static string Quantidade(int quantidade, string singular, string plural) =>
+    public static string Quantidade(long quantidade, string singular, string plural) =>
         $"{quantidade.ToString("N0", PortuguesDoBrasil)} {(quantidade == 1 ? singular : plural)}";
 
     public static string Iniciais(string nome)

@@ -1,3 +1,3 @@
 namespace Sophia.Application.Painel;
 
-public sealed record ProdutoMaisVendido(int ProdutoId, string Nome, int Quantidade, decimal Total);
+public sealed record ProdutoMaisVendido(int ProdutoId, string Nome, long Quantidade, decimal Total);

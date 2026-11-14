@@ -83,7 +83,7 @@ public sealed class PassosDoPainel(Cenario cenario)
     {
         var produtos = esperados.Rows.Select(linha => (
             linha["Produto"],
-            int.Parse(linha["Quantidade"], Cenario.PtBr),
+            long.Parse(linha["Quantidade"], Cenario.PtBr),
             Cenario.Valor(linha["Total"])!.Value));
 
         _painel!.MaisVendidos.Select(p => (p.Nome, p.Quantidade, p.Total)).Should().Equal(produtos);

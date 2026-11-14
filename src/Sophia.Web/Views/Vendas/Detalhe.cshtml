@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = T["venda.titulo", Model.Id].Value;
     var recemRegistrada = TempData.Peek(Avisos.ChaveDeSucesso) is not null;
-    var unidades = Model.Itens.Sum(item => item.Quantidade);
+    var unidades = Model.Itens.Sum(item => (long)item.Quantidade);
 }
 
 <div class="cabecalho-da-pagina">

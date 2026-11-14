@@ -38,6 +38,7 @@ public static class Composicao
 
     public static void UsarSophia(this WebApplication app)
     {
+        app.UsarCabecalhosDeSeguranca();
         UsarPortuguesDoBrasil(app);
         if (!app.Environment.IsDevelopment())
         {

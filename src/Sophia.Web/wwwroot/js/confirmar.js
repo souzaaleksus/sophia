@@ -25,6 +25,17 @@ if (dialogo) {
         }
     });
 
-    cancelar.addEventListener('click', () => dialogo.close());
+    const enviando = () => formulario.dataset.enviando === 'true';
+
+    dialogo.addEventListener('cancel', evento => {
+        if (enviando()) {
+            evento.preventDefault();
+        }
+    });
+    cancelar.addEventListener('click', () => {
+        if (!enviando()) {
+            dialogo.close();
+        }
+    });
     dialogo.addEventListener('close', () => origem?.focus());
 }

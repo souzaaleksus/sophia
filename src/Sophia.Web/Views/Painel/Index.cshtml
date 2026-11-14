@@ -50,7 +50,7 @@
                 <li class="barra-do-dia@(ehHoje ? " hoje" : string.Empty)" data-dia="@Formato.DataParaCampo(dia.Dia)" aria-current="@(ehHoje ? "date" : null)"
                     title="@T["painel.dica-do-dia", Formato.DiaDaSemanaCurto(dia.Dia), Formato.DiaEMes(dia.Dia), Formato.Moeda(dia.Total), Formato.Quantidade(dia.QuantidadeDeVendas, T["vendas.contagem-singular"], T["vendas.contagem-plural"])]">
                     <span class="barra-valor numero">@Formato.Moeda(dia.Total)</span>
-                    <span class="barra-trilho"><span class="barra" style="--altura: @Formato.Percentual(dia.Total, maiorDia)"></span></span>
+                    <span class="barra-trilho"><svg class="barra" focusable="false"><rect class="barra-preenchida" width="100%" height="100%" y="@Formato.PercentualRestante(dia.Total, maiorDia)" rx="4" /><rect class="barra-preenchida" width="100%" height="2" y="100%" transform="translate(0 -2)" /></svg></span>
                     <span class="barra-rotulo">@(ehHoje ? T["painel.hoje"].Value : Formato.DiaDaSemanaCurto(dia.Dia))</span>
                 </li>
             }
@@ -94,7 +94,7 @@
                             <span class="ranking-nome">@produto.Nome</span>
                             <span class="ranking-quantidade numero">@Formato.Quantidade(produto.Quantidade, T["vendas.unidades-singular"], T["vendas.unidades-plural"])</span>
                         </div>
-                        <span class="ranking-trilho" aria-hidden="true"><span class="ranking-barra" style="--largura: @Formato.Percentual(produto.Quantidade, maiorQuantidade)"></span></span>
+                        <svg class="ranking-trilho" aria-hidden="true" focusable="false"><rect class="ranking-barra" width="@Formato.Percentual(produto.Quantidade, maiorQuantidade)" height="100%" rx="4" /></svg>
                         <span class="secundario numero">@Formato.Moeda(produto.Total)</span>
                     </li>
                 }

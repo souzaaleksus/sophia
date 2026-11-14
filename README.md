@@ -363,8 +363,8 @@ dotnet test
 | `Sophia.Domain.Tests` | unidade | 94 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
 | `Sophia.Application.Tests` | aplicação | 160 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
 | `Sophia.Specs` | BDD (Gherkin) | 74 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 46 | script do banco, carga de demonstração, mapeamento do EF, índices, consultas, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
-| `Sophia.E2E` | tela | 137 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, no navegador | SQL Server e Chromium |
+| `Sophia.Integration.Tests` | integração | 47 | script do banco, carga de demonstração, mapeamento do EF, índices, consultas, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
+| `Sophia.E2E` | tela | 165 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
 
 Os testes da aplicação, os cenários BDD, os de integração e os de tela criam um banco
 temporário a partir de `database/create-database.sql` e o apagam ao final; nenhum deles usa
@@ -473,7 +473,14 @@ Caminho de uma venda:
 - **Identidade visual da Sophia.** Paleta, fonte e logo seguem o site da marca; o azul-petróleo
   foi escurecido de `#007B9E` para `#007596` porque o original não atingia contraste AA sobre o
   fundo claro.
-- **Fora do escopo, de propósito:** autenticação e cancelamento de venda. A estrutura em camadas
+- **Segurança no que o sistema faz.** Todo POST exige o token antiforgery; as consultas passam
+  pelo EF com parâmetros; o Razor codifica toda saída e o JavaScript só escreve na página por
+  `textContent`. Toda resposta leva `X-Content-Type-Options`, `X-Frame-Options`,
+  `Referrer-Policy` e uma política de conteúdo (CSP) que só aceita script, estilo, imagem e
+  conexão do próprio endereço, mais as fontes do Google: nenhum script ou estilo embutido no
+  HTML, e por isso as barras do painel são SVG com a medida em atributo. As somas de unidades
+  usam inteiro de 64 bits, para uma quantidade digitada com zeros a mais não derrubar o painel.
+- **Fora do escopo, de propósito:** autenticação, HTTPS e cancelamento de venda. A estrutura em camadas
   permite acrescentá-los sem mexer no que existe.
 
 ---

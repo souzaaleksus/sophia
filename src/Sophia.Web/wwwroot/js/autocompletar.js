@@ -23,7 +23,24 @@ class Autocompletar {
         this.#aviso = criarAreaDeAviso(this.#lista);
         entrada.addEventListener('input', () => this.#aoDigitar());
         entrada.addEventListener('keydown', evento => this.#aoTeclar(evento));
-        entrada.addEventListener('blur', () => setTimeout(() => this.#fechar(), esperaAntesDeFecharAoSair));
+        entrada.addEventListener('blur', evento => this.#aoSair(evento));
+        this.#aviso.addEventListener('focusout', evento => this.#aoSair(evento));
+    }
+
+    #aoSair(evento) {
+        if (!this.#contemOFoco(evento.relatedTarget)) {
+            setTimeout(() => this.#fecharSeOFocoSaiu(), esperaAntesDeFecharAoSair);
+        }
+    }
+
+    #fecharSeOFocoSaiu() {
+        if (!this.#contemOFoco(document.activeElement)) {
+            this.#fechar();
+        }
+    }
+
+    #contemOFoco(elemento) {
+        return elemento === this.#entrada || this.#aviso.contains(elemento);
     }
 
     #aoDigitar() {
@@ -150,6 +167,8 @@ class Autocompletar {
     }
 
     #fechar() {
+        clearTimeout(this.#temporizador);
+        this.#ultimaBusca += 1;
         this.#esconderAviso();
         this.#fecharLista();
     }

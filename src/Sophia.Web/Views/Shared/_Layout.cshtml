@@ -9,21 +9,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] – @T["geral.marca"]</title>
-    <script>
-        (() => {
-            const lerTemaGuardado = () => {
-                try {
-                    return localStorage.getItem('sophia-tema');
-                } catch {
-                    return null;
-                }
-            };
-            const preferencia = lerTemaGuardado() ?? 'automatico';
-            const sistemaEscuro = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const escuro = preferencia === 'escuro' || (preferencia !== 'claro' && sistemaEscuro);
-            document.documentElement.setAttribute('data-bs-theme', escuro ? 'dark' : 'light');
-        })();
-    </script>
+    <script src="~/js/tema-inicial.js" asp-append-version="true"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" />

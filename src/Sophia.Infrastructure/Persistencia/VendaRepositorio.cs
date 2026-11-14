@@ -184,7 +184,7 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
         {
             Id = vendido.Key.Id,
             Nome = vendido.Key.Nome,
-            Quantidade = vendido.Sum(i => i.Quantidade),
+            Quantidade = vendido.Sum(i => (long)i.Quantidade),
             Total = vendido.Sum(i => i.Subtotal),
         };
 
@@ -216,7 +216,7 @@ public sealed class VendaRepositorio(SophiaDbContext contexto) : IVendaRepositor
 
         public required string Nome { get; init; }
 
-        public int Quantidade { get; init; }
+        public long Quantidade { get; init; }
 
         public decimal Total { get; init; }
     }

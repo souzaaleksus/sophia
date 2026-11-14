@@ -236,6 +236,20 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Soma_dos_mais_vendidos_passa_do_limite_de_um_inteiro_sem_falhar()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 0.01m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1_500_000_000, 0.01m)], data: new DateOnly(2026, 11, 2));
+        await RegistrarVendaAsync(maria, [new(caneta, 1_000_000_000, 0.01m)], data: Hoje);
+
+        await using var contexto = banco.NovoContexto();
+        var doMes = await new VendaRepositorio(contexto).MaisVendidosAsync(new DateOnly(2026, 11, 1), Hoje, 5);
+
+        doMes.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul", 2_500_000_000, 25_000_000m));
+    }
+
+    [Fact]
     public async Task Pagina_as_vendas_no_banco_das_mais_recentes_para_as_mais_antigas()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");

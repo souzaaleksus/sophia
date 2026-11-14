@@ -127,7 +127,9 @@ class Linhas {
     #somarNaLinhaExistente(item, existente) {
         const quantidade = campoDe(existente, 'Quantidade');
         quantidade.value = (lerInteiro(quantidade.value) ?? 0) + 1;
-        campoDe(item, 'ProdutoNome').value = '';
+        camposDaLinha.forEach(nome => {
+            campoDe(item, nome).value = '';
+        });
         selecionar(quantidade);
         this.#aoMudar();
     }

@@ -283,6 +283,10 @@
         grid-template-rows: none;
     }
 
+    html {
+        scroll-padding-bottom: 7.5rem;
+    }
+
     .caixa {
         padding-bottom: 6.5rem;
     }

@@ -601,6 +601,20 @@ a:hover {
     width: 7.8rem;
 }
 
+.tinta-fundo {
+    fill: var(--ilustracao-fundo);
+    stroke: none;
+}
+
+.tinta-papel {
+    fill: var(--ilustracao-papel);
+}
+
+.tinta-destaque {
+    fill: var(--ilustracao-destaque);
+    stroke: none;
+}
+
 .vazio-icone {
     background: var(--cor-primaria-suave);
     border-radius: 50%;
@@ -1465,18 +1479,21 @@ a:hover {
 }
 
 .barra {
-    background: color-mix(in srgb, var(--cor-primaria) 45%, var(--cor-cartao));
-    border-radius: 4px 4px 0 0;
     display: block;
-    height: max(var(--altura), 2px);
+    height: 100%;
     max-width: 2rem;
-    transition: background-color 0.15s ease;
+    overflow: hidden;
     width: 70%;
 }
 
-.barra-do-dia:hover .barra,
-.barra-do-dia.hoje .barra {
-    background: var(--cor-primaria);
+.barra-preenchida {
+    fill: color-mix(in srgb, var(--cor-primaria) 45%, var(--cor-cartao));
+    transition: fill 0.15s ease;
+}
+
+.barra-do-dia:hover .barra-preenchida,
+.barra-do-dia.hoje .barra-preenchida {
+    fill: var(--cor-primaria);
 }
 
 .barra-rotulo {
@@ -1534,14 +1551,11 @@ a:hover {
     display: block;
     height: 0.5rem;
     overflow: hidden;
+    width: 100%;
 }
 
 .ranking-barra {
-    background: var(--cor-primaria);
-    border-radius: 0 4px 4px 0;
-    display: block;
-    height: 100%;
-    width: var(--largura);
+    fill: var(--cor-primaria);
 }
 
 @media (max-width: 991.98px) {
@@ -1565,7 +1579,7 @@ a:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .barra {
+    .barra-preenchida {
         transition: none;
     }
 }
