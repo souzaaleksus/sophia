@@ -134,6 +134,24 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
 
         resposta!.Status.Should().Be(400);
         await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Algo deu errado");
+        await Expect(_pagina.Locator("main")).ToContainTextAsync("O endereço tem um valor que não foi entendido. Volte à lista e tente de novo.");
+        await Expect(_pagina.Locator("main")).Not.ToContainTextAsync("em instantes");
+    }
+
+    [Theory]
+    [InlineData("/Clientes/Editar/999999", "Ir para os clientes", "/Clientes")]
+    [InlineData("/Clientes/Editar/abc", "Ir para os clientes", "/Clientes")]
+    [InlineData("/Produtos/Excluir/999999", "Ir para os produtos", "/Produtos")]
+    [InlineData("/Vendas/Detalhe/999999", "Ir para as vendas", "/Vendas")]
+    [InlineData("/Vendas?pagina=abc", "Ir para as vendas", "/Vendas")]
+    [InlineData("/NaoExiste", "Ir para o painel", "/")]
+    public async Task A_pagina_de_erro_oferece_voltar_para_a_area_do_endereco(string endereco, string botao, string destino)
+    {
+        await _pagina.GotoAsync(endereco);
+
+        var link = _pagina.Locator("main").GetByRole(AriaRole.Link, new() { Name = botao, Exact = true });
+        await Expect(link).ToHaveAttributeAsync("href", destino);
+        await Expect(_pagina.Locator("main").GetByRole(AriaRole.Link)).ToHaveCountAsync(1);
     }
 
     [Fact]

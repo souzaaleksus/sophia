@@ -307,6 +307,7 @@ public sealed partial class ListasTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         resposta!.Status.Should().Be(400);
         await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToBeVisibleAsync();
+        await Expect(_pagina.Locator("main")).ToContainTextAsync("O endereço tem um valor que não foi entendido. Volte à lista e tente de novo.");
         (await _pagina.ContentAsync()).Should().NotContain("\"errors\"");
     }
 
