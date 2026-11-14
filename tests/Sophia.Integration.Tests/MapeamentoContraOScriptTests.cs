@@ -69,6 +69,19 @@ public sealed class MapeamentoContraOScriptTests(BancoDeTestes banco)
     }
 
     [Fact]
+    public async Task As_chaves_estrangeiras_do_mapeamento_sao_as_do_script()
+    {
+        await using var contexto = banco.NovoContexto();
+
+        var doScript = await banco.ConsultarAsync("SELECT name FROM sys.foreign_keys");
+
+        ModeloCompleto(contexto).GetEntityTypes()
+            .SelectMany(entidade => entidade.GetForeignKeys())
+            .Select(chave => chave.GetConstraintName())
+            .Should().BeEquivalentTo(doScript);
+    }
+
+    [Fact]
     public async Task O_teto_da_quantidade_no_mapeamento_e_no_banco_e_o_maximo_aceito_pelo_parametro()
     {
         await using var contexto = banco.NovoContexto();

@@ -36,7 +36,7 @@ internal sealed class VendaConfiguracao : IEntityTypeConfiguration<Venda>
             .WithMany()
             .HasForeignKey(v => v.ClienteId)
             .OnDelete(DeleteBehavior.NoAction)
-            .HasConstraintName("FK_Vendas_Clientes");
+            .HasConstraintName(ChavesEstrangeiras.VendaDoCliente);
 
     private static void ConfigurarItens(EntityTypeBuilder<Venda> venda)
     {
@@ -44,7 +44,7 @@ internal sealed class VendaConfiguracao : IEntityTypeConfiguration<Venda>
             .WithOne()
             .HasForeignKey(i => i.VendaId)
             .OnDelete(DeleteBehavior.Cascade)
-            .HasConstraintName("FK_VendaItens_Vendas");
+            .HasConstraintName(ChavesEstrangeiras.ItemDaVenda);
         venda.Navigation(v => v.Itens).HasField("_itens").UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
@@ -76,5 +76,5 @@ internal sealed class ItemVendaConfiguracao : IEntityTypeConfiguration<ItemVenda
             .WithMany()
             .HasForeignKey(i => i.ProdutoId)
             .OnDelete(DeleteBehavior.NoAction)
-            .HasConstraintName("FK_VendaItens_Produtos");
+            .HasConstraintName(ChavesEstrangeiras.ProdutoDoItem);
 }
