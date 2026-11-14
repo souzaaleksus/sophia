@@ -1,4 +1,5 @@
 using Reqnroll;
+using Sophia.Application;
 using Sophia.Application.Clientes;
 using Sophia.Domain.Clientes;
 using Sophia.Specs.Apoio;
@@ -41,7 +42,7 @@ public sealed class PassosDeClientes(Cenario cenario)
     [When("eu buscar clientes por {string}")]
     public async Task QuandoEuBuscarClientes(string termo)
     {
-        _encontrados = await cenario.Clientes.ListarAsync(termo);
+        _encontrados = (await cenario.Clientes.ListarAsync(new ConsultaDeLista(Busca: termo))).Pagina.Itens;
     }
 
     [When("eu excluir o cliente {string}")]
@@ -54,7 +55,7 @@ public sealed class PassosDeClientes(Cenario cenario)
     [Then("o cliente {string} aparece na lista com o CPF {string}")]
     public async Task EntaoOClienteApareceNaLista(string nome, string cpf)
     {
-        var clientes = await cenario.Clientes.ListarAsync(null);
+        var clientes = (await cenario.Clientes.ListarAsync(new ConsultaDeLista())).Pagina.Itens;
         clientes.Should().ContainSingle(c => c.Nome == nome).Which.Cpf.Should().Be(cpf);
     }
 
@@ -67,7 +68,7 @@ public sealed class PassosDeClientes(Cenario cenario)
     [Then("a lista de clientes fica vazia")]
     public async Task EntaoAListaDeClientesFicaVazia()
     {
-        (await cenario.Clientes.ListarAsync(null)).Should().BeEmpty();
+        (await cenario.Clientes.ListarAsync(new ConsultaDeLista())).Pagina.TotalDeItens.Should().Be(0);
     }
 
     private static DadosCliente ComoDados(ClienteDto cliente) =>

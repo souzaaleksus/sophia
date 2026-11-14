@@ -127,13 +127,134 @@ public sealed class ClienteServicoTests(BancoDeTestes banco) : IAsyncLifetime, I
     }
 
     [Fact]
-    public async Task Lista_em_ordem_alfabetica_e_filtra_por_cpf_ou_nome()
+    public async Task Lista_em_paginas_de_25_em_ordem_alfabetica()
+    {
+        await CadastrarClientesAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista());
+
+        lista.Ordem.Should().Be("nome");
+        lista.Pagina.Numero.Should().Be(1);
+        lista.Pagina.Tamanho.Should().Be(new ParametrosDoSophia().TamanhoDaPagina).And.Be(25);
+        lista.Pagina.TotalDeItens.Should().Be(30);
+        lista.Pagina.Itens.Select(c => c.Nome).Should().Equal(Nomes(1, 25));
+    }
+
+    [Fact]
+    public async Task A_segunda_pagina_traz_os_clientes_que_sobraram()
+    {
+        await CadastrarClientesAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Pagina: 2));
+
+        lista.Pagina.Numero.Should().Be(2);
+        lista.Pagina.Itens.Select(c => c.Nome).Should().Equal(Nomes(26, 30));
+        lista.Pagina.TemProxima.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(null, "nome", "Cliente 01", "Cliente 25")]
+    [InlineData("nome", "nome", "Cliente 01", "Cliente 25")]
+    [InlineData("-nome", "-nome", "Cliente 30", "Cliente 06")]
+    [InlineData("cpf", "cpf", "Cliente 30", "Cliente 06")]
+    [InlineData("-cpf", "-cpf", "Cliente 01", "Cliente 25")]
+    [InlineData("valor", "nome", "Cliente 01", "Cliente 25")]
+    [InlineData("-NOME", "nome", "Cliente 01", "Cliente 25")]
+    public async Task Ordena_pela_coluna_pedida_e_devolve_a_ordem_que_ficou_valendo(
+        string? pedida,
+        string valendo,
+        string primeiro,
+        string ultimo)
+    {
+        await CadastrarClientesAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Ordem: pedida));
+
+        lista.Ordem.Should().Be(valendo);
+        lista.Pagina.Itens[0].Nome.Should().Be(primeiro);
+        lista.Pagina.Itens[^1].Nome.Should().Be(ultimo);
+    }
+
+    [Fact]
+    public async Task Nomes_iguais_ficam_na_ordem_do_cadastro_e_se_invertem_junto_com_a_coluna()
+    {
+        var primeira = (await Servico.CadastrarAsync(Maria(GeradorDeCpf.Gerar(1)) with { Nome = "Ana Souza" })).Valor;
+        var segunda = (await Servico.CadastrarAsync(Maria(GeradorDeCpf.Gerar(2)) with { Nome = "Ana Souza" })).Valor;
+
+        (await Servico.ListarAsync(new ConsultaDeLista(Ordem: "nome"))).Pagina.Itens.Select(c => c.Id)
+            .Should().Equal(primeira, segunda);
+        (await Servico.ListarAsync(new ConsultaDeLista(Ordem: "-nome"))).Pagina.Itens.Select(c => c.Id)
+            .Should().Equal(segunda, primeira);
+    }
+
+    [Fact]
+    public async Task Filtra_por_cpf_ou_nome_antes_de_paginar()
     {
         await Servico.CadastrarAsync(Maria());
         await Servico.CadastrarAsync(Maria("111.444.777-35") with { Nome = "João Lima" });
 
-        (await Servico.ListarAsync(null)).Select(c => c.Nome).Should().Equal("João Lima", "Maria Santos");
-        (await Servico.ListarAsync("529.982")).Select(c => c.Nome).Should().Equal("Maria Santos");
-        (await Servico.ListarAsync("LIMA")).Select(c => c.Nome).Should().Equal("João Lima");
+        (await Servico.ListarAsync(new ConsultaDeLista(Busca: "529.982"))).Pagina.Itens.Select(c => c.Nome)
+            .Should().Equal("Maria Santos");
+        (await Servico.ListarAsync(new ConsultaDeLista(Busca: "LIMA"))).Pagina.Itens.Select(c => c.Nome)
+            .Should().Equal("João Lima");
+    }
+
+    [Fact]
+    public async Task A_contagem_e_as_paginas_valem_so_para_os_encontrados()
+    {
+        await CadastrarClientesAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Busca: "cliente 1", Ordem: "-nome"));
+
+        lista.Pagina.TotalDeItens.Should().Be(10);
+        lista.Pagina.TotalDePaginas.Should().Be(1);
+        lista.Pagina.Itens.Select(c => c.Nome).Should().Equal(Nomes(10, 19).Reverse());
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-3, 1)]
+    [InlineData(3, 2)]
+    [InlineData(99, 2)]
+    public async Task Pagina_fora_dos_limites_vira_a_primeira_ou_a_ultima(int pedida, int mostrada)
+    {
+        await CadastrarClientesAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Pagina: pedida));
+
+        lista.Pagina.Numero.Should().Be(mostrada);
+        lista.Pagina.Itens.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task Sem_clientes_devolve_uma_pagina_vazia()
+    {
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Pagina: 4));
+
+        lista.Pagina.Numero.Should().Be(1);
+        lista.Pagina.Itens.Should().BeEmpty();
+        lista.Pagina.TotalDeItens.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task As_sugestoes_da_busca_respeitam_o_limite_e_a_ordem_alfabetica()
+    {
+        await CadastrarClientesAsync(30);
+
+        (await Servico.BuscarAsync("cliente", 8)).Select(c => c.Nome).Should().Equal(Nomes(1, 8));
+        (await Servico.BuscarAsync(GeradorDeCpf.Gerar(30), 8)).Select(c => c.Nome).Should().Equal("Cliente 01");
+    }
+
+    private static IEnumerable<string> Nomes(int primeiro, int ultimo) =>
+        Enumerable.Range(primeiro, ultimo - primeiro + 1).Select(numero => $"Cliente {numero:00}");
+
+    private async Task CadastrarClientesAsync(int quantidade)
+    {
+        for (var numero = 1; numero <= quantidade; numero++)
+        {
+            var cpf = GeradorDeCpf.Gerar(quantidade - numero + 1);
+            var resultado = await Servico.CadastrarAsync(new DadosCliente(cpf, $"Cliente {numero:00}", null, null, null));
+            resultado.Sucesso.Should().BeTrue();
+        }
     }
 }

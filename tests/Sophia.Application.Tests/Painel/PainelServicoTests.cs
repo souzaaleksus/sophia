@@ -81,7 +81,7 @@ public sealed class PainelServicoTests(BancoDeTestes banco) : IAsyncLifetime, ID
     {
         var painel = await _sistema.Painel.ObterAsync();
 
-        painel.UltimosDias.Should().HaveCount(PainelServico.DiasNoGrafico)
+        painel.UltimosDias.Should().HaveCount(new ParametrosDoSophia().DiasNoGrafico)
             .And.OnlyContain(d => d.Total == 0m && d.QuantidadeDeVendas == 0);
         painel.UltimosDias[0].Dia.Should().Be(new DateOnly(2026, 11, 7));
         painel.UltimosDias[^1].Dia.Should().Be(Hoje);
@@ -137,7 +137,7 @@ public sealed class PainelServicoTests(BancoDeTestes banco) : IAsyncLifetime, ID
 
         var painel = await _sistema.Painel.ObterAsync();
 
-        painel.MaisVendidos.Should().HaveCount(PainelServico.QuantidadeDeMaisVendidos);
+        painel.MaisVendidos.Should().HaveCount(new ParametrosDoSophia().MaisVendidosNoPainel);
         painel.MaisVendidos.Select(p => p.Quantidade).Should().Equal(6, 5, 4, 3, 2);
     }
 
@@ -149,6 +149,26 @@ public sealed class PainelServicoTests(BancoDeTestes banco) : IAsyncLifetime, ID
         var painel = await _sistema.Painel.ObterAsync();
 
         painel.MaisVendidos.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Os_tamanhos_do_painel_vem_dos_parametros()
+    {
+        using var sistema = new SistemaEmTeste(
+            banco,
+            Hoje,
+            new ParametrosDoSophia { DiasNoGrafico = 3, MaisVendidosNoPainel = 2, UltimasVendasNoPainel = 1 });
+        for (var quantidade = 1; quantidade <= 4; quantidade++)
+        {
+            var produto = await CadastrarProdutoAsync($"Produto {quantidade}");
+            await VenderAsync(Hoje.AddDays(-quantidade), (produto, quantidade, 1m));
+        }
+
+        var painel = await sistema.Painel.ObterAsync();
+
+        painel.UltimosDias.Select(d => d.Dia).Should().Equal(Hoje.AddDays(-2), Hoje.AddDays(-1), Hoje);
+        painel.MaisVendidos.Select(p => p.Quantidade).Should().Equal(4, 3);
+        painel.UltimasVendas.Should().ContainSingle().Which.Data.Should().Be(Hoje.AddDays(-1));
     }
 
     private async Task<int> CadastrarProdutoAsync(string nome) =>

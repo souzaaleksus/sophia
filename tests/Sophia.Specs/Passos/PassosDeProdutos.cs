@@ -1,4 +1,5 @@
 using Reqnroll;
+using Sophia.Application;
 using Sophia.Domain.Produtos;
 using Sophia.Specs.Apoio;
 
@@ -32,7 +33,7 @@ public sealed class PassosDeProdutos(Cenario cenario)
     [Then("o produto {string} aparece na lista com o valor {string}")]
     public async Task EntaoOProdutoApareceNaLista(string nome, string valor)
     {
-        var produtos = await cenario.Produtos.ListarAsync(null);
+        var produtos = (await cenario.Produtos.ListarAsync(new ConsultaDeLista())).Pagina.Itens;
         produtos.Should().ContainSingle(p => p.Nome == nome)
             .Which.ValorUnitario.Should().Be(Cenario.Valor(valor));
     }

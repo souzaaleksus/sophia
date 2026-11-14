@@ -20,10 +20,11 @@ public sealed class SistemaEmTeste : IDisposable
     private readonly List<IServiceScope> _escopos = [];
     private Func<Task>? _antesDoProximoSalvamento;
 
-    public SistemaEmTeste(BancoDeTestes banco, DateOnly hoje)
+    public SistemaEmTeste(BancoDeTestes banco, DateOnly hoje, ParametrosDoSophia? parametros = null)
     {
         var servicos = new ServiceCollection();
         servicos.AddAplicacao();
+        servicos.AddSingleton(parametros ?? new ParametrosDoSophia());
         servicos.AddInfraestrutura(banco.TextoDeConexao, FusoHorario);
         servicos.AddSingleton<TimeProvider>(Tempo);
         servicos.AddScoped<IUnidadeDeTrabalho>(provedor => new UnidadeComGancho(

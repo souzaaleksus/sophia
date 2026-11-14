@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sophia.Testes.Banco\Sophia.Testes.Banco.csproj" />
+    <ProjectReference Include="..\..\src\Sophia.Web\Sophia.Web.csproj" />
   </ItemGroup>
 
 </Project>

@@ -57,4 +57,15 @@ public sealed class PaginaTests
         pagina.PrimeiroItem.Should().Be(0);
         pagina.UltimoItem.Should().Be(0);
     }
+
+    [Fact]
+    public void Converte_os_itens_sem_mudar_a_posicao_na_lista()
+    {
+        var pagina = new Pagina<int>([26, 27], 2, 25, 27).Converter(numero => $"#{numero}");
+
+        pagina.Itens.Should().Equal("#26", "#27");
+        pagina.Numero.Should().Be(2);
+        pagina.Tamanho.Should().Be(25);
+        pagina.TotalDeItens.Should().Be(27);
+    }
 }

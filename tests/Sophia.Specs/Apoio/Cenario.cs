@@ -1,4 +1,5 @@
 using System.Globalization;
+using Sophia.Application;
 using Sophia.Application.Clientes;
 using Sophia.Application.Painel;
 using Sophia.Application.Produtos;
@@ -41,10 +42,10 @@ public sealed class Cenario : IDisposable
     public static string? Texto(string? texto) => string.IsNullOrEmpty(texto) ? null : texto;
 
     public async Task<ClienteDto> ClienteChamadoAsync(string nome) =>
-        (await Clientes.ListarAsync(nome)).Single(c => c.Nome == nome);
+        (await Clientes.ListarAsync(new ConsultaDeLista(Busca: nome))).Pagina.Itens.Single(c => c.Nome == nome);
 
     public async Task<ProdutoDto> ProdutoChamadoAsync(string nome) =>
-        (await Produtos.ListarAsync(nome)).Single(p => p.Nome == nome);
+        (await Produtos.ListarAsync(new ConsultaDeLista(Busca: nome))).Pagina.Itens.Single(p => p.Nome == nome);
 
     public void Dispose() => _sistema.Dispose();
 }

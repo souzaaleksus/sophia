@@ -113,13 +113,98 @@ public sealed class ProdutoServicoTests(BancoDeTestes banco) : IAsyncLifetime, I
     }
 
     [Fact]
-    public async Task Lista_em_ordem_alfabetica_e_filtra_pelo_nome()
+    public async Task Lista_em_paginas_de_25_em_ordem_alfabetica()
     {
-        await Servico.CadastrarAsync(new DadosProduto("Lápis", 1m));
-        await Servico.CadastrarAsync(new DadosProduto("Caneta azul", 2.50m));
-        await Servico.CadastrarAsync(new DadosProduto("Caneta preta", 2.50m));
+        await CadastrarProdutosAsync(30);
 
-        (await Servico.ListarAsync(null)).Select(p => p.Nome).Should().Equal("Caneta azul", "Caneta preta", "Lápis");
-        (await Servico.ListarAsync("caneta")).Select(p => p.Nome).Should().Equal("Caneta azul", "Caneta preta");
+        var lista = await Servico.ListarAsync(new ConsultaDeLista());
+
+        lista.Ordem.Should().Be("nome");
+        lista.Pagina.Tamanho.Should().Be(25);
+        lista.Pagina.TotalDeItens.Should().Be(30);
+        lista.Pagina.TotalDePaginas.Should().Be(2);
+        lista.Pagina.Itens.Select(p => p.Nome).Should().Equal(Nomes(1, 25));
+    }
+
+    [Theory]
+    [InlineData(null, "nome", "Produto 01", 30)]
+    [InlineData("nome", "nome", "Produto 01", 30)]
+    [InlineData("-nome", "-nome", "Produto 30", 1)]
+    [InlineData("valor", "valor", "Produto 30", 1)]
+    [InlineData("-valor", "-valor", "Produto 01", 30)]
+    [InlineData("cpf", "nome", "Produto 01", 30)]
+    [InlineData("-total", "nome", "Produto 01", 30)]
+    public async Task Ordena_pela_coluna_pedida_e_devolve_a_ordem_que_ficou_valendo(
+        string? pedida,
+        string valendo,
+        string primeiro,
+        int valorDoPrimeiro)
+    {
+        await CadastrarProdutosAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Ordem: pedida));
+
+        lista.Ordem.Should().Be(valendo);
+        lista.Pagina.Itens[0].Should().BeEquivalentTo(new { Nome = primeiro, ValorUnitario = (decimal)valorDoPrimeiro });
+    }
+
+    [Fact]
+    public async Task Valores_iguais_ficam_na_ordem_do_cadastro_e_se_invertem_junto_com_a_coluna()
+    {
+        var borracha = (await Servico.CadastrarAsync(new DadosProduto("Borracha", 1.50m))).Valor;
+        var apontador = (await Servico.CadastrarAsync(new DadosProduto("Apontador", 1.50m))).Valor;
+        var regua = (await Servico.CadastrarAsync(new DadosProduto("Régua", 4m))).Valor;
+
+        (await Servico.ListarAsync(new ConsultaDeLista(Ordem: "valor"))).Pagina.Itens.Select(p => p.Id)
+            .Should().Equal(borracha, apontador, regua);
+        (await Servico.ListarAsync(new ConsultaDeLista(Ordem: "-valor"))).Pagina.Itens.Select(p => p.Id)
+            .Should().Equal(regua, apontador, borracha);
+    }
+
+    [Fact]
+    public async Task Filtra_pelo_nome_antes_de_paginar()
+    {
+        await CadastrarProdutosAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Busca: "  produto 2  ", Ordem: "valor"));
+
+        lista.Pagina.TotalDeItens.Should().Be(10);
+        lista.Pagina.Itens.Select(p => p.Nome).Should().Equal(Nomes(20, 29).Reverse());
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(-1, 1)]
+    [InlineData(3, 2)]
+    [InlineData(50, 2)]
+    public async Task Pagina_fora_dos_limites_vira_a_primeira_ou_a_ultima(int pedida, int mostrada)
+    {
+        await CadastrarProdutosAsync(30);
+
+        var lista = await Servico.ListarAsync(new ConsultaDeLista(Pagina: pedida));
+
+        lista.Pagina.Numero.Should().Be(mostrada);
+        lista.Pagina.Itens.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task As_sugestoes_da_busca_respeitam_o_limite_e_a_ordem_alfabetica()
+    {
+        await CadastrarProdutosAsync(30);
+
+        (await Servico.BuscarAsync("produto", 8)).Select(p => p.Nome).Should().Equal(Nomes(1, 8));
+        (await Servico.BuscarAsync("produto 3", 8)).Select(p => p.Nome).Should().Equal("Produto 30");
+    }
+
+    private static IEnumerable<string> Nomes(int primeiro, int ultimo) =>
+        Enumerable.Range(primeiro, ultimo - primeiro + 1).Select(numero => $"Produto {numero:00}");
+
+    private async Task CadastrarProdutosAsync(int quantidade)
+    {
+        for (var numero = 1; numero <= quantidade; numero++)
+        {
+            var resultado = await Servico.CadastrarAsync(new DadosProduto($"Produto {numero:00}", quantidade - numero + 1));
+            resultado.Sucesso.Should().BeTrue();
+        }
     }
 }
