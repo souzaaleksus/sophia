@@ -1,41 +1,32 @@
-using Sophia.Application.Clientes;
 using Sophia.Application.Painel;
-using Sophia.Application.Produtos;
-using Sophia.Application.Vendas;
+using Sophia.Application.Tests.Apoio;
 using Sophia.Domain.Clientes;
 using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
-using Sophia.Tests.Fakes;
+using Sophia.Testes.Banco;
 
 namespace Sophia.Application.Tests.Painel;
 
-public sealed class PainelServicoTests : IAsyncLifetime
+[Collection(ColecaoDoBanco.Nome)]
+public sealed class PainelServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDisposable
 {
     private static readonly DateOnly Hoje = new(2026, 11, 13);
 
-    private readonly BancoEmMemoria _banco = new();
-    private readonly RelogioFixo _relogio = new(Hoje);
-    private readonly PainelServico _painel;
-    private readonly VendaServico _vendas;
-    private readonly ProdutoServico _produtos;
+    private readonly SistemaEmTeste _sistema = new(banco, Hoje);
     private int _maria;
     private int _caneta;
 
-    public PainelServicoTests()
-    {
-        _painel = new PainelServico(_banco.Vendas, _relogio);
-        _vendas = new VendaServico(_banco.Vendas, _banco.Clientes, _banco.Produtos, _banco, _relogio);
-        _produtos = new ProdutoServico(_banco.Produtos, _banco);
-    }
-
     public async Task InitializeAsync()
     {
-        _maria = (await new ClienteServico(_banco.Clientes, _banco, _relogio)
+        await banco.LimparAsync();
+        _maria = (await _sistema.Clientes
             .CadastrarAsync(new DadosCliente("529.982.247-25", "Maria Santos", null, null, null))).Valor;
         _caneta = await CadastrarProdutoAsync("Caneta azul");
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
+
+    public void Dispose() => _sistema.Dispose();
 
     [Fact]
     public async Task O_mes_vai_do_dia_primeiro_ate_hoje()
@@ -44,7 +35,7 @@ public sealed class PainelServicoTests : IAsyncLifetime
         await VenderAsync(new DateOnly(2026, 11, 1), 2);
         await VenderAsync(Hoje, 4);
 
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.Mes.Should().Be(new ResumoDoPeriodo(2, 6m));
         painel.Dia.Should().Be(new ResumoDoPeriodo(1, 4m));
@@ -59,7 +50,7 @@ public sealed class PainelServicoTests : IAsyncLifetime
             await VenderAsync(new DateOnly(2026, 11, dia), dia);
         }
 
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.UltimasVendas.Select(v => v.Data.Day).Should().Equal(7, 6, 5, 4, 3);
     }
@@ -73,7 +64,7 @@ public sealed class PainelServicoTests : IAsyncLifetime
         await VenderAsync(new DateOnly(2026, 11, 10), 3);
         await VenderAsync(Hoje, 4);
 
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.UltimosDias.Should().Equal(
             new TotalDoDia(new DateOnly(2026, 11, 7), 2m, 1),
@@ -88,7 +79,7 @@ public sealed class PainelServicoTests : IAsyncLifetime
     [Fact]
     public async Task Sem_vendas_os_sete_dias_aparecem_zerados()
     {
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.UltimosDias.Should().HaveCount(PainelServico.DiasNoGrafico)
             .And.OnlyContain(d => d.Total == 0m && d.QuantidadeDeVendas == 0);
@@ -99,10 +90,10 @@ public sealed class PainelServicoTests : IAsyncLifetime
     [Fact]
     public async Task Os_ultimos_sete_dias_atravessam_a_virada_do_mes()
     {
-        _relogio.Hoje = new DateOnly(2026, 12, 2);
+        _sistema.Hoje = new DateOnly(2026, 12, 2);
         await VenderAsync(new DateOnly(2026, 11, 26), 5);
 
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.UltimosDias.Select(d => d.Dia).Should().Equal(
             new DateOnly(2026, 11, 26),
@@ -126,7 +117,7 @@ public sealed class PainelServicoTests : IAsyncLifetime
         await VenderAsync(new DateOnly(2026, 11, 9), (_caneta, 3, 1m), (caderno, 3, 18.90m));
         await VenderAsync(Hoje, (borracha, 3, 1m));
 
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.MaisVendidos.Should().Equal(
             new ProdutoMaisVendido(_caneta, "Caneta azul", 5, 5m),
@@ -144,7 +135,7 @@ public sealed class PainelServicoTests : IAsyncLifetime
             await VenderAsync(Hoje, (produto, quantidade, 1m));
         }
 
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.MaisVendidos.Should().HaveCount(PainelServico.QuantidadeDeMaisVendidos);
         painel.MaisVendidos.Select(p => p.Quantidade).Should().Equal(6, 5, 4, 3, 2);
@@ -155,13 +146,13 @@ public sealed class PainelServicoTests : IAsyncLifetime
     {
         await VenderAsync(new DateOnly(2026, 10, 31), 1);
 
-        var painel = await _painel.ObterAsync();
+        var painel = await _sistema.Painel.ObterAsync();
 
         painel.MaisVendidos.Should().BeEmpty();
     }
 
     private async Task<int> CadastrarProdutoAsync(string nome) =>
-        (await _produtos.CadastrarAsync(new DadosProduto(nome, 1m))).Valor;
+        (await _sistema.Produtos.CadastrarAsync(new DadosProduto(nome, 1m))).Valor;
 
     private Task VenderAsync(DateOnly data, int quantidade) => VenderAsync(data, (_caneta, quantidade, 1m));
 
@@ -171,7 +162,7 @@ public sealed class PainelServicoTests : IAsyncLifetime
             data,
             _maria,
             itens.Select(i => new DadosItemVenda(i.Produto, i.Quantidade, i.Valor)).ToList());
-        var resultado = await _vendas.RegistrarAsync(dados);
+        var resultado = await _sistema.Vendas.RegistrarAsync(dados);
         resultado.Sucesso.Should().BeTrue();
     }
 }

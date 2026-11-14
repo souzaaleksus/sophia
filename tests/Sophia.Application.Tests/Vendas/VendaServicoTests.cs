@@ -1,49 +1,43 @@
 using Sophia.Application.Abstracoes;
-using Sophia.Application.Clientes;
-using Sophia.Application.Produtos;
+using Sophia.Application.Tests.Apoio;
 using Sophia.Application.Vendas;
 using Sophia.Domain;
 using Sophia.Domain.Clientes;
 using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
-using Sophia.Tests.Fakes;
+using Sophia.Testes.Banco;
 
 namespace Sophia.Application.Tests.Vendas;
 
-public sealed class VendaServicoTests : IAsyncLifetime
+[Collection(ColecaoDoBanco.Nome)]
+public sealed class VendaServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDisposable
 {
     private static readonly DateOnly Hoje = new(2026, 11, 13);
 
-    private readonly BancoEmMemoria _banco = new();
-    private readonly VendaServico _servico;
-    private readonly ClienteServico _clientes;
-    private readonly ProdutoServico _produtos;
+    private readonly SistemaEmTeste _sistema = new(banco, Hoje);
     private int _maria;
     private int _caneta;
     private int _caderno;
 
-    public VendaServicoTests()
-    {
-        var relogio = new RelogioFixo(Hoje);
-        _servico = new VendaServico(_banco.Vendas, _banco.Clientes, _banco.Produtos, _banco, relogio);
-
-        _clientes = new ClienteServico(_banco.Clientes, _banco, relogio);
-        _produtos = new ProdutoServico(_banco.Produtos, _banco);
-    }
+    private IVendaServico Servico => _sistema.Vendas;
 
     public async Task InitializeAsync()
     {
-        _maria = (await _clientes.CadastrarAsync(new DadosCliente("529.982.247-25", "Maria Santos", null, null, null))).Valor;
-        _caneta = (await _produtos.CadastrarAsync(new DadosProduto("Caneta azul", 2.50m))).Valor;
-        _caderno = (await _produtos.CadastrarAsync(new DadosProduto("Caderno 96 folhas", 18.90m))).Valor;
+        await banco.LimparAsync();
+        _maria = (await _sistema.Clientes.CadastrarAsync(
+            new DadosCliente("529.982.247-25", "Maria Santos", null, null, null))).Valor;
+        _caneta = (await _sistema.Produtos.CadastrarAsync(new DadosProduto("Caneta azul", 2.50m))).Valor;
+        _caderno = (await _sistema.Produtos.CadastrarAsync(new DadosProduto("Caderno 96 folhas", 18.90m))).Valor;
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
 
+    public void Dispose() => _sistema.Dispose();
+
     [Fact]
     public void Sugere_a_data_de_hoje()
     {
-        _servico.DataSugerida().Should().Be(Hoje);
+        Servico.DataSugerida().Should().Be(Hoje);
     }
 
     [Fact]
@@ -51,10 +45,10 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         var dados = new DadosVenda(Hoje, _maria, [new(_caneta, 10, 2.50m), new(_caderno, 2, 18.90m)]);
 
-        var resultado = await _servico.RegistrarAsync(dados);
+        var resultado = await Servico.RegistrarAsync(dados);
 
         resultado.Sucesso.Should().BeTrue();
-        var venda = await _servico.ObterAsync(resultado.Valor);
+        var venda = await Servico.ObterAsync(resultado.Valor);
         venda.Should().BeEquivalentTo(new VendaDetalheDto(
             resultado.Valor,
             Hoje,
@@ -70,7 +64,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     [Fact]
     public async Task Recusa_cliente_inexistente()
     {
-        var resultado = await _servico.RegistrarAsync(new DadosVenda(Hoje, 999, [new(_caneta, 1, 2.50m)]));
+        var resultado = await Servico.RegistrarAsync(new DadosVenda(Hoje, 999, [new(_caneta, 1, 2.50m)]));
 
         resultado.Erros.Should().ContainSingle()
             .Which.Should().Be(new Erro("ClienteId", "Cliente não encontrado."));
@@ -79,7 +73,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     [Fact]
     public async Task Recusa_produto_inexistente_apontando_a_linha()
     {
-        var resultado = await _servico.RegistrarAsync(
+        var resultado = await Servico.RegistrarAsync(
             new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m), new(999, 1, 1m)]));
 
         resultado.Erros.Should().ContainSingle()
@@ -89,7 +83,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     [Fact]
     public async Task Regras_do_dominio_chegam_ao_chamador()
     {
-        var resultado = await _servico.RegistrarAsync(new DadosVenda(Hoje.AddDays(1), _maria, []));
+        var resultado = await Servico.RegistrarAsync(new DadosVenda(Hoje.AddDays(1), _maria, []));
 
         resultado.Erros.Select(e => e.Campo).Should().BeEquivalentTo("Data", "Itens");
     }
@@ -97,8 +91,8 @@ public sealed class VendaServicoTests : IAsyncLifetime
     [Fact]
     public async Task Lista_as_vendas_mais_recentes_primeiro_com_cliente_e_total()
     {
-        await _servico.RegistrarAsync(new DadosVenda(Hoje.AddDays(-1), _maria, [new(_caneta, 2, 2.50m)]));
-        await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caderno, 1, 18.90m), new(_caneta, 1, 2.50m)]));
+        await Servico.RegistrarAsync(new DadosVenda(Hoje.AddDays(-1), _maria, [new(_caneta, 2, 2.50m)]));
+        await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caderno, 1, 18.90m), new(_caneta, 1, 2.50m)]));
 
         var vendas = await PrimeiraPaginaAsync();
 
@@ -112,8 +106,8 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         var dados = new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], Guid.NewGuid());
 
-        var primeira = await _servico.RegistrarAsync(dados);
-        var segunda = await _servico.RegistrarAsync(dados);
+        var primeira = await Servico.RegistrarAsync(dados);
+        var segunda = await Servico.RegistrarAsync(dados);
 
         segunda.Sucesso.Should().BeTrue();
         segunda.Valor.Should().Be(primeira.Valor);
@@ -125,8 +119,8 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         var itens = new DadosItemVenda[] { new(_caneta, 1, 2.50m) };
 
-        var primeira = await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, itens, Guid.NewGuid()));
-        var segunda = await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, itens, Guid.NewGuid()));
+        var primeira = await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, itens, Guid.NewGuid()));
+        var segunda = await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, itens, Guid.NewGuid()));
 
         segunda.Valor.Should().NotBe(primeira.Valor);
         (await PrimeiraPaginaAsync()).Should().HaveCount(2);
@@ -137,8 +131,8 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         var dados = new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)]);
 
-        await _servico.RegistrarAsync(dados);
-        await _servico.RegistrarAsync(dados);
+        await Servico.RegistrarAsync(dados);
+        await Servico.RegistrarAsync(dados);
 
         (await PrimeiraPaginaAsync()).Should().HaveCount(2);
     }
@@ -147,11 +141,14 @@ public sealed class VendaServicoTests : IAsyncLifetime
     public async Task Na_corrida_entre_dois_envios_devolve_a_venda_que_o_banco_gravou_primeiro()
     {
         var dados = new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], Guid.NewGuid());
-        _banco.SimularVendaConcorrenteNoProximoSalvamento(dados);
+        var idDoOutroEnvio = 0;
+        _sistema.AntesDoProximoSalvamento(async () =>
+            idDoOutroEnvio = (await _sistema.Vendas.RegistrarAsync(dados)).Valor);
 
-        var resultado = await _servico.RegistrarAsync(dados);
+        var resultado = await Servico.RegistrarAsync(dados);
 
         resultado.Sucesso.Should().BeTrue();
+        resultado.Valor.Should().Be(idDoOutroEnvio).And.BePositive();
         (await PrimeiraPaginaAsync()).Should().ContainSingle()
             .Which.Id.Should().Be(resultado.Valor);
     }
@@ -159,9 +156,10 @@ public sealed class VendaServicoTests : IAsyncLifetime
     [Fact]
     public async Task Conflito_que_nao_e_da_chave_continua_sendo_erro()
     {
-        _banco.SimularCadastroConcorrenteNoProximoSalvamento();
+        _sistema.AntesDoProximoSalvamento(async () =>
+            (await _sistema.Produtos.ExcluirAsync(_caneta)).Sucesso.Should().BeTrue());
 
-        var registrar = () => _servico.RegistrarAsync(
+        var registrar = () => Servico.RegistrarAsync(
             new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)], Guid.NewGuid()));
 
         await registrar.Should().ThrowAsync<ConflitoAoSalvarException>();
@@ -170,7 +168,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     [Fact]
     public async Task Venda_inexistente_devolve_nulo()
     {
-        (await _servico.ObterAsync(999)).Should().BeNull();
+        (await Servico.ObterAsync(999)).Should().BeNull();
     }
 
     [Fact]
@@ -178,7 +176,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         await RegistrarUmaVendaPorDiaAsync(60);
 
-        var pagina = await _servico.ListarAsync(1);
+        var pagina = await Servico.ListarAsync(1);
 
         pagina.Numero.Should().Be(1);
         pagina.Tamanho.Should().Be(VendaServico.TamanhoDaPagina).And.Be(25);
@@ -195,7 +193,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         await RegistrarUmaVendaPorDiaAsync(60);
 
-        var pagina = await _servico.ListarAsync(3);
+        var pagina = await Servico.ListarAsync(3);
 
         pagina.Numero.Should().Be(3);
         pagina.Itens.Select(v => v.Data).Should().Equal(Enumerable.Range(50, 10).Select(dias => Hoje.AddDays(-dias)));
@@ -207,11 +205,11 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         for (var vez = 0; vez < 30; vez++)
         {
-            await _servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)]));
+            await Servico.RegistrarAsync(new DadosVenda(Hoje, _maria, [new(_caneta, 1, 2.50m)]));
         }
 
-        var primeira = await _servico.ListarAsync(1);
-        var segunda = await _servico.ListarAsync(2);
+        var primeira = await Servico.ListarAsync(1);
+        var segunda = await Servico.ListarAsync(2);
 
         var ids = primeira.Itens.Concat(segunda.Itens).Select(v => v.Id).ToList();
         ids.Should().HaveCount(30).And.OnlyHaveUniqueItems().And.BeInDescendingOrder();
@@ -226,7 +224,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     {
         await RegistrarUmaVendaPorDiaAsync(60);
 
-        var pagina = await _servico.ListarAsync(pedida);
+        var pagina = await Servico.ListarAsync(pedida);
 
         pagina.Numero.Should().Be(mostrada);
         pagina.Itens.Should().NotBeEmpty();
@@ -235,7 +233,7 @@ public sealed class VendaServicoTests : IAsyncLifetime
     [Fact]
     public async Task Sem_vendas_devolve_uma_pagina_vazia()
     {
-        var pagina = await _servico.ListarAsync(7);
+        var pagina = await Servico.ListarAsync(7);
 
         pagina.Numero.Should().Be(1);
         pagina.Itens.Should().BeEmpty();
@@ -243,13 +241,13 @@ public sealed class VendaServicoTests : IAsyncLifetime
         pagina.TotalDePaginas.Should().Be(1);
     }
 
-    private async Task<IReadOnlyList<VendaResumoDto>> PrimeiraPaginaAsync() => (await _servico.ListarAsync(1)).Itens;
+    private async Task<IReadOnlyList<VendaResumoDto>> PrimeiraPaginaAsync() => (await Servico.ListarAsync(1)).Itens;
 
     private async Task RegistrarUmaVendaPorDiaAsync(int quantidade)
     {
         for (var dias = quantidade - 1; dias >= 0; dias--)
         {
-            var resultado = await _servico.RegistrarAsync(
+            var resultado = await Servico.RegistrarAsync(
                 new DadosVenda(Hoje.AddDays(-dias), _maria, [new(_caneta, 1, 2.50m)]));
             resultado.Sucesso.Should().BeTrue();
         }

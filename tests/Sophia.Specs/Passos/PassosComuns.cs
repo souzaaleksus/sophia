@@ -13,7 +13,7 @@ public sealed class PassosComuns(Cenario cenario)
     [Given(@"^que hoje é (\d{2}/\d{2}/\d{4})$")]
     public void DadoQueHojeE(string data)
     {
-        cenario.Relogio.Hoje = Cenario.Data(data)!.Value;
+        cenario.Hoje = Cenario.Data(data)!.Value;
     }
 
     [Given("que existe o cliente {string} com o CPF {string}")]
@@ -35,7 +35,7 @@ public sealed class PassosComuns(Cenario cenario)
     {
         var comprador = await cenario.ClienteChamadoAsync(cliente);
         var item = await cenario.ProdutoChamadoAsync(produto);
-        var dados = new DadosVenda(cenario.Relogio.Hoje, comprador.Id, [new(item.Id, quantidade, item.ValorUnitario)]);
+        var dados = new DadosVenda(cenario.Hoje, comprador.Id, [new(item.Id, quantidade, item.ValorUnitario)]);
 
         var resultado = await cenario.Vendas.RegistrarAsync(dados);
 

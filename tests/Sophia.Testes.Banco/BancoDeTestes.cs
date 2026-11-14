@@ -2,13 +2,16 @@ using System.Text.RegularExpressions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Sophia.Infrastructure.Persistencia;
+using Xunit;
 
-namespace Sophia.Integration.Tests.Apoio;
+namespace Sophia.Testes.Banco;
 
 public sealed partial class BancoDeTestes : IAsyncLifetime
 {
     private const string ServidorPadrao =
         @"Server=.\SQLEXPRESS;Integrated Security=true;TrustServerCertificate=true";
+
+    private static readonly string[] TabelasNaOrdemDasChaves = ["VendaItens", "Vendas", "Produtos", "Clientes"];
 
     private readonly string _nome = $"Sophia_Testes_{Guid.NewGuid():N}";
 
@@ -67,19 +70,15 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
             .LogTo(registrarSql, [DbLoggerCategory.Database.Command.Name])
             .Options);
 
-    public async Task LimparAsync()
-    {
-        await using var conexao = new SqlConnection(TextoDeConexao);
-        await conexao.OpenAsync();
-        const string limpar = """
-            DELETE FROM dbo.VendaItens;
-            DELETE FROM dbo.Vendas;
-            DELETE FROM dbo.Produtos;
-            DELETE FROM dbo.Clientes;
-            """;
-        await using var comando = new SqlCommand(limpar, conexao);
-        await comando.ExecuteNonQueryAsync();
-    }
+    public Task LimparAsync() =>
+        ExecutarAsync(string.Concat(TabelasNaOrdemDasChaves.Select(tabela => $"""
+            DELETE FROM dbo.{tabela};
+            IF EXISTS (
+                SELECT 1 FROM sys.identity_columns
+                WHERE object_id = OBJECT_ID(N'dbo.{tabela}') AND last_value IS NOT NULL)
+                DBCC CHECKIDENT (N'dbo.{tabela}', RESEED, 0) WITH NO_INFOMSGS;
+
+            """)));
 
     public async Task<List<string>> ConsultarAsync(string sql)
     {
@@ -98,10 +97,4 @@ public sealed partial class BancoDeTestes : IAsyncLifetime
 
     [GeneratedRegex(@"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
     private static partial Regex SeparadorDeLotes();
-}
-
-[CollectionDefinition(Nome)]
-public sealed class ColecaoDoBanco : ICollectionFixture<BancoDeTestes>
-{
-    public const string Nome = "Banco SQL Server";
 }

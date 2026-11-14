@@ -6,7 +6,7 @@ using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
 using Sophia.Infrastructure;
 using Sophia.Infrastructure.Persistencia;
-using Sophia.Integration.Tests.Apoio;
+using Sophia.Testes.Banco;
 
 namespace Sophia.E2E.Apoio;
 

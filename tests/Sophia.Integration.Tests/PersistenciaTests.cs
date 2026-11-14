@@ -8,6 +8,7 @@ using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
 using Sophia.Infrastructure.Persistencia;
 using Sophia.Integration.Tests.Apoio;
+using Sophia.Testes.Banco;
 
 namespace Sophia.Integration.Tests;
 
@@ -187,32 +188,6 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Na_corrida_o_servico_devolve_a_venda_que_o_banco_gravou_primeiro()
-    {
-        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
-        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
-        var dados = new DadosVenda(Hoje, maria, [new(caneta, 1, 2.50m)], Guid.NewGuid());
-        var idDoOutroEnvio = 0;
-
-        await using var contexto = banco.NovoContexto();
-        var unidade = new UnidadeQueDeixaOutroEnvioGravarAntes(
-            new UnidadeDeTrabalho(contexto),
-            async () => idDoOutroEnvio = await RegistrarVendaAsync(maria, dados.Itens, dados.Chave));
-        var servico = new VendaServico(
-            new VendaRepositorio(contexto),
-            new ClienteRepositorio(contexto),
-            new ProdutoRepositorio(contexto),
-            unidade,
-            new RelogioParado());
-
-        var resultado = await servico.RegistrarAsync(dados);
-
-        resultado.Valor.Should().Be(idDoOutroEnvio);
-        await using var leitura = banco.NovoContexto();
-        (await new VendaRepositorio(leitura).ListarAsync()).Should().ContainSingle();
-    }
-
-    [Fact]
     public async Task Totaliza_por_dia_no_banco_so_os_dias_do_periodo_que_tem_venda()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
@@ -327,20 +302,5 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         new VendaRepositorio(contexto).Adicionar(venda);
         await new UnidadeDeTrabalho(contexto).SalvarAsync();
         return venda.Id;
-    }
-
-    private sealed class RelogioParado : IRelogio
-    {
-        public DateOnly Hoje => PersistenciaTests.Hoje;
-    }
-
-    private sealed class UnidadeQueDeixaOutroEnvioGravarAntes(IUnidadeDeTrabalho unidade, Func<Task> outroEnvio)
-        : IUnidadeDeTrabalho
-    {
-        public async Task SalvarAsync(CancellationToken cancelamento = default)
-        {
-            await outroEnvio();
-            await unidade.SalvarAsync(cancelamento);
-        }
     }
 }

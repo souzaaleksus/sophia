@@ -1,4 +1,5 @@
 using Sophia.Integration.Tests.Apoio;
+using Sophia.Testes.Banco;
 
 namespace Sophia.Integration.Tests;
 

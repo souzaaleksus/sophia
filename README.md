@@ -326,13 +326,14 @@ dotnet test
 | Projeto | Tipo | O que cobre | Precisa de |
 |---|---|---|---|
 | `Sophia.Domain.Tests` | unidade | CPF, cliente, produto, venda, totais | nada |
-| `Sophia.Application.Tests` | unidade | serviços: duplicidade, exclusão bloqueada, conflito de concorrência | nada |
-| `Sophia.Specs` | BDD (Gherkin) | os cenários da especificação, em português | nada |
+| `Sophia.Application.Tests` | aplicação | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações | SQL Server |
+| `Sophia.Specs` | BDD (Gherkin) | os cenários da especificação, em português, sobre o banco real | SQL Server |
 | `Sophia.Integration.Tests` | integração | script do banco, mapeamento do EF, índices únicos e chaves estrangeiras | SQL Server |
 | `Sophia.E2E` | tela | cadastros e a venda completa no navegador | SQL Server e Chromium |
 
-Os testes de integração e de tela criam um banco temporário a partir de
-`database/create-database.sql` e o apagam ao final. O servidor usado é `.\SQLEXPRESS`; para
+Os testes da aplicação, os cenários BDD, os de integração e os de tela criam um banco
+temporário a partir de `database/create-database.sql` e o apagam ao final; nenhum deles usa
+dublê de repositório. O apoio comum fica em `tests/Sophia.Testes.Banco`. O servidor usado é `.\SQLEXPRESS`; para
 outro, defina `SOPHIA_TESTES_SQLSERVER` com o texto de conexão (sem o nome do banco).
 
 Os testes de tela precisam do navegador do Playwright, instalado uma vez:
@@ -421,10 +422,10 @@ src/Sophia.Application            casos de uso
 src/Sophia.Infrastructure         EF Core e SQL Server
 src/Sophia.Web                    ASP.NET Core MVC
 tests/Sophia.Domain.Tests         unidade
-tests/Sophia.Application.Tests    unidade
+tests/Sophia.Application.Tests    serviços sobre o SQL Server
 tests/Sophia.Specs                BDD (Gherkin)
 tests/Sophia.Integration.Tests    integração com SQL Server
 tests/Sophia.E2E                  tela com Playwright
-tests/Sophia.Tests.Fakes          banco em memória dos testes de unidade e BDD
+tests/Sophia.Testes.Banco         banco temporário e composição dos serviços para os testes
 Dockerfile, docker-compose.yml    execução em contêineres
 ```

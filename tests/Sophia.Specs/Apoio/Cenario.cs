@@ -4,34 +4,29 @@ using Sophia.Application.Painel;
 using Sophia.Application.Produtos;
 using Sophia.Application.Vendas;
 using Sophia.Domain;
-using Sophia.Tests.Fakes;
+using Sophia.Testes.Banco;
 
 namespace Sophia.Specs.Apoio;
 
-public sealed class Cenario
+public sealed class Cenario : IDisposable
 {
     public static readonly CultureInfo PtBr = CultureInfo.GetCultureInfo("pt-BR");
 
-    public Cenario()
+    private readonly SistemaEmTeste _sistema = new(Ganchos.Banco, new DateOnly(2026, 11, 13));
+
+    public DateOnly Hoje
     {
-        Relogio = new RelogioFixo(new DateOnly(2026, 11, 13));
-        Clientes = new ClienteServico(Banco.Clientes, Banco, Relogio);
-        Produtos = new ProdutoServico(Banco.Produtos, Banco);
-        Vendas = new VendaServico(Banco.Vendas, Banco.Clientes, Banco.Produtos, Banco, Relogio);
-        Painel = new PainelServico(Banco.Vendas, Relogio);
+        get => _sistema.Hoje;
+        set => _sistema.Hoje = value;
     }
 
-    public BancoEmMemoria Banco { get; } = new();
+    public IClienteServico Clientes => _sistema.Clientes;
 
-    public RelogioFixo Relogio { get; }
+    public IProdutoServico Produtos => _sistema.Produtos;
 
-    public ClienteServico Clientes { get; }
+    public IVendaServico Vendas => _sistema.Vendas;
 
-    public ProdutoServico Produtos { get; }
-
-    public VendaServico Vendas { get; }
-
-    public PainelServico Painel { get; }
+    public IPainelServico Painel => _sistema.Painel;
 
     public Resultado? UltimoResultado { get; set; }
 
@@ -50,4 +45,6 @@ public sealed class Cenario
 
     public async Task<ProdutoDto> ProdutoChamadoAsync(string nome) =>
         (await Produtos.ListarAsync(nome)).Single(p => p.Nome == nome);
+
+    public void Dispose() => _sistema.Dispose();
 }
