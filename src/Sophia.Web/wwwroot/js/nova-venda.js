@@ -57,6 +57,8 @@ window.addEventListener('beforeunload', evento => {
     }
 });
 
+formulario.dataset.pronto = 'true';
+
 function recalcularTotais() {
     const itens = [...formulario.querySelectorAll('[data-itens] [data-item]')];
     const dados = itens.map(lerLinha);
