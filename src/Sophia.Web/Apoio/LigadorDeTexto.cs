@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.Localization;
 
 namespace Sophia.Web.Apoio;
 
@@ -24,6 +25,15 @@ internal abstract class LigadorDeTexto : IModelBinder
         return metadados.ModelBindingMessageProvider.AttemptedValueIsInvalidAccessor(texto, metadados.GetDisplayName());
     }
 
+    protected static string MaiorQueZero(ModelBindingContext contexto)
+    {
+        var textos = TextosDe(contexto);
+        return textos["binder.numero-maior-que-zero-no-campo", contexto.ModelMetadata.GetDisplayName()];
+    }
+
+    protected static IStringLocalizer<Textos> TextosDe(ModelBindingContext contexto) =>
+        contexto.HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Textos>>();
+
     private void Ligar(ModelBindingContext contexto, string? texto)
     {
         if (string.IsNullOrWhiteSpace(texto))
@@ -47,7 +57,7 @@ internal abstract class LigadorDeTexto : IModelBinder
     {
         if (!contexto.ModelMetadata.IsReferenceOrNullableType)
         {
-            var mensagem = contexto.ModelMetadata.ModelBindingMessageProvider.ValueMustNotBeNullAccessor(string.Empty);
+            var mensagem = contexto.ModelMetadata.ModelBindingMessageProvider.ValueMustNotBeNullAccessor(contexto.ModelMetadata.GetDisplayName());
             contexto.ModelState.TryAddModelError(contexto.ModelName, mensagem);
         }
     }

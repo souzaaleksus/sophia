@@ -91,7 +91,9 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     [InlineData("1.2.3")]
     [InlineData("1.25,0")]
     [InlineData("0.500")]
-    public async Task Valor_em_forma_ambigua_e_recusado_no_campo(string digitado)
+    [InlineData("1000000000000000000000000000000")]
+    [InlineData("99999999999999999")]
+    public async Task Valor_em_forma_ambigua_ou_acima_do_aceito_e_recusado_no_campo(string digitado)
     {
         await _pagina.GotoAsync("/Produtos/Novo");
         await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
@@ -100,6 +102,19 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("Informe um número em Valor unitário.");
         (await new Cadastro(aplicacao.Banco).QuantidadeDeProdutosAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_enviado_direto_avisa_que_esta_acima_do_permitido()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        await _pagina.GetByLabel("Valor unitário").FillAsync("1000000000000000000000000000000");
+
+        await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("Valor unitário está acima do permitido.");
+        await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("1000000000000000000000000000000");
     }
 
     [Fact]

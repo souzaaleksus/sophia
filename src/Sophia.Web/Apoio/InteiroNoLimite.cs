@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.Extensions.Localization;
 
 namespace Sophia.Web.Apoio;
 
@@ -14,7 +13,7 @@ public static partial class InteiroNoLimite
         return opcoes;
     }
 
-    [GeneratedRegex(@"^[+-]?\d+$")]
+    [GeneratedRegex(@"^[+-]?[0-9]+$")]
     private static partial Regex SoDigitos();
 
     private sealed class Provedor : IModelBinderProvider
@@ -40,11 +39,13 @@ public static partial class InteiroNoLimite
 
         private static string ForaDoLimite(ModelBindingContext contexto, bool abaixo)
         {
-            var textos = contexto.HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Textos>>();
-            var campo = contexto.ModelMetadata.GetDisplayName();
-            return abaixo
-                ? textos["binder.numero-abaixo-do-minimo-no-campo", campo, int.MinValue.ToString("N0", Formato.Cultura)]
-                : textos["binder.numero-acima-do-maximo-no-campo", campo, int.MaxValue.ToString("N0", Formato.Cultura)];
+            if (abaixo)
+            {
+                return MaiorQueZero(contexto);
+            }
+
+            var textos = TextosDe(contexto);
+            return textos["binder.numero-acima-do-maximo-no-campo", contexto.ModelMetadata.GetDisplayName(), int.MaxValue.ToString("N0", Formato.Cultura)];
         }
     }
 }

@@ -13,17 +13,11 @@ public static partial class DecimalPtBr
         return opcoes;
     }
 
-    public static decimal? Ler(string? texto)
+    private static (string? Numero, bool Negativo) Separar(string texto)
     {
-        var limpo = Espacos().Replace(texto ?? string.Empty, string.Empty);
+        var limpo = Espacos().Replace(texto, string.Empty);
         var negativo = limpo.StartsWith('-');
-        var numero = Normalizar(negativo ? limpo[1..] : limpo);
-        if (numero is null || !decimal.TryParse(numero, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var valor))
-        {
-            return null;
-        }
-
-        return negativo ? -valor : valor;
+        return (Normalizar(negativo ? limpo[1..] : limpo), negativo);
     }
 
     private static string? Normalizar(string numero)
@@ -44,16 +38,16 @@ public static partial class DecimalPtBr
     [GeneratedRegex(@"\s")]
     private static partial Regex Espacos();
 
-    [GeneratedRegex(@"^([1-9]\d{0,2}(\.\d{3})+|\d+),\d+$")]
+    [GeneratedRegex(@"^([1-9][0-9]{0,2}(\.[0-9]{3})+|[0-9]+),[0-9]+$")]
     private static partial Regex ComVirgula();
 
-    [GeneratedRegex(@"^[1-9]\d{0,2}(\.\d{3})+$")]
+    [GeneratedRegex(@"^[1-9][0-9]{0,2}(\.[0-9]{3})+$")]
     private static partial Regex ComMilhar();
 
-    [GeneratedRegex(@"^\d+\.\d{1,2}$")]
+    [GeneratedRegex(@"^[0-9]+\.[0-9]{1,2}$")]
     private static partial Regex ComPontoDecimal();
 
-    [GeneratedRegex(@"^\d+$")]
+    [GeneratedRegex(@"^[0-9]+$")]
     private static partial Regex Inteiro();
 
     private sealed class Provedor : IModelBinderProvider
@@ -66,9 +60,27 @@ public static partial class DecimalPtBr
     {
         protected override object? Interpretar(ModelBindingContext contexto, string texto, out string? recusa)
         {
-            var valor = DecimalPtBr.Ler(texto);
-            recusa = valor is null ? ValorInvalido(contexto, texto) : null;
-            return valor;
+            var (numero, negativo) = Separar(texto);
+            if (numero is null)
+            {
+                recusa = ValorInvalido(contexto, texto);
+                return null;
+            }
+
+            if (!decimal.TryParse(numero, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var valor))
+            {
+                recusa = negativo ? MaiorQueZero(contexto) : AcimaDoPermitido(contexto);
+                return null;
+            }
+
+            recusa = null;
+            return negativo ? -valor : valor;
+        }
+
+        private static string AcimaDoPermitido(ModelBindingContext contexto)
+        {
+            var textos = TextosDe(contexto);
+            return textos["binder.numero-acima-do-permitido-no-campo", contexto.ModelMetadata.GetDisplayName()];
         }
     }
 }

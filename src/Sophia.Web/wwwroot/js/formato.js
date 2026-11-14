@@ -18,6 +18,7 @@ const comVirgula = /^([1-9]\d{0,2}(\.\d{3})+|\d+),\d+$/;
 const comMilhar = /^[1-9]\d{0,2}(\.\d{3})+$/;
 const comPontoDecimal = /^\d+\.\d{1,2}$/;
 const soDigitos = /^\d+$/;
+const limiteDoValor = 1e16;
 
 function normalizarDecimal(numero) {
     if (comVirgula.test(numero)) {
@@ -39,7 +40,12 @@ export function lerDecimal(texto) {
         return null;
     }
 
-    return negativo ? -Number(numero) : Number(numero);
+    const valor = Number(numero);
+    if (!Number.isFinite(valor) || valor >= limiteDoValor) {
+        return null;
+    }
+
+    return negativo ? -valor : valor;
 }
 
 export function lerInteiro(texto) {

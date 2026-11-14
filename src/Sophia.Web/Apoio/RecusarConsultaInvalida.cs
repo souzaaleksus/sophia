@@ -7,7 +7,8 @@ public sealed class RecusarConsultaInvalida : IAsyncActionFilter
 {
     public Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (HttpMethods.IsGet(context.HttpContext.Request.Method) && !context.ModelState.IsValid)
+        var metodo = context.HttpContext.Request.Method;
+        if ((HttpMethods.IsGet(metodo) || HttpMethods.IsHead(metodo)) && !context.ModelState.IsValid)
         {
             context.Result = new BadRequestResult();
             return Task.CompletedTask;

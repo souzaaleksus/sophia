@@ -42,11 +42,14 @@
   <data name="binder.numero" xml:space="preserve">
     <value>Informe um número.</value>
   </data>
-  <data name="binder.numero-abaixo-do-minimo-no-campo" xml:space="preserve">
-    <value>{0} aceita no mínimo {1}.</value>
-  </data>
   <data name="binder.numero-acima-do-maximo-no-campo" xml:space="preserve">
     <value>{0} aceita no máximo {1}.</value>
+  </data>
+  <data name="binder.numero-acima-do-permitido-no-campo" xml:space="preserve">
+    <value>{0} está acima do permitido.</value>
+  </data>
+  <data name="binder.numero-maior-que-zero-no-campo" xml:space="preserve">
+    <value>{0} deve ser maior que zero.</value>
   </data>
   <data name="binder.numero-no-campo" xml:space="preserve">
     <value>Informe um número em {0}.</value>

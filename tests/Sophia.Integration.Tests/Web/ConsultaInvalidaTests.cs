@@ -17,10 +17,12 @@ public sealed class ConsultaInvalidaTests
         opcoes.Filters.OfType<RecusarConsultaInvalida>().Should().ContainSingle();
     }
 
-    [Fact]
-    public async Task Consulta_com_valor_invalido_e_recusada_sem_chegar_a_acao()
+    [Theory]
+    [InlineData("GET")]
+    [InlineData("HEAD")]
+    public async Task Consulta_com_valor_invalido_e_recusada_sem_chegar_a_acao(string metodo)
     {
-        var (contexto, chegou) = await ExecutarAsync(HttpMethods.Get, valido: false);
+        var (contexto, chegou) = await ExecutarAsync(metodo, valido: false);
 
         contexto.Result.Should().BeOfType<BadRequestResult>();
         chegou.Should().BeFalse();
