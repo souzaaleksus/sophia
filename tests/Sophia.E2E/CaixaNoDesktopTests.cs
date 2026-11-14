@@ -24,6 +24,23 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
 
     [Fact]
+    public async Task Trocar_o_produto_de_uma_linha_por_um_ja_lancado_soma_na_existente_e_libera_a_linha()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        await _caixa.LancarAsync(1, "Caderno", "Caderno 96 folhas", "3");
+
+        await _caixa.ProdutoDaLinha(1).FillAsync("Caneta");
+        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Caneta azul" }).ClickAsync();
+
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("2");
+        await Expect(_caixa.ProdutoDaLinha(1)).ToHaveValueAsync(string.Empty);
+        await Expect(_caixa.Linha(1).GetByLabel("Valor unitário")).ToHaveValueAsync(string.Empty);
+        await Expect(_caixa.QuantidadeDaLinha(1)).ToHaveValueAsync(string.Empty);
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 5,00");
+    }
+
+    [Fact]
     public async Task No_desktop_a_linha_mostra_os_botoes_de_quantidade_e_diminuir_comeca_desabilitado()
     {
         await _pagina.GotoAsync("/Vendas/Nova");

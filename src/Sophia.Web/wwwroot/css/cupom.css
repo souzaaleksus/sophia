@@ -1,0 +1,168 @@
+.cupom {
+    --cupom-papel: #ffffff;
+    --cupom-texto: #26323f;
+    --cupom-texto-suave: #5a6b73;
+    --cupom-titulo: #134169;
+    --cupom-linha: #b9c9d3;
+    --cupom-serrilha: 0.6rem;
+    background: var(--cupom-papel);
+    border-radius: var(--raio) var(--raio) 0 0;
+    box-shadow: var(--sombra-flutuante);
+    color: var(--cupom-texto);
+    margin-inline: auto;
+    max-width: 36rem;
+    padding: 1.5rem 1.75rem calc(1.5rem + var(--cupom-serrilha));
+    position: relative;
+    -webkit-mask:
+        conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg) bottom / calc(var(--cupom-serrilha) * 2) var(--cupom-serrilha) repeat-x,
+        linear-gradient(black 0 0) top / 100% calc(100% - var(--cupom-serrilha) + 1px) no-repeat;
+    mask:
+        conic-gradient(from -45deg at bottom, transparent, black 1deg 89deg, transparent 90deg) bottom / calc(var(--cupom-serrilha) * 2) var(--cupom-serrilha) repeat-x,
+        linear-gradient(black 0 0) top / 100% calc(100% - var(--cupom-serrilha) + 1px) no-repeat;
+}
+
+.cupom-topo {
+    align-items: center;
+    border-bottom: 1px dashed var(--cupom-linha);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+}
+
+.cupom-logo {
+    height: 2rem;
+    width: auto;
+}
+
+.cupom-identificacao {
+    display: flex;
+    gap: 1.5rem;
+    margin: 0;
+    text-align: right;
+}
+
+.cupom-identificacao dt {
+    color: var(--cupom-texto-suave);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.cupom-identificacao dd {
+    color: var(--cupom-titulo);
+    font-weight: 600;
+    margin: 0;
+}
+
+.cupom-itens {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    margin-block: 0.5rem;
+    width: 100%;
+}
+
+.cupom-itens th {
+    border-bottom: 1px solid var(--cupom-linha);
+    color: var(--cupom-texto-suave);
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.6rem 0 0.4rem;
+}
+
+.cupom-itens td {
+    padding: 0.55rem 0;
+    vertical-align: top;
+}
+
+.cupom-itens th + th,
+.cupom-itens td + td {
+    padding-left: 1rem;
+}
+
+.cupom-conta {
+    color: var(--cupom-texto-suave);
+    font-size: 0.85rem;
+}
+
+.cupom-rodape {
+    border-top: 1px dashed var(--cupom-linha);
+    padding-top: 0.75rem;
+}
+
+.cupom-resumo {
+    color: var(--cupom-texto-suave);
+    font-size: 0.85rem;
+    margin: 0 0 0.35rem;
+}
+
+.cupom-total {
+    align-items: baseline;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    margin: 0;
+}
+
+.cupom-total span {
+    color: var(--cupom-titulo);
+    font-weight: 600;
+}
+
+.cupom-total strong {
+    color: var(--cupom-titulo);
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+}
+
+.cupom + .voltar {
+    margin-inline: auto;
+    max-width: 36rem;
+}
+
+.cupom-recem-emitido {
+    animation: cupom-saindo 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes cupom-saindo {
+    from {
+        clip-path: inset(0 0 100% 0);
+        transform: translateY(-0.75rem);
+    }
+
+    to {
+        clip-path: inset(0 0 0 0);
+        transform: none;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .cupom {
+        padding-inline: 1.1rem;
+    }
+
+    .cupom-itens td:first-child > span {
+        display: block;
+    }
+
+    .cupom-total {
+        flex-wrap: wrap;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cupom-recem-emitido {
+        animation: none;
+    }
+}
+
+@media print {
+    .cupom {
+        box-shadow: none;
+        max-width: none;
+        -webkit-mask: none;
+        mask: none;
+    }
+}

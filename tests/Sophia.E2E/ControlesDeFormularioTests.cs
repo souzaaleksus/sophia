@@ -26,6 +26,60 @@ public sealed partial class ControlesDeFormularioTests(AplicacaoEmExecucao aplic
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
 
     [Fact]
+    public async Task Apagar_um_separador_da_mascara_apaga_o_digito_antes_dele_e_mantem_o_cursor()
+    {
+        await _pagina.GotoAsync("/Clientes/Novo");
+        var cpf = _pagina.GetByLabel("CPF");
+        await cpf.PressSequentiallyAsync("52998224725");
+        await Expect(cpf).ToHaveValueAsync("529.982.247-25");
+
+        await PosicionarAsync(cpf, 4);
+        await cpf.PressAsync("Backspace");
+
+        await Expect(cpf).ToHaveValueAsync("529.822.472-5");
+        (await CursorAsync(cpf)).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Digitar_no_meio_da_mascara_mantem_o_cursor_e_campo_cheio_nao_perde_digito()
+    {
+        await _pagina.GotoAsync("/Clientes/Novo");
+        var cpf = _pagina.GetByLabel("CPF");
+        await cpf.PressSequentiallyAsync("5299822472");
+
+        await PosicionarAsync(cpf, 4);
+        await cpf.PressSequentiallyAsync("1");
+
+        await Expect(cpf).ToHaveValueAsync("529.198.224-72");
+        (await CursorAsync(cpf)).Should().Be(5);
+
+        await PosicionarAsync(cpf, 1);
+        await cpf.PressSequentiallyAsync("7");
+
+        await Expect(cpf).ToHaveValueAsync("529.198.224-72");
+        (await CursorAsync(cpf)).Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData("Telefone", "+55 11 98765-4321", "(11) 98765-4321")]
+    [InlineData("Telefone", "+55 (11) 3456-7890", "(11) 3456-7890")]
+    [InlineData("Data de nascimento", "1990-05-12", "12/05/1990")]
+    public async Task Valor_colado_ou_preenchido_pelo_navegador_e_entendido_pela_mascara(string campo, string colado, string esperado)
+    {
+        await _pagina.GotoAsync("/Clientes/Novo");
+
+        await _pagina.GetByLabel(campo).FillAsync(colado);
+
+        await Expect(_pagina.GetByLabel(campo)).ToHaveValueAsync(esperado);
+    }
+
+    private static async Task PosicionarAsync(ILocator campo, int posicao) =>
+        await campo.EvaluateAsync("(campo, posicao) => { campo.focus(); campo.setSelectionRange(posicao, posicao); }", posicao);
+
+    private static Task<int> CursorAsync(ILocator campo) =>
+        campo.EvaluateAsync<int>("campo => campo.selectionStart");
+
+    [Fact]
     public async Task O_novo_cliente_abre_com_o_foco_no_cpf()
     {
         await _pagina.GotoAsync("/Clientes/Novo");

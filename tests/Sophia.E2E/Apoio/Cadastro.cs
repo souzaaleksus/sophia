@@ -40,6 +40,7 @@ public sealed class Cadastro(BancoDeTestes banco)
         await using var contexto = banco.NovoContexto();
         var servico = new VendaServico(
             new VendaRepositorio(contexto),
+            new ConsultasDeVendas(contexto),
             new ClienteRepositorio(contexto),
             new ProdutoRepositorio(contexto),
             new UnidadeDeTrabalho(contexto),

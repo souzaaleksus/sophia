@@ -151,22 +151,27 @@ mais vendidos do mês e as cinco vendas mais recentes.
 
 ### 7. Stack
 
-| Camada | Tecnologia | Por quê |
+Cada peça entrou por uma razão concreta, e o critério geral foi o mesmo: usar o que o próprio
+ecossistema .NET oferece, evitar etapa de build no front-end e não depender de serviço externo
+para compilar, testar ou rodar.
+
+| Camada | Tecnologia | Por que usamos |
 |---|---|---|
-| Linguagem e plataforma | C# 12 · .NET 8 (LTS) | versão com suporte de longo prazo |
-| Web | ASP.NET Core MVC · Razor | pedido no enunciado; páginas renderizadas no servidor |
-| Interface | Bootstrap 5.3 · CSS próprio · JavaScript puro (módulos ES) | leve, sem etapa de build no front-end; tema escuro nativo |
-| Tipografia e ícones | Poppins (Google Fonts) · ícones Lucide (licença ISC) em sprite SVG | a mesma fonte da identidade da Sophia; algarismos tabulares nos valores |
-| Acesso a dados | Entity Framework Core 8 | mapeamento explícito via Fluent API, sem migrations |
-| Banco de dados | SQL Server 2019 Express (local) · SQL Server 2022 Express (Docker) | edição gratuita do SQL Server |
-| Testes de unidade | xUnit · FluentAssertions | domínio e serviços isolados |
-| Especificação executável (BDD) | Reqnroll · Gherkin em português | os cenários deste documento rodam como testes |
-| Testes de integração | xUnit · SQL Server real | o banco é criado pelo próprio script entregue |
-| Testes de tela (E2E) | Playwright para .NET | navegador de verdade operando a aplicação |
-| Contêineres | Docker · Docker Compose | sobe banco e aplicação com um comando |
-| Textos | `IStringLocalizer` · arquivos `.resx` | nenhuma frase da interface escrita no código |
-| Análise estática | analisadores do .NET · SonarAnalyzer.CSharp · métricas de código · ESLint · `dotnet format` | regras do SonarQube e limites de complexidade aplicados no próprio build, sem serviço externo |
-| Integração contínua | GitHub Actions | confere formatação e JavaScript, compila e roda os testes a cada PR |
+| Linguagem e plataforma | C# 12 · .NET 8 | O enunciado pede ASP.NET Core MVC, e o .NET 8 foi a versão LTS (suporte de longo prazo) quando o projeto começou. O suporte oficial do .NET 8 terminou em 10/11/2026: a atualização para o .NET 10, o LTS atual, é o próximo passo de manutenção. |
+| Web | ASP.NET Core MVC · Razor | Pedido no enunciado. As páginas chegam prontas do servidor, então a tela funciona antes de qualquer JavaScript, e o framework já entrega validação do modelo, proteção contra envio forjado (antiforgery), localização e página de erro. |
+| Interface | Bootstrap 5.3 · CSS próprio por área · JavaScript puro em módulos ES | O Bootstrap dá grade, formulários e o tema escuro (`data-bs-theme`) prontos e já cuidados em acessibilidade. O CSS próprio, dividido por área em `wwwroot/css`, aplica a identidade da Sophia. O JavaScript roda direto no navegador, sem npm nem bundler na aplicação: o que precisa de interação (caixa, busca enquanto digita, diálogo) é pequeno demais para justificar um framework. |
+| Validação no navegador | jQuery Validation · validação discreta do ASP.NET Core | É o par que transforma as regras (`DataAnnotations`) do modelo em validação no navegador, com as mesmas mensagens do servidor. O jQuery entra só por causa dele. |
+| Tipografia e ícones | Poppins (Google Fonts) · ícones Lucide em sprite SVG | A Poppins é a fonte da identidade da Sophia e tem algarismos tabulares, que alinham os valores em coluna. Os ícones Lucide (licença ISC) ficam num sprite SVG da própria página: uma requisição a menos e cor herdada do texto, inclusive no tema escuro. |
+| Acesso a dados | Entity Framework Core 8 | Consultas tipadas e sempre parametrizadas (nada de SQL montado com texto do usuário), projeção direta para os DTOs da tela e tradução da violação de índice único para a mensagem do negócio. Sem migrations: o enunciado pede o script, e ele é a única fonte do esquema. |
+| Banco de dados | SQL Server Express (2019 ou mais novo local, 2022 no Docker) | Edição gratuita do SQL Server. O mesmo script T-SQL roda no local e no contêiner, e recursos como o índice único filtrado garantem regras do negócio, como a RN25, no próprio banco. |
+| Testes de unidade e de serviço | xUnit · FluentAssertions 6 | O xUnit é o padrão do ecossistema .NET, com fixtures que compartilham um banco por coleção de testes. O FluentAssertions faz a falha dizer o esperado e o encontrado em forma de frase. A versão 6 tem licença Apache 2.0; a 8 passou a ser paga para uso comercial. |
+| Especificação executável (BDD) | Reqnroll · Gherkin em português | Sucessor de código aberto do SpecFlow. Os cenários desta especificação rodam como testes, então o documento não fica desatualizado em relação ao código. |
+| Testes de integração | xUnit · SQL Server real | Conferem o que um dublê não conferiria: o script do banco, os índices, o SQL que o EF gera e a corrida entre duas gravações. |
+| Testes de tela (E2E) | Playwright para .NET | Opera um Chromium de verdade, na mesma linguagem dos outros testes. Espera os elementos sozinho, o que evita testes instáveis, e emula celular, toque, rede lenta e tema escuro. |
+| Contêineres | Docker · Docker Compose | Quem avalia sobe o banco, cria as tabelas, carrega os dados de demonstração e abre a aplicação com um comando, sem instalar .NET nem SQL Server. |
+| Textos | `IStringLocalizer` · arquivos `.resx` | Mecanismo nativo do ASP.NET Core. Todas as frases da tela ficam num lugar só, e um teste confere que nenhuma chave falta e nenhuma sobra. |
+| Análise estática | analisadores do .NET · SonarAnalyzer.CSharp · métricas de código · ESLint · `dotnet format` | Defeito comum, complexidade alta e formatação fora do padrão quebram o build, na máquina e no CI. As regras do SonarQube rodam como analisador, sem depender de servidor. |
+| Integração contínua | GitHub Actions | O repositório está no GitHub. A cada PR roda formatação, ESLint, build e a suíte completa, com SQL Server em contêiner, e o merge só acontece com tudo verde. |
 
 ### 8. Modelo de dados
 
@@ -407,8 +412,8 @@ Sophia.Web ─────────────► Sophia.Application ──�
 | Projeto | Responsabilidade | Depende de |
 |---|---|---|
 | `Sophia.Domain` | entidades (`Cliente`, `Produto`, `Venda`, `ItemVenda`), o valor `Cpf` e todas as regras de negócio | nada |
-| `Sophia.Application` | casos de uso (`ClienteServico`, `ProdutoServico`, `VendaServico`), contratos de repositório, DTOs | Domain |
-| `Sophia.Infrastructure` | EF Core, repositórios, unidade de trabalho, relógio no fuso de Brasília | Application |
+| `Sophia.Application` | casos de uso (`ClienteServico`, `ProdutoServico`, `VendaServico`, `PainelServico`), contratos de repositório (gravação) e de consulta (leitura), DTOs | Domain |
+| `Sophia.Infrastructure` | EF Core, repositórios que gravam (`VendaRepositorio`), consultas que só leem (`ConsultasDeVendas`, `ConsultasDoPainel`), unidade de trabalho, relógio no fuso de Brasília | Application |
 | `Sophia.Web` | controllers, modelos de formulário, telas Razor, JavaScript | Application; Infrastructure só para registrar as dependências |
 
 Caminho de uma venda:
@@ -498,7 +503,8 @@ JavaScript.
 | Índice de manutenibilidade (CA1505) | não medido | no mínimo 60; 23 achados resolvidos dividindo métodos e classes em partes nomeadas |
 | Estilo de código no build | não | sim (`EnforceCodeStyleInBuild`) e `dotnet format` no CI |
 | JavaScript | sem verificação | ESLint com complexidade até 10, funções de até 60 linhas e no máximo 3 níveis de aninhamento |
-| Maior arquivo JavaScript | `nova-venda.js` com 335 linhas | `nova-venda.js` com 60 linhas, compondo 5 módulos em `js/caixa/` |
+| Maior arquivo JavaScript | `nova-venda.js` com 335 linhas | `autocompletar.js` com 231 linhas; `nova-venda.js` e `site.js` só compõem os módulos de `js/caixa/` e `js/comum/` |
+| Maior arquivo CSS | `site.css` com 1.877 linhas | `componentes.css` com 462 linhas; o estilo fica dividido por área em `wwwroot/css` |
 
 ---
 
@@ -526,6 +532,8 @@ tests/Sophia.Integration.Tests    integração com SQL Server
 tests/Sophia.E2E                  tela com Playwright
 tests/Sophia.Testes.Banco         banco temporário e composição dos serviços para os testes
 src/Sophia.Web/Recursos           textos da interface (Textos.resx)
+src/Sophia.Web/wwwroot/css        estilo por área: base, layout, componentes, responsivo, painel, pessoas, cupom, listas e caixa
+src/Sophia.Web/wwwroot/js         módulos ES: comum/ (todas as telas), caixa/ (nova venda), lista, confirmar e autocompletar
 Dockerfile, docker-compose.yml    execução em contêineres
 eslint.config.mjs                 regras do JavaScript
 CodeMetricsConfig.txt             limites de complexidade e manutenibilidade

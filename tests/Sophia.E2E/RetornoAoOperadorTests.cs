@@ -22,6 +22,46 @@ public sealed partial class RetornoAoOperadorTests(AplicacaoEmExecucao aplicacao
 
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Busca_abandonada_nao_abre_a_lista_quando_a_resposta_chega(bool apagando)
+    {
+        await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await Rede.DeixarLentaAsync(_pagina, TimeSpan.FromMilliseconds(900));
+
+        await _caixa.ComboboxDeCliente.FillAsync("Ma");
+        await Task.Delay(400);
+        if (apagando)
+        {
+            await _caixa.ComboboxDeCliente.FillAsync(string.Empty);
+        }
+        else
+        {
+            await _caixa.ComboboxDeCliente.PressAsync("Escape");
+        }
+
+        await Task.Delay(1500);
+        await Expect(_pagina.GetByRole(AriaRole.Option)).ToHaveCountAsync(0);
+        await Expect(_caixa.ComboboxDeCliente).ToHaveAttributeAsync("aria-expanded", "false");
+    }
+
+    [Fact]
+    public async Task O_atalho_para_cadastrar_cliente_e_alcancado_pelo_teclado()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.ComboboxDeCliente.FillAsync("zzzz");
+        var cadastrar = _pagina.GetByRole(AriaRole.Link, new() { Name = "Cadastrar novo cliente" });
+        await Expect(cadastrar).ToBeVisibleAsync();
+
+        await _pagina.Keyboard.PressAsync("Tab");
+        await Task.Delay(400);
+
+        await Expect(cadastrar).ToBeVisibleAsync();
+        await Expect(cadastrar).ToBeFocusedAsync();
+    }
+
     [Fact]
     public async Task Enquanto_a_busca_de_cliente_demora_a_lista_mostra_buscando()
     {
