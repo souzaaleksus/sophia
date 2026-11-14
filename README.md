@@ -118,7 +118,7 @@ vendas e o atalho de dias da lista de vendas) são parâmetros da seção `Sophi
 | RN07 | Telefone, se informado, com DDD | Informe o telefone com DDD. | Clientes › Recusar dados inválidos |
 | RN08 | Cliente com venda não pode ser excluído | Este cliente possui vendas e não pode ser excluído. | Clientes › Não excluir cliente que já comprou |
 | RN09 | Nome do produto obrigatório | Informe o nome. | Produtos › Recusar dados inválidos |
-| RN10 | Nome do produto não se repete; maiúsculas e espaços a mais não fazem outro nome | Já existe um produto com este nome. | Produtos › Não aceitar dois produtos com o mesmo nome |
+| RN10 | Nome do produto não se repete; maiúsculas, acentos e espaços a mais não fazem outro nome ("Café Torrado" e "Cafe Torrado" são o mesmo) | Já existe um produto com este nome. | Produtos › Não aceitar dois produtos com o mesmo nome; Produtos › Não aceitar dois produtos cujo nome só difere no acento |
 | RN11 | Valor unitário obrigatório | Informe o valor unitário. | Produtos › Recusar dados inválidos |
 | RN12 | Valor unitário maior que zero | O valor unitário deve ser maior que zero. | Produtos › Recusar dados inválidos |
 | RN13 | Valor unitário com até duas casas | O valor unitário aceita no máximo duas casas decimais. | Produtos › Recusar dados inválidos |
@@ -139,6 +139,7 @@ vendas e o atalho de dias da lista de vendas) são parâmetros da seção `Sophi
 | RN28 | A lista de vendas mostra 25 vendas por página, das mais recentes para as mais antigas; página pedida antes da primeira mostra a primeira, e depois da última mostra a última | — | Consulta de vendas › A lista de vendas mostra 25 por página, das mais recentes para as mais antigas |
 | RN29 | As listas de clientes e de produtos mostram 25 por página, com a busca aplicada antes da divisão em páginas (clientes por CPF ou nome, produtos por nome) e ordenação por coluna: clientes por nome ou CPF, produtos por nome ou valor, em ordem crescente ou decrescente; o padrão é o nome em ordem alfabética, ordem desconhecida volta ao padrão e, no empate, vale a ordem de cadastro | — | Consulta de clientes › Ordenar a lista pela coluna escolhida; Consulta de produtos › Ordenar a lista pela coluna escolhida |
 | RN30 | A lista de vendas pode ser filtrada por período, com as duas datas inclusive (data inicial depois da final é lida ao contrário; uma data só deixa o outro lado aberto), e ordenada pela data ou pelo total, em ordem crescente ou decrescente; o padrão é da mais recente para a mais antiga e, no empate, vale o número da venda no mesmo sentido | — | Consulta de vendas › Filtrar as vendas por período, com as duas datas inclusive; Consulta de vendas › Ordenar pelo total da venda |
+| RN31 | A quantidade de cada item da venda vai até o máximo configurado em `Sophia:QuantidadeMaximaPorItem` (padrão 99.999); o banco recusa acima de 999.999, o maior valor que o parâmetro aceita | A quantidade aceita no máximo 99.999 por item. | Vendas › Quantidade acima do máximo por item é recusada |
 
 ### 6. Requisitos não funcionais
 
@@ -176,7 +177,7 @@ para compilar, testar ou rodar.
 | Contêineres | Docker · Docker Compose | Quem avalia sobe o banco, cria as tabelas, carrega os dados de demonstração e abre a aplicação com um comando, sem instalar .NET nem SQL Server. |
 | Textos | `IStringLocalizer` · arquivos `.resx` | Mecanismo nativo do ASP.NET Core. Todas as frases da tela ficam num lugar só, e um teste confere que nenhuma chave falta e nenhuma sobra. |
 | Análise estática | analisadores do .NET · SonarAnalyzer.CSharp · métricas de código · ESLint · `dotnet format` | Defeito comum, complexidade alta e formatação fora do padrão quebram o build, na máquina e no CI. As regras do SonarQube rodam como analisador, sem depender de servidor. |
-| Integração contínua | GitHub Actions | O repositório está no GitHub. A cada PR roda formatação, ESLint, build e a suíte completa, com SQL Server em contêiner, e o merge só acontece com tudo verde. |
+| Integração contínua | GitHub Actions | O repositório está no GitHub. A cada PR roda formatação, ESLint, build e a suíte completa, com SQL Server em contêiner, e um segundo job sobe a aplicação pelo `docker compose` do Caminho A e confere o painel e a carga de demonstração: o caminho Docker fica provado a cada mudança. O merge só acontece com tudo verde. |
 
 ### 8. Modelo de dados
 
@@ -228,6 +229,7 @@ de novo acrescenta a coluna e o índice sem apagar nada.
 | RN28 | `ConsultaDeVendas.feature` | `Sophia.Application.Tests` (Pagina, VendaServico: tamanho, ordem e limites de página) | `Sophia.Integration.Tests` (contagem e recorte com `OFFSET`/`FETCH` no SQL Server) |
 | RN29 | `ConsultaDeClientes.feature`, `ConsultaDeProdutos.feature` | `Sophia.Application.Tests` (Ordenacao, ClienteServico, ProdutoServico: busca, ordem, desempate e limites de página) | `Sophia.Integration.Tests` (contagem, `ORDER BY` e recorte com `OFFSET`/`FETCH` no SQL Server) |
 | RN30 | `ConsultaDeVendas.feature` | `Sophia.Application.Tests` (ConsultaDeVendas, VendaServico: período, ordem pela data ou pelo total) | `Sophia.Integration.Tests` (período e total somado no SQL Server, ligação das datas `yyyy-MM-dd` da consulta) |
+| RN31 | `RegistroDeVendas.feature` › Quantidade acima do máximo por item é recusada | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` (VendaServico, ParametrosDoSophia) | `Sophia.Integration.Tests` (CHECK no banco, subida com parâmetro fora da faixa), `Sophia.E2E` (campo com máximo, soma de quantidades sem estouro) |
 
 ---
 
@@ -299,8 +301,20 @@ Pré-requisitos:
    sqlcmd -S .\SQLEXPRESS -E -C -i database/create-database.sql
    ```
 
-   No SSMS, abra `database/create-database.sql` e execute (F5). O script pode ser rodado de
-   novo sem apagar nada: ele só cria o que ainda não existe.
+   No SSMS, abra `database/create-database.sql` e execute (F5) com o `master` selecionado. O
+   script pode ser rodado de novo sem apagar nada: ele só cria o que ainda não existe.
+
+   Já existe um banco `Sophia` na instância? Use outro nome: crie o banco vazio e rode o script
+   conectado a ele. Conectado a um banco que não é de sistema, o script prepara esse banco e não
+   toca no `Sophia`.
+
+   ```powershell
+   sqlcmd -S .\SQLEXPRESS -E -C -Q "CREATE DATABASE [SophiaAvaliacao] COLLATE Latin1_General_CI_AS"
+   sqlcmd -S .\SQLEXPRESS -E -C -d SophiaAvaliacao -i database/create-database.sql
+   ```
+
+   No SSMS, escolha o banco na lista antes do F5. Depois aponte a aplicação para ele com
+   `ConnectionStrings__Sophia="Server=.\SQLEXPRESS;Database=SophiaAvaliacao;Integrated Security=true;TrustServerCertificate=true"`.
 
 2. Confira se a conexão aponta para a sua instância. Ela fica em
    `src/Sophia.Web/appsettings.json`:
@@ -335,6 +349,8 @@ No Docker a carga roda por padrão, na subida. No caminho local, rode-a depois d
 ```powershell
 sqlcmd -S .\SQLEXPRESS -E -C -d Sophia -i database/carga-de-demonstracao.sql
 ```
+
+Com outro nome de banco, troque o `-d Sophia` pelo nome escolhido.
 
 No Docker, para carregar num banco que subiu vazio (com `SOPHIA_DADOS_DE_DEMONSTRACAO=nao`), troque
 a variável para `sim` e rode `docker compose up -d criar-banco`.
@@ -495,22 +511,32 @@ Caminho de uma venda:
   a aplicação de subir. O JavaScript recebe endereços e textos por atributos `data-*` gerados pela
   view. Exceção consciente: a mensagem de configuração ausente no `Program`, que é para quem
   instala, não para quem usa a tela.
-- **DRY sem herança forçada.** Listas, busca, cabeçalho ordenável, paginador e páginas de
-  exclusão são partials comuns; listar, gravar e excluir cadastro ficam em `Apoio/AcoesDeCadastro`
-  e o salvamento com tradução de duplicidade em `GravacaoDeCadastro`. Os controllers e os serviços
-  de cliente e de produto continuam separados e parecidos: com dois casos, uma classe base
-  genérica custaria mais leitura do que economizaria.
+- **Cadastros com um controller base.** Clientes e produtos herdam de
+  `Controllers/CadastroController`, que lista, busca, grava, exclui e confere o envio do
+  formulário; cada controller concreto só informa o serviço, os avisos e as conversões entre
+  formulário e dados, sem sobrescrever nenhuma action. Listas, busca, cabeçalho ordenável,
+  paginador e páginas de exclusão são partials comuns, e o salvamento com tradução de duplicidade
+  fica em `GravacaoDeCadastro`.
 - **Duas regras de qualidade valem só para o código de produção.** Nos testes, nomes com
   sublinhado (CA1707) deixam o nome do teste legível como frase, e o índice de manutenibilidade
   (CA1505) não se aplica: um teste é um roteiro declarativo de preparar, agir e conferir.
 - **Uma regra do Sonar fica desligada no código de produção: S6967** (conferir o `ModelState` em
   cada action). A conferência existe, mas num lugar só: o filtro `RecusarConsultaInvalida` recusa
-  toda consulta GET com valor inválido, e o envio de formulário é conferido em `AcoesDeCadastro`.
+  toda consulta GET com valor inválido, e o envio de formulário é conferido no
+  `CadastroController`.
   Repetir a mesma linha em cada action era o que a regra pedia.
 - **Docker para avaliação.** O `docker-compose.yml` conecta como `sa`, com senha padrão se
-  `SOPHIA_SENHA_DO_BANCO` não for definida, e o script cria o banco com o nome fixo `Sophia`:
-  se ele já existir, o script reaproveita e só cria o que falta, sem apagar dados. Fora da
-  avaliação, defina a senha e use um login próprio da aplicação.
+  `SOPHIA_SENHA_DO_BANCO` não for definida. Fora da avaliação, defina a senha e use um login
+  próprio da aplicação.
+- **Um script só, para qualquer nome de banco.** Sem nada escolhido, o script cria e prepara o
+  `Sophia`; conectado a outro banco, prepara esse. Para isso, cada bloco do esquema roda dentro
+  do banco escolhido por `sp_executesql`, e por isso as aspas aparecem dobradas no texto: o
+  `USE [Sophia]` escrito direto falha ao compilar quando o banco ainda não existe, mesmo dentro
+  de um `IF` falso. O script continua idempotente, roda no SSMS com F5 sem modo SQLCMD e não usa
+  variáveis do `sqlcmd`.
+- **A quantidade por item tem teto (RN31).** 99.999 por padrão, configurável, com um CHECK no
+  banco no maior valor aceito; as somas de unidades usam inteiro de 64 bits, então nem vários
+  itens no máximo estouram a tela.
 - **Identidade visual da Sophia.** Paleta, fonte e logo seguem o site da marca; o azul-petróleo
   foi escurecido de `#007B9E` para `#007596` porque o original não atingia contraste AA sobre o
   fundo claro.
