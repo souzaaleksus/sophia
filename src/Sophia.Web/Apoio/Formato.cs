@@ -8,7 +8,11 @@ public static class Formato
 {
     private static readonly CultureInfo PortuguesDoBrasil = CultureInfo.GetCultureInfo("pt-BR");
 
+    public const decimal MaiorValorUnitario = 999_999.99m;
+
     public static CultureInfo Cultura => PortuguesDoBrasil;
+
+    public static string Invariante(decimal valor) => valor.ToString(CultureInfo.InvariantCulture);
 
     public static string Moeda(decimal valor) => valor.ToString("C", PortuguesDoBrasil);
 

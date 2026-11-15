@@ -31,6 +31,8 @@
                        autocomplete="off" aria-required="true" placeholder="0,00"
                        data-val-number="@T["validacao.valor-invalido"]"
                        data-val-maximo="@T["binder.numero-acima-do-permitido-no-campo", T["campo.valor-unitario"].Value]"
+                       data-val-maximo-valor="@Formato.Invariante(Formato.MaiorValorUnitario)"
+                       data-val-duascasas="@Sophia.Domain.Recursos.Mensagens.ValorUnitarioComMaisDeDuasCasas"
                        value="@ValorTentado.Ou(ViewData.ModelState, nameof(Model.ValorUnitario), Formato.Numero(Model.ValorUnitario))" />
             </div>
             <span class="campo-dica">@T["produtos.dica-valor"]</span>

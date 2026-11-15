@@ -1,14 +1,19 @@
-import { escritaDecimalValida, lerDecimal } from './formato.js';
+import { escritaDecimalValida, lerDecimal, temMaisDeDuasCasas } from './formato.js';
 
 if (window.jQuery?.validator) {
     jQuery.validator.methods.number = function (valor, elemento) {
         return this.optional(elemento) || escritaDecimalValida(valor);
     };
 
-    jQuery.validator.addMethod('maximo', function (valor, elemento) {
-        return this.optional(elemento) || !escritaDecimalValida(valor) || lerDecimal(valor) !== null;
+    jQuery.validator.addMethod('maximo', function (valor, elemento, maximo) {
+        return this.optional(elemento) || !escritaDecimalValida(valor) || lerDecimal(valor) <= lerDecimal(maximo);
     });
-    jQuery.validator.unobtrusive.adapters.addBool('maximo');
+    jQuery.validator.unobtrusive.adapters.addSingleVal('maximo', 'valor');
+
+    jQuery.validator.addMethod('duascasas', function (valor, elemento) {
+        return this.optional(elemento) || !temMaisDeDuasCasas(valor);
+    });
+    jQuery.validator.unobtrusive.adapters.addBool('duascasas');
 
     jQuery.validator.methods.range = function (valor, elemento, limites) {
         const numero = lerDecimal(valor);

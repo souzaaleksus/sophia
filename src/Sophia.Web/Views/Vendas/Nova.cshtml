@@ -31,6 +31,7 @@
                     <span class="input-group-text">@T["geral.moeda"]</span>
                     <input id="item-@indice-ValorUnitario" name="Itens[@indice].ValorUnitario" value="@Valor("ValorUnitario", Formato.Numero(item.ValorUnitario))"
                            type="text" class="form-control valor" inputmode="decimal" autocomplete="off"
+                           data-valor-maximo="@Formato.Invariante(Formato.MaiorValorUnitario)"
                            placeholder="@T["caixa.valor-vazio"]" data-campo="ValorUnitario" />
                 </div>
                 <span class="erro" data-erro="ValorUnitario" data-valmsg-for="Itens[@indice].ValorUnitario">@ErroDe("ValorUnitario")</span>
@@ -89,6 +90,7 @@
       data-texto-produto-no-maximo="@T["caixa.produto-no-maximo"]"
       data-texto-valor-invalido="@T["validacao.valor-invalido"]"
       data-texto-valor-com-mais-de-duas-casas="@Sophia.Domain.Recursos.Mensagens.ValorUnitarioComMaisDeDuasCasas"
+      data-texto-quantidade-acima-do-maximo="@Sophia.Domain.Recursos.Mensagens.QuantidadeAcimaDoMaximo(Parametros.QuantidadeMaximaPorItem)"
       data-texto-valor-acima-do-permitido="@T["binder.numero-acima-do-permitido-no-campo", T["campo.valor-unitario"].Value]"
       data-texto-item="@T["venda.itens-singular"]"
       data-texto-itens="@T["venda.itens-plural"]"

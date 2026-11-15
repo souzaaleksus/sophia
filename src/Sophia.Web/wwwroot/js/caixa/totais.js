@@ -1,8 +1,8 @@
-import { formatarContagem, formatarDecimalDeCentavos, formatarMoedaDeCentavos, lerCentavos, lerInteiro } from '../formato.js';
+import { formatarContagem, formatarDecimal, formatarMoeda, lerCentavos, lerInteiro } from '../formato.js';
 
 export function somarLinhas(linhas) {
     return linhas.reduce((soma, linha) => {
-        const subtotalEmCentavos = (linha.centavos ?? 0n) * BigInt(linha.quantidade ?? 0);
+        const subtotalEmCentavos = (linha.centavos ?? 0) * (linha.quantidade ?? 0);
         const lancada = linha.produtoEscolhido;
         return {
             totalEmCentavos: soma.totalEmCentavos + subtotalEmCentavos,
@@ -10,7 +10,7 @@ export function somarLinhas(linhas) {
             unidades: soma.unidades + (lancada ? linha.quantidade ?? 0 : 0),
             subtotaisEmCentavos: [...soma.subtotaisEmCentavos, subtotalEmCentavos],
         };
-    }, { totalEmCentavos: 0n, itens: 0, unidades: 0, subtotaisEmCentavos: [] });
+    }, { totalEmCentavos: 0, itens: 0, unidades: 0, subtotaisEmCentavos: [] });
 }
 
 export function criarVisor(formulario, textos, movimentoReduzido) {
@@ -20,7 +20,7 @@ export function criarVisor(formulario, textos, movimentoReduzido) {
     const unidades = formulario.querySelector('[data-testid=unidades-da-venda]');
 
     function mostrar(soma) {
-        const texto = formatarDecimalDeCentavos(soma.totalEmCentavos);
+        const texto = formatarDecimal(soma.totalEmCentavos / 100);
         if (valor.textContent !== texto) {
             escreverQuebrandoNoMilhar(valor, texto);
             piscar();
@@ -41,16 +41,20 @@ export function criarVisor(formulario, textos, movimentoReduzido) {
 
 export function lerLinha(item) {
     const campo = nome => item.querySelector(`[data-campo=${nome}]`);
+    const valor = campo('ValorUnitario');
+    const centavos = lerCentavos(valor.value);
     return {
-        centavos: lerCentavos(campo('ValorUnitario').value),
+        centavos: centavos !== null && centavos <= lerCentavos(valor.dataset.valorMaximo) ? centavos : null,
         quantidade: lerInteiro(campo('Quantidade').value),
         produtoEscolhido: campo('ProdutoId').value !== '',
     };
 }
 
 export function mostrarSubtotal(item, subtotalEmCentavos, quantidade) {
-    escreverQuebrandoNoMilhar(item.querySelector('[data-campo=Subtotal]'), formatarMoedaDeCentavos(subtotalEmCentavos));
+    escreverQuebrandoNoMilhar(item.querySelector('[data-campo=Subtotal]'), formatarMoeda(subtotalEmCentavos / 100));
+    const maximo = lerInteiro(item.querySelector('[data-campo=Quantidade]').max) ?? Infinity;
     item.querySelector('[data-acao=menos]').disabled = (quantidade ?? 0) <= 1;
+    item.querySelector('[data-acao=mais]').disabled = (quantidade ?? 0) >= maximo;
 }
 
 function escreverQuebrandoNoMilhar(elemento, texto) {

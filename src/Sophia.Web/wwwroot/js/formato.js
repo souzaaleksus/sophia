@@ -18,7 +18,6 @@ const comVirgula = /^([1-9]\d{0,2}(\.\d{3})+|\d+),\d+$/;
 const comMilhar = /^[1-9]\d{0,2}(\.\d{3})+$/;
 const comPontoDecimal = /^\d+\.\d{1,2}$/;
 const soDigitos = /^\d+$/;
-const limiteDoValor = 1e16;
 
 function normalizarDecimal(numero) {
     if (comVirgula.test(numero)) {
@@ -32,67 +31,39 @@ function normalizarDecimal(numero) {
     return comPontoDecimal.test(numero) || soDigitos.test(numero) ? numero : null;
 }
 
-function decompor(texto) {
+function separarDecimal(texto) {
     const limpo = String(texto ?? '').replace(/\s/g, '');
     const negativo = limpo.startsWith('-');
-    return { numero: normalizarDecimal(negativo ? limpo.slice(1) : limpo), negativo };
+    const numero = normalizarDecimal(negativo ? limpo.slice(1) : limpo);
+    return numero === null ? null : { numero, negativo, casas: numero.split('.')[1]?.length ?? 0 };
 }
 
 export function escritaDecimalValida(texto) {
-    return decompor(texto).numero !== null;
-}
-
-function separarDecimal(texto) {
-    const { numero, negativo } = decompor(texto);
-    return numero === null || Number(numero) >= limiteDoValor ? null : { numero, negativo };
-}
-
-function casasDecimais(separado) {
-    return separado.numero.split('.')[1]?.length ?? 0;
+    return separarDecimal(texto) !== null;
 }
 
 export function temMaisDeDuasCasas(texto) {
-    const separado = separarDecimal(texto);
-    return separado !== null && casasDecimais(separado) > 2;
+    return (separarDecimal(texto)?.casas ?? 0) > 2;
 }
 
 export function reescreverDecimal(texto) {
-    const centavos = lerCentavos(texto);
-    return centavos === null ? null : formatarDecimalDeCentavos(centavos);
+    const separado = separarDecimal(texto);
+    return separado === null || separado.casas > 2 ? null : decimal.format(`${separado.negativo ? '-' : ''}${separado.numero}`);
 }
 
 export function lerDecimal(texto) {
     const separado = separarDecimal(texto);
-    if (separado === null) {
-        return null;
-    }
-
-    const valor = Number(separado.numero);
-    return separado.negativo ? -valor : valor;
+    return separado === null ? null : (separado.negativo ? -1 : 1) * Number(separado.numero);
 }
 
 export function lerCentavos(texto) {
     const separado = separarDecimal(texto);
-    if (separado === null || casasDecimais(separado) > 2) {
+    if (separado === null || separado.casas > 2) {
         return null;
     }
 
-    const [inteiro, fracao = ''] = separado.numero.split('.');
-    const centavos = BigInt(inteiro) * 100n + BigInt(fracao.padEnd(2, '0'));
-    return separado.negativo ? -centavos : centavos;
-}
-
-function textoDosCentavos(centavos) {
-    const absoluto = (centavos < 0n ? -centavos : centavos).toString().padStart(3, '0');
-    return `${centavos < 0n ? '-' : ''}${absoluto.slice(0, -2)}.${absoluto.slice(-2)}`;
-}
-
-export function formatarMoedaDeCentavos(centavos) {
-    return moeda.format(textoDosCentavos(centavos));
-}
-
-export function formatarDecimalDeCentavos(centavos) {
-    return decimal.format(textoDosCentavos(centavos));
+    const [reais, centavos = ''] = separado.numero.split('.');
+    return (separado.negativo ? -1 : 1) * (Number(reais) * 100 + Number(centavos.padEnd(2, '0')));
 }
 
 export function lerInteiro(texto) {
