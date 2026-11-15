@@ -255,7 +255,8 @@ cd sophia
 ### Caminho A — Docker
 
 Pré-requisito: Docker com o plugin Compose (Docker Desktop no Windows/macOS ou Docker Engine
-no Linux/WSL). Sem Docker na máquina, o caminho pode ser conferido no job `docker` do
+no Linux/WSL). No Windows, o Docker pode estar instalado dentro da WSL mesmo sem aparecer no
+PowerShell: `wsl docker version` confere, e os comandos abaixo rodam igual dentro da WSL. Sem Docker na máquina, o caminho pode ser conferido no job `docker` do
 [CI](https://github.com/souzaaleksus/sophia/actions/workflows/testes.yml), que a cada PR sobe
 este mesmo `docker compose`, abre o painel com a carga de demonstração e confere que o login da
 aplicação não consegue criar tabela.
@@ -293,8 +294,9 @@ aplicação não consegue criar tabela.
    próxima subida. Quando o Docker reinicia, o `banco` e o `web` voltam sozinhos, se não
    tiverem sido parados com `docker compose stop` ou `down`. Com o Docker instalado dentro da
    WSL, eles voltam quando a WSL volta a rodar. Para começar do zero, use `docker compose down -v`.
-   Um volume criado por uma versão anterior do Sophia é recusado pelo script (o `criar-banco`
-   termina com erro e diz o que falta); nesse caso, `docker compose down -v` e suba de novo.
+   Um volume criado pela versão imediatamente anterior do Sophia é atualizado pelo `criar-banco`
+   na subida, sem perder dados; um volume mais antigo é recusado (o `criar-banco` termina com erro
+   e diz o que falta), e nesse caso `docker compose down -v` começa do zero.
 
 A aplicação não conecta como `sa`: o `criar-banco` cria o login `sophia_app`
 (`database/usuario-da-aplicacao.sql`), que só lê e grava no banco `Sophia`, e o `sa` fica só para
@@ -324,11 +326,30 @@ Pré-requisitos:
    entra nele e cria as tabelas numa transação só: ou cria todas, ou nenhuma. Rodar de novo não
    muda nada. O `-b` faz o `sqlcmd` terminar com erro quando o script recusa o banco; sem ele, a
    recusa aparece na tela e nada é alterado do mesmo jeito. O script não prepara o banco em que
-   você está conectado: rodado com `-d` de outro banco, ele recusa e não grava nada. Se o banco `Sophia` já existir com outras tabelas, com outro agrupamento ou criado por uma
-   versão anterior do script, ele para com uma mensagem que diz o que fazer, sem alterar nada.
+   você está conectado: rodado com `-d` de outro banco, ele recusa e não grava nada. Um banco `Sophia` criado pela versão imediatamente anterior do script é atualizado na mesma
+   transação, sem perder dados: os itens de venda ganham o nome do produto da época (preenchido
+   com o nome atual) e o valor unitário ganha o teto da RN32. Se algum valor já gravado passar do
+   teto, ou se o banco tiver outras tabelas, outro agrupamento ou uma versão mais antiga, o script
+   para com uma mensagem que diz o que fazer, sem alterar nada.
 
-   Já existe um banco `Sophia` na instância? Use outro nome: troque `Sophia` no topo do script (as
-   duas linhas que citam o nome, a do `CREATE DATABASE` e a do `USE`) e aponte a aplicação para ele com
+   Já existe um banco `Sophia` na instância? Use outro nome sem editar o script: o comando abaixo
+   troca `Sophia` pelo nome escolhido (aqui, `SophiaAvaliacao`) numa cópia temporária e a entrega ao
+   `sqlcmd`. O nome só aparece nas duas linhas do topo do script, a do `CREATE DATABASE` e a do `USE`.
+
+   No PowerShell (Windows PowerShell 5.1 ou PowerShell 7):
+
+   ```powershell
+   $f = New-TemporaryFile; [IO.File]::WriteAllText($f.FullName, ((Get-Content database/create-database.sql -Raw -Encoding UTF8) -replace 'Sophia', 'SophiaAvaliacao'), [Text.UTF8Encoding]::new($true)); sqlcmd -S .\SQLEXPRESS -E -C -b -i $f.FullName; Remove-Item $f
+   ```
+
+   No bash (Linux, macOS ou WSL), com a senha do `sa` em `SQLCMDPASSWORD`:
+
+   ```bash
+   tail -c +4 database/create-database.sql | sed 's/Sophia/SophiaAvaliacao/g' | sqlcmd -S localhost -U sa -C -b
+   ```
+
+   O `tail -c +4` tira a marca de UTF-8 (BOM) do começo do arquivo, que o `sqlcmd` só reconhece
+   quando lê de um arquivo. Depois aponte a aplicação para o banco novo com
    `ConnectionStrings__Sophia="Server=.\SQLEXPRESS;Database=SophiaAvaliacao;Integrated Security=true;TrustServerCertificate=true"`.
 
 2. Confira se a conexão aponta para a sua instância. Ela fica em
@@ -622,11 +643,13 @@ Caminho de uma venda:
   lê e grava (`db_datareader` e `db_datawriter`); o `sa` só cria o banco. O job `docker` do CI
   confere que a aplicação funciona com esse login e que ele não consegue criar tabela.
 - **Script em T-SQL direto, criação atômica.** O script cria o banco `Sophia`, entra nele, confere
-  o que já existe e cria tudo numa transação só; roda no SSMS com F5, sem modo SQLCMD. Ele não
-  migra versões anteriores, porque não há banco de produção a preservar: banco de versão anterior,
-  com outro agrupamento ou com tabelas de outro sistema é recusado com a instrução de recriar, sem
-  nada alterado. O nome do banco aparece só nas duas linhas do topo; quem precisar de outro
-  nome troca ali. O arquivo vai em UTF-8 com BOM, para as mensagens acentuadas saírem certas no
+  o que já existe e cria tudo numa transação só; roda no SSMS com F5, sem modo SQLCMD. Ele
+  atualiza só a versão imediatamente anterior, na mesma transação e sem SQL dinâmico; versões mais
+  antigas, banco com outro agrupamento ou com tabelas de outro sistema são recusados com a
+  instrução do que fazer, sem nada alterado. Manter uma cadeia de migrações para versões que não
+  existem em produção seria código sem uso. O nome do banco aparece só nas duas linhas do topo, e o
+  comando pronto do Caminho B troca o nome sem editar o arquivo; um teste executa esse comando
+  lido do próprio README. O arquivo vai em UTF-8 com BOM, para as mensagens acentuadas saírem certas no
   `sqlcmd` do Windows.
 - **Quantidade e valor têm teto de negócio (RN31 e RN32).** A quantidade vai até 99.999 por
   item (configurável até 999.999) e o valor unitário até R$ 999.999,99; os dois limites moram no
