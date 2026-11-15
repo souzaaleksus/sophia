@@ -1,52 +1,52 @@
 @model VendaDetalheDto
 @{
-    ViewData["Title"] = T["venda.titulo", Model.Id].Value;
+    ViewData["Title"] = $"Venda nº {Model.Id}";
     var recemRegistrada = TempData.Peek(Avisos.ChaveDeSucesso) is not null;
     var unidades = Model.Itens.Sum(item => (long)item.Quantidade);
 }
 
 <div class="cabecalho-da-pagina">
     <div>
-        <h1>@T["venda.titulo", Model.Id]</h1>
-        <p class="subtitulo">@T["venda.registrada-em", Formato.Data(Model.Data)]</p>
+        <h1>Venda nº @Model.Id</h1>
+        <p class="subtitulo">Registrada em @Formato.Data(Model.Data).</p>
     </div>
     <div class="nao-imprimir">
         <button type="button" class="btn btn-outline-secondary" data-acao="imprimir">
             <svg class="icone" aria-hidden="true"><use href="#icone-imprimir" /></svg>
-            @T["venda.imprimir"]
+            Imprimir
         </button>
     </div>
 </div>
 
-<section class="cupom@(recemRegistrada ? " cupom-recem-emitido" : string.Empty)" aria-label="@T["venda.comprovante"]">
+<section class="cupom@(recemRegistrada ? " cupom-recem-emitido" : string.Empty)" aria-label="Comprovante da venda">
     <header class="cupom-topo">
-        <img class="cupom-logo" src="~/img/sophia.png" alt="@T["geral.marca"]" width="117" height="32" />
+        <img class="cupom-logo" src="~/img/sophia.png" alt="Sophia" width="117" height="32" />
         <dl class="cupom-identificacao">
             <div>
-                <dt>@T["venda.venda"]</dt>
-                <dd class="numero">@T["venda.numero", Model.Id]</dd>
+                <dt>Venda</dt>
+                <dd class="numero">nº @Model.Id</dd>
             </div>
             <div>
-                <dt>@T["campo.data"]</dt>
+                <dt>Data</dt>
                 <dd class="numero">@Formato.Data(Model.Data)</dd>
             </div>
         </dl>
     </header>
 
     <div class="cliente-da-venda" data-testid="cliente-da-venda">
-        <span class="rotulo">@T["campo.cliente"]</span>
+        <span class="rotulo">Cliente</span>
         <strong>@Model.ClienteNome</strong>
-        <span class="numero">@T["clientes.detalhe-cpf", Model.ClienteCpf]</span>
+        <span class="numero">CPF @Model.ClienteCpf</span>
     </div>
 
     <table class="cupom-itens">
-        <caption class="visually-hidden">@T["venda.produtos-da-venda"]</caption>
+        <caption class="visually-hidden">Produtos da venda</caption>
         <thead>
             <tr>
-                <th scope="col">@T["campo.produto"]</th>
-                <th scope="col" class="valor coluna-opcional">@T["campo.quantidade"]</th>
-                <th scope="col" class="valor coluna-opcional">@T["campo.valor-unitario"]</th>
-                <th scope="col" class="valor">@T["campo.subtotal"]</th>
+                <th scope="col">Produto</th>
+                <th scope="col" class="valor coluna-opcional">Quantidade</th>
+                <th scope="col" class="valor coluna-opcional">Valor unitário</th>
+                <th scope="col" class="valor">Subtotal</th>
             </tr>
         </thead>
         <tbody>
@@ -55,7 +55,7 @@
                 <tr>
                     <td>
                         <span class="destaque">@item.Produto</span>
-                        <span class="cupom-conta numero apenas-no-celular">@T["venda.conta", item.Quantidade, Formato.Moeda(item.ValorUnitario)]</span>
+                        <span class="cupom-conta numero apenas-no-celular">@item.Quantidade × @Formato.Moeda(item.ValorUnitario)</span>
                     </td>
                     <td class="valor coluna-opcional">@item.Quantidade</td>
                     <td class="valor coluna-opcional">@Formato.QuebrarNoMilhar(Formato.Moeda(item.ValorUnitario))</td>
@@ -67,13 +67,13 @@
 
     <footer class="cupom-rodape">
         <p class="cupom-resumo numero">
-            @T["venda.resumo", Formato.Quantidade(Model.Itens.Count, T["venda.itens-singular"], T["venda.itens-plural"]), Formato.Quantidade(unidades, T["vendas.unidades-singular"], T["vendas.unidades-plural"])]
+            @Formato.Quantidade(Model.Itens.Count, "item", "itens"), @Formato.Quantidade(unidades, "unidade", "unidades")
         </p>
         <p class="cupom-total">
-            <span>@T["venda.total"]</span>
+            <span>Total da venda</span>
             <strong class="numero" data-testid="total-da-venda">@Formato.QuebrarNoMilhar(Formato.Moeda(Model.Total))</strong>
         </p>
     </footer>
 </section>
 
-<p class="nao-imprimir voltar"><a asp-action="Index">@T["venda.voltar"]</a></p>
+<p class="nao-imprimir voltar"><a asp-action="Index">Voltar para as vendas</a></p>

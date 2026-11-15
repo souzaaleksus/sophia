@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 using Sophia.Application;
 using Sophia.Infrastructure;
 
@@ -20,20 +20,26 @@ public static class Composicao
         builder.Services.AddParametrosDoSophia(configuracao);
         builder.Services.AddAplicacao();
         builder.Services.AddInfraestrutura(textoDeConexao, configuracao["Sophia:FusoHorario"] ?? FusoHorarioPadrao);
-        builder.Services.AdicionarMvc().AdicionarNumerosDoBrasil();
+        builder.Services.AdicionarMvc();
+    }
+
+    public static IServiceCollection AddParametrosDoSophia(this IServiceCollection services, IConfiguration configuracao)
+    {
+        services.AddOptions<ParametrosDoSophia>()
+            .Bind(configuracao.GetSection("Sophia"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddSingleton(provedor => provedor.GetRequiredService<IOptions<ParametrosDoSophia>>().Value);
+        return services;
     }
 
     public static IServiceCollection AdicionarMvc(this IServiceCollection servicos)
     {
-        servicos.AddLocalization(opcoes => opcoes.ResourcesPath = Textos.Pasta);
-        servicos
-            .AddControllersWithViews(opcoes => opcoes.UsarDatasIso().RecusarConsultasInvalidas().Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
-            .AddDataAnnotationsLocalization(opcoes =>
-                opcoes.DataAnnotationLocalizerProvider = (_, fabrica) => fabrica.Create(typeof(Textos)));
-        servicos
-            .AddOptions<MvcOptions>()
-            .Configure<IStringLocalizerFactory>((opcoes, fabrica) =>
-                MensagensDeValidacao.TraduzirParaPortugues(opcoes.ModelBindingMessageProvider, fabrica.Create(typeof(Textos))));
+        servicos.AddControllersWithViews(opcoes =>
+        {
+            opcoes.UsarDatasIso().UsarNumerosDoBrasil().RecusarConsultasInvalidas().Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+            MensagensDeValidacao.TraduzirParaPortugues(opcoes.ModelBindingMessageProvider);
+        });
         return servicos;
     }
 
@@ -47,8 +53,16 @@ public static class Composicao
         }
 
         app.UseStatusCodePagesWithReExecute("/Erro/{0}");
-        app.ExibirErroComoLeitura();
-        app.UseStaticFiles(ArquivosEstaticos.Opcoes);
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            OnPrepareResponse = contexto =>
+            {
+                if (contexto.File.Name.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
+                {
+                    contexto.Context.Response.Headers.CacheControl = "no-cache";
+                }
+            },
+        });
         app.UseRouting();
         app.MapControllerRoute(name: "default", pattern: "{controller=Painel}/{action=Index}/{id?}");
     }

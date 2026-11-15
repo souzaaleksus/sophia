@@ -10,12 +10,12 @@ public sealed class ProdutoFormulario : IFormularioDeCadastro<DadosProduto>
 {
     public int? Id { get; set; }
 
-    [Display(Name = "campo.nome")]
+    [Display(Name = "Nome")]
     [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.NomeObrigatorio))]
     [TamanhoDoNome(Produto.TamanhoMaximoNome)]
     public string? Nome { get; set; }
 
-    [Display(Name = "campo.valor-unitario")]
+    [Display(Name = "Valor unitário")]
     [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.ValorUnitarioObrigatorio))]
     public decimal? ValorUnitario { get; set; }
 

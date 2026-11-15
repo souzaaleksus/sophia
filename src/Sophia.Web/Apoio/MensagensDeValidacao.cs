@@ -1,37 +1,38 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
-using Microsoft.Extensions.Localization;
 
 namespace Sophia.Web.Apoio;
 
 public static class MensagensDeValidacao
 {
-    public static void TraduzirParaPortugues(DefaultModelBindingMessageProvider mensagens, IStringLocalizer textos)
+    public const string ValorInvalido = "Valor inválido. Use 12,50 ou 1.250,00.";
+
+    public static void TraduzirParaPortugues(DefaultModelBindingMessageProvider mensagens)
     {
-        TraduzirValoresInvalidos(mensagens, textos);
-        TraduzirNumerosInvalidos(mensagens, textos);
-        TraduzirValoresAusentes(mensagens, textos);
+        TraduzirValoresInvalidos(mensagens);
+        TraduzirNumerosInvalidos(mensagens);
+        TraduzirValoresAusentes(mensagens);
     }
 
-    private static void TraduzirValoresInvalidos(DefaultModelBindingMessageProvider mensagens, IStringLocalizer textos)
+    private static void TraduzirValoresInvalidos(DefaultModelBindingMessageProvider mensagens)
     {
-        mensagens.SetAttemptedValueIsInvalidAccessor((valor, campo) => textos["binder.valor-invalido-no-campo", valor, campo]);
-        mensagens.SetNonPropertyAttemptedValueIsInvalidAccessor(valor => textos["binder.valor-invalido", valor]);
-        mensagens.SetUnknownValueIsInvalidAccessor(campo => textos["binder.valor-desconhecido-no-campo", campo]);
-        mensagens.SetNonPropertyUnknownValueIsInvalidAccessor(() => textos["binder.valor-desconhecido"]);
-        mensagens.SetValueIsInvalidAccessor(valor => textos["binder.valor-invalido", valor]);
+        mensagens.SetAttemptedValueIsInvalidAccessor((valor, campo) => $"O valor \"{valor}\" não é válido para {campo}.");
+        mensagens.SetNonPropertyAttemptedValueIsInvalidAccessor(valor => $"O valor \"{valor}\" não é válido.");
+        mensagens.SetUnknownValueIsInvalidAccessor(campo => $"O valor informado não é válido para {campo}.");
+        mensagens.SetNonPropertyUnknownValueIsInvalidAccessor(() => "O valor informado não é válido.");
+        mensagens.SetValueIsInvalidAccessor(valor => $"O valor \"{valor}\" não é válido.");
     }
 
-    private static void TraduzirNumerosInvalidos(DefaultModelBindingMessageProvider mensagens, IStringLocalizer textos)
+    private static void TraduzirNumerosInvalidos(DefaultModelBindingMessageProvider mensagens)
     {
-        mensagens.SetValueMustBeANumberAccessor(campo => textos["binder.numero-no-campo", campo]);
-        mensagens.SetNonPropertyValueMustBeANumberAccessor(() => textos["binder.numero"]);
+        mensagens.SetValueMustBeANumberAccessor(campo => $"Informe um número em {campo}.");
+        mensagens.SetNonPropertyValueMustBeANumberAccessor(() => "Informe um número.");
     }
 
-    private static void TraduzirValoresAusentes(DefaultModelBindingMessageProvider mensagens, IStringLocalizer textos)
+    private static void TraduzirValoresAusentes(DefaultModelBindingMessageProvider mensagens)
     {
-        mensagens.SetValueMustNotBeNullAccessor(campo => textos["binder.informe-o-campo", campo]);
-        mensagens.SetMissingBindRequiredValueAccessor(campo => textos["binder.informe-o-campo", campo]);
-        mensagens.SetMissingKeyOrValueAccessor(() => textos["binder.informe-um-valor"]);
-        mensagens.SetMissingRequestBodyRequiredValueAccessor(() => textos["binder.requisicao-vazia"]);
+        mensagens.SetValueMustNotBeNullAccessor(campo => $"Informe {campo}.");
+        mensagens.SetMissingBindRequiredValueAccessor(campo => $"Informe {campo}.");
+        mensagens.SetMissingKeyOrValueAccessor(() => "Informe um valor.");
+        mensagens.SetMissingRequestBodyRequiredValueAccessor(() => "A requisição veio vazia.");
     }
 }

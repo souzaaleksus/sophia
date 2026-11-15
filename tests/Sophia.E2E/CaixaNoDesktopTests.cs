@@ -185,7 +185,7 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await valor.FillAsync("99999999999999999");
         await valor.BlurAsync();
 
-        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("Valor unitário está acima do permitido.");
+        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("O valor unitário está acima do permitido.");
         await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
     }
 
@@ -477,7 +477,7 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _caixa.Finalizar.ClickAsync();
 
-        await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("Quantidade aceita no máximo 2.147.483.647.");
+        await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("A quantidade aceita no máximo 99.999 por item.");
         await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("3000000000");
         (await new Cadastro(aplicacao.Banco).QuantidadeDeVendasAsync()).Should().Be(0);
     }

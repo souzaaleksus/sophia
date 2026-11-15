@@ -111,8 +111,8 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     [InlineData("0.500", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("10,", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("1,234.56", "Valor inválido. Use 12,50 ou 1.250,00.")]
-    [InlineData("1000000000000000000000000000000", "Valor unitário está acima do permitido.")]
-    [InlineData("99999999999999999", "Valor unitário está acima do permitido.")]
+    [InlineData("1000000000000000000000000000000", "O valor unitário está acima do permitido.")]
+    [InlineData("99999999999999999", "O valor unitário está acima do permitido.")]
     public async Task Valor_em_forma_ambigua_ou_acima_do_aceito_e_recusado_no_campo(string digitado, string aviso)
     {
         await _pagina.GotoAsync("/Produtos/Novo");
@@ -162,7 +162,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
 
-        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("Valor unitário está acima do permitido.");
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O valor unitário está acima do permitido.");
         await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("1000000000000000000000000000000");
     }
 
