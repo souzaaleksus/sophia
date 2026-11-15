@@ -9,4 +9,8 @@
     <ProjectReference Include="..\..\src\Sophia.Web\Sophia.Web.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="VersoesAnteriores\*.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

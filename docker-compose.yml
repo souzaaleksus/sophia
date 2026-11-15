@@ -34,10 +34,15 @@ services:
       - -c
       - |
         set -e
+        case "$$SOPHIA_SENHA_DA_APLICACAO" in
+          *"'"*)
+            echo "SOPHIA_SENHA_DA_APLICACAO não pode ter aspa simples ('): a aplicação recebe a senha entre aspas simples no texto de conexão. Escolha outra senha; nada foi alterado." >&2
+            exit 1
+            ;;
+        esac
         sqlcmd() { /opt/mssql-tools18/bin/sqlcmd -S banco -U sa -P "$$MSSQL_SA_PASSWORD" -C -b "$$@"; }
         sqlcmd -i /scripts/create-database.sql
-        aspa="'"
-        sqlcmd -d Sophia -v SenhaDaAplicacao="$${SOPHIA_SENHA_DA_APLICACAO//$$aspa/$$aspa$$aspa}" -i /scripts/usuario-da-aplicacao.sql
+        sqlcmd -d Sophia -v SenhaDaAplicacao="$$SOPHIA_SENHA_DA_APLICACAO" -i /scripts/usuario-da-aplicacao.sql
         if [ "$$SOPHIA_DADOS_DE_DEMONSTRACAO" = "sim" ]; then
           sqlcmd -d Sophia -i /scripts/carga-de-demonstracao.sql
         fi
@@ -50,7 +55,7 @@ services:
       criar-banco:
         condition: service_completed_successfully
     environment:
-      ConnectionStrings__Sophia: "Server=banco;Database=Sophia;User Id=sophia_app;Password=${SOPHIA_SENHA_DA_APLICACAO:-Sophia#Aplicacao2026};TrustServerCertificate=true"
+      ConnectionStrings__Sophia: "Server=banco;Database=Sophia;User Id=sophia_app;Password='${SOPHIA_SENHA_DA_APLICACAO:-Sophia#Aplicacao2026}';TrustServerCertificate=true"
       Sophia__FusoHorario: America/Sao_Paulo
     ports:
       - "8080:8080"
