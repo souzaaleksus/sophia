@@ -1,0 +1,52 @@
+using System.Diagnostics;
+using Microsoft.Playwright;
+using Sophia.E2E.Apoio;
+using static Microsoft.Playwright.Assertions;
+
+namespace Sophia.E2E;
+
+[Collection(ColecaoDaAplicacao.Nome)]
+public sealed class IsolamentoDaRedeTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
+{
+    private IPage _pagina = null!;
+
+    public async Task InitializeAsync()
+    {
+        await aplicacao.Banco.LimparAsync();
+        var cadastro = new Cadastro(aplicacao.Banco);
+        await cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        await cadastro.ProdutoAsync("Caneta azul", 2.50m);
+        _pagina = await aplicacao.NovaPaginaAsync();
+    }
+
+    public Task DisposeAsync() => _pagina.Context.CloseAsync();
+
+    [Fact]
+    public async Task A_tela_carrega_busca_e_envia_a_venda_sem_depender_das_conexoes_do_navegador()
+    {
+        var caixa = new Caixa(_pagina);
+        await _pagina.Context.SetOfflineAsync(true);
+
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await caixa.LancarAsync(0, "Caneta", "Caneta azul", "2");
+        await Expect(caixa.Total).ToHaveTextAsync("R$ 5,00");
+        var envio = await _pagina.RunAndWaitForResponseAsync(
+            () => caixa.Finalizar.ClickAsync(),
+            resposta => resposta.Request.Method == "POST");
+
+        envio.Status.Should().Be(302);
+        (await aplicacao.Banco.ConsultarAsync("SELECT CAST(COUNT(*) AS VARCHAR(10)) FROM dbo.Vendas")).Should().Equal("1");
+    }
+
+    [Fact]
+    public async Task Endereco_fora_da_aplicacao_e_recusado_na_hora_sem_esperar_a_rede()
+    {
+        var relogio = Stopwatch.StartNew();
+
+        var abrir = () => _pagina.GotoAsync("http://192.0.2.1/script.js", new() { Timeout = 10_000 });
+
+        await abrir.Should().ThrowAsync<PlaywrightException>().WithMessage("*net::ERR_FAILED*");
+        relogio.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));
+    }
+}

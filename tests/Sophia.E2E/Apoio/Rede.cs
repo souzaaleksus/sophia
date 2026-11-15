@@ -4,16 +4,26 @@ namespace Sophia.E2E.Apoio;
 
 public static class Rede
 {
-    public static async Task DeixarLentaAsync(IPage pagina, TimeSpan atraso)
-    {
-        var protocolo = await pagina.Context.NewCDPSessionAsync(pagina);
-        await protocolo.SendAsync("Network.enable");
-        await protocolo.SendAsync("Network.emulateNetworkConditions", new Dictionary<string, object>
+    public static Task DeixarLentaAsync(IPage pagina, TimeSpan atraso) =>
+        pagina.RouteAsync("**/*", async rota =>
         {
-            ["offline"] = false,
-            ["latency"] = atraso.TotalMilliseconds,
-            ["downloadThroughput"] = -1,
-            ["uploadThroughput"] = -1,
+            await Task.Delay(atraso);
+            await rota.FallbackAsync();
         });
-    }
+
+    public static Task BuscarForaDoNavegadorAsync(IBrowserContext contexto, string endereco) =>
+        contexto.RouteAsync("**/*", async rota =>
+        {
+            if (!rota.Request.Url.StartsWith(endereco + "/", StringComparison.OrdinalIgnoreCase))
+            {
+                await rota.AbortAsync();
+                return;
+            }
+
+            var cabecalhos = (await rota.Request.AllHeadersAsync())
+                .Where(cabecalho => !string.Equals(cabecalho.Key, "cookie", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary();
+            var resposta = await rota.FetchAsync(new() { Headers = cabecalhos, MaxRedirects = 0 });
+            await rota.FulfillAsync(new() { Response = resposta });
+        });
 }

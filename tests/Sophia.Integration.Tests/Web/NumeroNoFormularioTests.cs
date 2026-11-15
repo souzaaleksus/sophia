@@ -17,41 +17,52 @@ public sealed class NumeroNoFormularioTests
     }
 
     [Fact]
-    public async Task Quantidade_acima_do_limite_avisa_o_maximo()
+    public async Task Quantidade_acima_do_que_o_servidor_comporta_avisa_o_maximo_por_item_com_a_mensagem_do_dominio()
     {
         var (resultado, erros) = await LigarAsync(nameof(Formulario.Quantidade), "99999999999");
 
         resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("Quantidade aceita no máximo 2.147.483.647.");
+        erros.Should().Equal("A quantidade aceita no máximo 99.999 por item.");
     }
 
     [Fact]
-    public async Task Quantidade_negativa_enorme_avisa_que_deve_ser_maior_que_zero()
+    public async Task Quantidade_negativa_enorme_avisa_com_a_mensagem_do_dominio()
     {
         var (resultado, erros) = await LigarAsync(nameof(Formulario.Quantidade), "-99999999999");
 
         resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("Quantidade deve ser maior que zero.");
+        erros.Should().Equal("A quantidade deve ser maior que zero.");
+    }
+
+    [Theory]
+    [InlineData("99999999999")]
+    [InlineData("-99999999999")]
+    public async Task Numero_enorme_em_campo_que_nao_e_quantidade_e_valor_invalido(string digitado)
+    {
+        var (resultado, erros) = await LigarAsync(nameof(Formulario.Codigo), digitado);
+
+        resultado.IsModelSet.Should().BeFalse();
+        erros.Should().Equal($"O valor \"{digitado}\" não é válido para Codigo.");
     }
 
     [Theory]
     [InlineData("1000000000000000000000000000000")]
     [InlineData("1.000.000.000.000.000.000.000.000.000.000,00")]
-    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_avisa_que_esta_acima_do_permitido(string digitado)
+    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_avisa_com_a_mensagem_do_dominio(string digitado)
     {
         var (resultado, erros) = await LigarAsync(nameof(Formulario.ValorUnitario), digitado);
 
         resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("Valor unitário está acima do permitido.");
+        erros.Should().Equal("O valor unitário aceita no máximo R$ 999.999,99.");
     }
 
     [Fact]
-    public async Task Valor_negativo_enorme_avisa_que_deve_ser_maior_que_zero()
+    public async Task Valor_negativo_enorme_avisa_com_a_mensagem_do_dominio()
     {
         var (resultado, erros) = await LigarAsync(nameof(Formulario.ValorUnitario), "-1000000000000000000000000000000");
 
         resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("Valor unitário deve ser maior que zero.");
+        erros.Should().Equal("O valor unitário deve ser maior que zero.");
     }
 
     [Theory]

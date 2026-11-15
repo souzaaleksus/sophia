@@ -7,7 +7,7 @@ public sealed class NovaVendaFormulario
 {
     public Guid? Chave { get; set; }
 
-    [Display(Name = "campo.data-da-venda")]
+    [Display(Name = "Data da venda")]
     public DateOnly? Data { get; set; }
 
     public int? ClienteId { get; set; }
@@ -47,10 +47,10 @@ public sealed class ItemDaVendaFormulario
 
     public string? ProdutoNome { get; set; }
 
-    [Display(Name = "campo.quantidade")]
+    [Display(Name = "Quantidade")]
     public int? Quantidade { get; set; }
 
-    [Display(Name = "campo.valor-unitario")]
+    [Display(Name = "Valor unitário")]
     public decimal? ValorUnitario { get; set; }
 
     public decimal? Subtotal()

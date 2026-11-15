@@ -114,6 +114,13 @@ public sealed class PassosDeVendas(Cenario cenario)
         venda.Itens.Should().Equal(itens);
     }
 
+    [Then("a última venda continua com o item {string}")]
+    public async Task EntaoAUltimaVendaContinuaComOItem(string produto)
+    {
+        var venda = await UltimaVendaAsync();
+        venda.Itens.Should().ContainSingle().Which.Produto.Should().Be(produto);
+    }
+
     [Then("o total da venda é {string}")]
     [Then("a última venda continua com o total {string}")]
     public async Task EntaoOTotalDaVendaE(string total)

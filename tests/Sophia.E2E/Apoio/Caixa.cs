@@ -56,6 +56,13 @@ public sealed class Caixa(IPage pagina)
     {
         await ProntoAsync();
         await combobox.FillAsync(termo);
-        await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = sugestao }).ClickAsync();
+        try
+        {
+            await pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = sugestao }).ClickAsync();
+        }
+        catch (TimeoutException erro)
+        {
+            throw await DiarioDaPagina.FalhaAsync(pagina, combobox, sugestao, erro);
+        }
     }
 }

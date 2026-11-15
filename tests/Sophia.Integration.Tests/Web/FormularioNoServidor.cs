@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Sophia.Application;
 using Sophia.Web.Apoio;
 
 namespace Sophia.Integration.Tests.Web;
@@ -22,7 +23,7 @@ internal static class FormularioNoServidor
         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("pt-BR");
         try
         {
-            await using var servicos = new ServiceCollection().AddLogging().AdicionarMvc().AdicionarNumerosDoBrasil().BuildServiceProvider();
+            await using var servicos = new ServiceCollection().AddLogging().AddSingleton(new ParametrosDoSophia()).AdicionarMvc().BuildServiceProvider();
             var metadados = servicos.GetRequiredService<IModelMetadataProvider>().GetMetadataForProperty(typeof(Formulario), propriedade);
             var ligador = servicos.GetRequiredService<IModelBinderFactory>().CreateBinder(new ModelBinderFactoryContext
             {
@@ -62,19 +63,21 @@ internal static class FormularioNoServidor
 
     public sealed class Formulario
     {
-        [Display(Name = "campo.quantidade")]
+        [Display(Name = "Quantidade")]
         public int? Quantidade { get; set; }
 
-        [Display(Name = "campo.quantidade")]
+        [Display(Name = "Quantidade")]
         public int QuantidadeExigida { get; set; }
 
-        [Display(Name = "campo.valor-unitario")]
+        [Display(Name = "Valor unitário")]
         public decimal? ValorUnitario { get; set; }
 
-        [Display(Name = "campo.valor-unitario")]
+        [Display(Name = "Valor unitário")]
         public decimal ValorUnitarioExigido { get; set; }
 
-        [Display(Name = "campo.data-da-venda")]
+        [Display(Name = "Data da venda")]
         public DateOnly DataExigida { get; set; }
+
+        public int? Codigo { get; set; }
     }
 }

@@ -19,7 +19,7 @@ public sealed class CpfGravadoForaDaRegraTests(BancoDeTestes banco) : IAsyncLife
             INSERT INTO dbo.Clientes (Cpf, Nome) VALUES ('11111111111', N'Cliente Repetido'), ('52998224724', N'Cliente Digitado Errado');
             INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Caneta azul', 2.50);
             INSERT INTO dbo.Vendas (Data, ClienteId) VALUES ('2026-11-13', 2);
-            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 1, 2, 2.50);
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario) VALUES (1, 1, N'Caneta azul', 2, 2.50);
             """);
     }
 

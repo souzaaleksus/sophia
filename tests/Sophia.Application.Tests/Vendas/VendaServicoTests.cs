@@ -218,6 +218,16 @@ public sealed class VendaServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDi
     }
 
     [Fact]
+    public async Task Renomear_o_produto_nao_muda_o_nome_no_detalhe_da_venda_antiga()
+    {
+        var venda = await VenderAsync(Hoje, (_caneta, 4));
+
+        (await _sistema.Produtos.AlterarAsync(_caneta, new DadosProduto("Caneta azul fina", 2.50m))).Sucesso.Should().BeTrue();
+
+        (await Servico.ObterAsync(venda))!.Itens.Should().Equal(new ItemVendaDto("Caneta azul", 4, 2.50m, 10.00m));
+    }
+
+    [Fact]
     public async Task Venda_inexistente_devolve_nulo()
     {
         (await Servico.ObterAsync(999)).Should().BeNull();

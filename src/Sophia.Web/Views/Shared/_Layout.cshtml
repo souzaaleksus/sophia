@@ -8,7 +8,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] – @T["geral.marca"]</title>
+    <title>@ViewData["Title"] – Sophia</title>
     <script src="~/js/tema-inicial.js" asp-append-version="true"></script>
     <link rel="preload" href="~/fontes/poppins/poppins-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="~/fontes/poppins/poppins-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
@@ -35,62 +35,62 @@
 </head>
 <body>
     <partial name="_Icones" />
-    <a class="pular-para-o-conteudo visually-hidden-focusable" href="#conteudo">@T["geral.ir-para-o-conteudo"]</a>
+    <a class="pular-para-o-conteudo visually-hidden-focusable" href="#conteudo">Ir para o conteúdo</a>
 
     <header class="barra-superior">
-        <nav class="navbar navbar-expand-md container" aria-label="@T["geral.navegacao-principal"]">
+        <nav class="navbar navbar-expand-md container" aria-label="Navegação principal">
             <a class="marca" href="~/">
-                <img class="marca-logo marca-logo-claro" src="~/img/sophia.png" alt="@T["geral.marca"]" width="138" height="38" />
+                <img class="marca-logo marca-logo-claro" src="~/img/sophia.png" alt="Sophia" width="138" height="38" />
                 <img class="marca-logo marca-logo-escuro" src="~/img/sophia-branco.png" alt="" width="138" height="38" aria-hidden="true" />
             </a>
 
             <div class="ferramentas-do-topo">
                 <a class="btn btn-primary botao-nova-venda" asp-controller="Vendas" asp-action="Nova">
                     <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-                    <span class="texto-nova-venda">@T["vendas.nova-venda"]</span>
+                    <span class="texto-nova-venda">Nova venda</span>
                 </a>
 
-                <div class="seletor-de-tema" role="radiogroup" aria-label="@T["tema.grupo"]" data-tema="grupo">
-                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="claro" data-tema-nome="@T["tema.nome-claro"]" aria-checked="false" aria-label="@T["tema.claro"]" title="@T["tema.claro"]">
+                <div class="seletor-de-tema" role="radiogroup" aria-label="Tema" data-tema="grupo">
+                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="claro" data-tema-nome="claro" aria-checked="false" aria-label="Claro" title="Claro">
                         <svg class="icone" aria-hidden="true"><use href="#icone-sol" /></svg>
                     </button>
-                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="escuro" data-tema-nome="@T["tema.nome-escuro"]" aria-checked="false" aria-label="@T["tema.escuro"]" title="@T["tema.escuro"]">
+                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="escuro" data-tema-nome="escuro" aria-checked="false" aria-label="Escuro" title="Escuro">
                         <svg class="icone" aria-hidden="true"><use href="#icone-lua" /></svg>
                     </button>
-                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="automatico" data-tema-nome="@T["tema.nome-automatico"]" aria-checked="true" aria-label="@T["tema.automatico"]" title="@T["tema.automatico"]">
+                    <button type="button" role="radio" class="seletor-de-tema-opcao" data-tema-opcao="automatico" data-tema-nome="automático" aria-checked="true" aria-label="Automático" title="Automático">
                         <svg class="icone" aria-hidden="true"><use href="#icone-automatico" /></svg>
                     </button>
                 </div>
 
                 <div class="dropdown menu-do-tema-compacto">
                     <button type="button" class="btn botao-do-tema" data-bs-toggle="dropdown" aria-expanded="false"
-                            aria-label="@T["tema.escolher"].Value.Replace("{tema}", T["tema.nome-automatico"].Value, StringComparison.Ordinal)" data-rotulo="@T["tema.escolher"]" data-tema="botao">
+                            aria-label="Escolher o tema (atual: automático)" data-rotulo="Escolher o tema (atual: {tema})" data-tema="botao">
                         <svg class="icone" aria-hidden="true"><use href="#icone-automatico" data-tema="icone" /></svg>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end menu-do-tema">
                         <li>
-                            <button type="button" class="dropdown-item" data-tema-opcao="claro" data-tema-nome="@T["tema.nome-claro"]" aria-pressed="false">
+                            <button type="button" class="dropdown-item" data-tema-opcao="claro" data-tema-nome="claro" aria-pressed="false">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-sol" /></svg>
-                                @T["tema.claro"]
+                                Claro
                             </button>
                         </li>
                         <li>
-                            <button type="button" class="dropdown-item" data-tema-opcao="escuro" data-tema-nome="@T["tema.nome-escuro"]" aria-pressed="false">
+                            <button type="button" class="dropdown-item" data-tema-opcao="escuro" data-tema-nome="escuro" aria-pressed="false">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-lua" /></svg>
-                                @T["tema.escuro"]
+                                Escuro
                             </button>
                         </li>
                         <li>
-                            <button type="button" class="dropdown-item" data-tema-opcao="automatico" data-tema-nome="@T["tema.nome-automatico"]" aria-pressed="true">
+                            <button type="button" class="dropdown-item" data-tema-opcao="automatico" data-tema-nome="automático" aria-pressed="true">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-automatico" /></svg>
-                                @T["tema.automatico"]
+                                Automático
                             </button>
                         </li>
                     </ul>
                 </div>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
-                        aria-controls="menu" aria-expanded="false" aria-label="@T["geral.abrir-o-menu"]">
+                        aria-controls="menu" aria-expanded="false" aria-label="Abrir o menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
             </div>
@@ -100,25 +100,25 @@
                     <li class="nav-item">
                         <a class="@Ativo("Painel")" aria-current="@Atual("Painel")" href="~/">
                             <svg class="icone" aria-hidden="true"><use href="#icone-painel" /></svg>
-                            @T["menu.painel"]
+                            Painel
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="@Ativo("Produtos")" aria-current="@Atual("Produtos")" asp-controller="Produtos" asp-action="Index">
                             <svg class="icone" aria-hidden="true"><use href="#icone-produtos" /></svg>
-                            @T["menu.produto"]
+                            Produto
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="@Ativo("Clientes")" aria-current="@Atual("Clientes")" asp-controller="Clientes" asp-action="Index">
                             <svg class="icone" aria-hidden="true"><use href="#icone-clientes" /></svg>
-                            @T["menu.cliente"]
+                            Cliente
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="@Ativo("Vendas")" aria-current="@Atual("Vendas")" asp-controller="Vendas" asp-action="Index">
                             <svg class="icone" aria-hidden="true"><use href="#icone-vendas" /></svg>
-                            @T["menu.venda"]
+                            Venda
                         </a>
                     </li>
                 </ul>
@@ -131,7 +131,7 @@
         @RenderBody()
     </main>
 
-    <footer class="rodape container">@T["geral.rodape"]</footer>
+    <footer class="rodape container">Sophia, a força de venda da sua loja.</footer>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="~/js/site.js" asp-append-version="true"></script>

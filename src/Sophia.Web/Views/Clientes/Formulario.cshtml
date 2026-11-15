@@ -1,33 +1,33 @@
 @model ClienteFormulario
 @{
-    ViewData["Title"] = Model.EhNovo ? T["clientes.novo"].Value : T["clientes.editar"].Value;
+    ViewData["Title"] = Model.EhNovo ? "Novo cliente" : "Editar cliente";
     var acao = Model.EhNovo ? "Novo" : "Editar";
 }
 
 <div class="cabecalho-da-pagina">
     <div>
         <h1>@ViewData["Title"]</h1>
-        <p class="subtitulo">@T["clientes.subtitulo"]</p>
+        <p class="subtitulo">Quem compra da loja.</p>
     </div>
 </div>
 
 <form class="cartao formulario" method="post" asp-action="@acao" asp-route-id="@Model.Id" novalidate
-      data-envio data-texto-enviando="@T["formulario.salvando"]">
+      data-envio data-texto-enviando="Salvando…">
     <div asp-validation-summary="ModelOnly" class="aviso aviso-falha" role="alert"></div>
-    <p class="legenda-obrigatorio"><span aria-hidden="true">*</span> @T["formulario.obrigatorio"]</p>
+    <p class="legenda-obrigatorio"><span aria-hidden="true">*</span> obrigatório</p>
 
     <div class="grade-de-campos">
         <div class="campo">
-            <label asp-for="Cpf" class="form-label">@T["campo.cpf"] <span class="obrigatorio" aria-hidden="true">*</span></label>
+            <label asp-for="Cpf" class="form-label">CPF <span class="obrigatorio" aria-hidden="true">*</span></label>
             <input asp-for="Cpf" class="form-control" inputmode="numeric" autocomplete="off" autofocus
                    aria-required="true" placeholder="000.000.000-00" data-mascara="cpf" data-val-cpf="@Sophia.Domain.Recursos.Mensagens.CpfInvalido" />
             <span asp-validation-for="Cpf" class="erro"></span>
         </div>
 
         <div class="campo campo-largo">
-            <label asp-for="Nome" class="form-label">@T["campo.nome"] <span class="obrigatorio" aria-hidden="true">*</span></label>
+            <label asp-for="Nome" class="form-label">Nome <span class="obrigatorio" aria-hidden="true">*</span></label>
             <input asp-for="Nome" class="form-control" autocomplete="off" aria-required="true" />
-            <span class="campo-dica">@T["clientes.dica-nome"]</span>
+            <span class="campo-dica">Como o cliente aparece na venda e no cupom.</span>
             <span asp-validation-for="Nome" class="erro"></span>
         </div>
 
@@ -54,8 +54,8 @@
     </div>
 
     <div class="rodape-do-formulario">
-        <a class="btn btn-outline-secondary" asp-action="Index">@T["formulario.cancelar"]</a>
-        <button type="submit" class="btn btn-primary">@T["formulario.salvar"]</button>
+        <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Salvar</button>
     </div>
 </form>
 

@@ -6,22 +6,15 @@ using Sophia.Web.Models;
 
 namespace Sophia.Web.Controllers;
 
-public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
+public abstract class CadastroController<TDto, TFormulario, TDados>(
+    IServicoDeCadastro<TDto, TDados> servico,
+    CadastroController<TDto, TFormulario, TDados>.AvisosDeCadastro avisos,
+    ParametrosDoSophia parametros)
+    : Controller
     where TDto : class
     where TFormulario : class, IFormularioDeCadastro<TDados>, new()
 {
     private const string Formulario = "Formulario";
-
-    private readonly IServicoDeCadastro<TDto, TDados> servico;
-    private readonly AvisosDeCadastro avisos;
-    private readonly ParametrosDoSophia parametros;
-
-    protected CadastroController(IServicoDeCadastro<TDto, TDados> servico, AvisosDeCadastro avisos, ParametrosDoSophia parametros)
-    {
-        this.servico = servico;
-        this.avisos = avisos;
-        this.parametros = parametros;
-    }
 
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ConsultaDeLista consulta, CancellationToken cancelamento)
@@ -116,4 +109,6 @@ public abstract class CadastroController<TDto, TFormulario, TDados> : Controller
         TempData.Sucesso(aviso);
         return RedirectToAction(nameof(Index));
     }
+
+    public sealed record AvisosDeCadastro(string Cadastrado, string Alterado, string Excluido);
 }

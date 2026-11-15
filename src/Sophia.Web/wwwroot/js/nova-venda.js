@@ -35,7 +35,9 @@ ligarAtalhos({
     finalizar: () => formulario.requestSubmit(),
 });
 
-formulario.querySelector('[data-acao=adicionar-item]').addEventListener('click', () => linhas.adicionar().focus());
+const adicionarItem = formulario.querySelector('[data-acao=adicionar-item]');
+adicionarItem.addEventListener('mousedown', evento => evento.preventDefault());
+adicionarItem.addEventListener('click', () => linhas.adicionar().focus());
 
 formulario.addEventListener('keydown', evento => {
     if (evento.key === 'Enter' && !evento.ctrlKey && evento.target.tagName === 'INPUT') {

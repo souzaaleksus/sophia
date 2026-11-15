@@ -23,16 +23,16 @@ public sealed class BancoDeTestes : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _banco = await BancoAvulso.CriarVazioAsync(Servidor);
+        _banco = BancoAvulso.Reservar(Servidor);
         TextoDeConexao = new SqlConnectionStringBuilder(Servidor) { InitialCatalog = _banco.Nome }.ConnectionString;
         await ExecutarScriptAsync();
     }
 
-    public Task ExecutarScriptAsync() => BancoAvulso.ExecutarScriptAsync(TextoDeConexao);
+    public Task ExecutarScriptAsync() => _banco!.ExecutarScriptDoBancoAsync();
 
     public async Task ExecutarComoOSqlcmdAsync(string arquivo)
     {
-        var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, arquivo));
+        var script = await File.ReadAllTextAsync(BancoAvulso.CaminhoDoArquivo(arquivo));
 
         await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(TextoDeConexao) { Pooling = false }.ConnectionString);
         await conexao.OpenAsync();

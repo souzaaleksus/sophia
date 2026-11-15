@@ -78,6 +78,20 @@ public static class Medidas
         }
         """;
 
+    private const string LinhasDeTexto = $$"""
+        seletor => {
+            const descrever = {{Descrever}};
+            return [...document.querySelectorAll(seletor)]
+                .filter(e => e.getBoundingClientRect().width > 1 && e.closest('[hidden]') === null)
+                .map(e => {
+                    const trecho = document.createRange();
+                    trecho.selectNodeContents(e);
+                    const linhas = new Set([...trecho.getClientRects()].filter(r => r.width > 0).map(r => Math.round(r.bottom)));
+                    return { elemento: descrever(e), linhas: linhas.size };
+                });
+        }
+        """;
+
     private const string Transbordando = $$"""
         seletor => {
             const descrever = {{Descrever}};
@@ -129,6 +143,13 @@ public static class Medidas
     public static Task<string[]> TransbordamentosAsync(IPage pagina, string seletor) =>
         pagina.EvaluateAsync<string[]>(Transbordando, seletor);
 
+    public static async Task<LinhasDoElemento[]> LinhasDeTextoAsync(IPage pagina, string seletor)
+    {
+        var medidas = await pagina.EvaluateAsync<LinhasDoElemento[]>(LinhasDeTexto, seletor);
+        medidas.Should().NotBeEmpty($"a página precisa ter elementos em {seletor}");
+        return medidas;
+    }
+
     public static Task<string[]> SobreposicoesAsync(IPage pagina, string seletorDoGrupo) =>
         pagina.EvaluateAsync<string[]>(Sobrepostos, seletorDoGrupo);
 
@@ -143,4 +164,11 @@ public static class Medidas
         var alvo = await elemento.ElementHandleAsync();
         return await elemento.Page.EvaluateAsync<string>(NoCentro, new object[] { alvo, aceitaDescendente });
     }
+}
+
+public sealed class LinhasDoElemento
+{
+    public string Elemento { get; set; } = string.Empty;
+
+    public int Linhas { get; set; }
 }
