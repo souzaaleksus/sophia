@@ -9,6 +9,7 @@ Aplicação web para o controle de vendas a clientes, em **ASP.NET Core MVC (.NE
 - [Como executar](#como-executar)
 - [Guia do usuário](docs/guia-do-usuario.md): como operar o sistema, com as telas
 - [Testes](#testes)
+- [Garantia da Qualidade](#garantia-da-qualidade)
 - [Arquitetura](#arquitetura)
 - [Decisões](#decisões)
 - Script do banco: [`database/create-database.sql`](database/create-database.sql)
@@ -276,17 +277,22 @@ aplicação não consegue criar tabela.
    download das imagens):
 
    ```bash
-   docker compose ps
+   docker compose ps -a
    docker compose logs -f web
    ```
 
+   O `-a` mostra também o `criar-banco`, que fica como `Exited (0)` depois de criar o banco.
    Quando aparecer `Now listening on: http://[::]:8080`, ela está no ar. Para sair dos logs,
-   use `Ctrl+C` (a aplicação continua rodando).
+   use `Ctrl+C` (a aplicação continua rodando). Os avisos de `DataProtection` no log são
+   esperados: as chaves que protegem os formulários ficam dentro do contêiner, e um formulário
+   aberto antes de recriar o `web` precisa ser recarregado.
 
 3. Abra http://localhost:8080.
 
 4. Para parar: `docker compose down`. Os dados ficam no volume `dados-do-banco` e voltam na
-   próxima subida. Para começar do zero, use `docker compose down -v`.
+   próxima subida. Quando o Docker reinicia, o `banco` e o `web` voltam sozinhos, se não
+   tiverem sido parados com `docker compose stop` ou `down`. Com o Docker instalado dentro da
+   WSL, eles voltam quando a WSL volta a rodar. Para começar do zero, use `docker compose down -v`.
    Um volume criado por uma versão anterior do Sophia é recusado pelo script (o `criar-banco`
    termina com erro e diz o que falta); nesse caso, `docker compose down -v` e suba de novo.
 
@@ -443,6 +449,65 @@ npx eslint --config eslint.config.mjs src/Sophia.Web/wwwroot/js
 
 Cada funcionalidade seguiu o ciclo do TDD: o cenário ou o teste foi escrito antes do código,
 falhou, e o código veio em seguida até ficar verde. O histórico de commits mostra essa ordem.
+
+---
+
+## Garantia da Qualidade
+
+Métodos, técnicas e verificações usados nesta entrega. Os números de cada nível estão em
+[Testes](#testes); as regras que quebram o build, em [Qualidade](#qualidade).
+
+**Metodologias**
+
+- **TDD**: cada mudança começa por um teste que falha; o código vem depois, até o teste passar.
+- **BDD**: as regras de negócio estão escritas como cenários em português (Gherkin, nos
+  arquivos `.feature` de `Sophia.Specs`, executados pelo Reqnroll) e rodam contra o banco real.
+- **Prova pela tela**: antes de cada entrega, os roteiros de uso são feitos à mão num navegador
+  visível, sobre um banco temporário criado pelo script e apagado no fim, com capturas de tela.
+
+**Níveis de teste**
+
+| Nível | Projeto | Como |
+|---|---|---|
+| Unidade | `Sophia.Domain.Tests` | regras puras do domínio, sem banco (xUnit e FluentAssertions) |
+| Aplicação | `Sophia.Application.Tests` | serviços sobre o SQL Server real, sem dublês; banco temporário limpo a cada teste |
+| Comportamento | `Sophia.Specs` | um cenário por regra de negócio, na língua do negócio |
+| Integração | `Sophia.Integration.Tests` | script do banco, mapeamento do EF conferido contra o script, consultas, leitura dos formulários |
+| Tela | `Sophia.E2E` | fluxos completos no Chrome pelo Playwright: de 320 a 1280 px, toque, teclado, tema, cabeçalhos de segurança |
+
+**Técnicas de desenho dos casos**
+
+- **Valor-limite**: o maior valor aceito contra o primeiro recusado (R$ 999.999,99 contra
+  R$ 1.000.000,00; 99.999 contra 100.000 unidades por item).
+- **Partição de equivalência**: teorias com cada forma de número aceita e recusada (`12.50`,
+  `1.250`, `1.2.3`).
+- **Concorrência**: duas gravações ao mesmo tempo, por dois contextos do EF, para conferir
+  duplicidade, a chave de idempotência da venda e as restrições do banco.
+- **Teste pelo avesso**: o teste novo é visto falhando sem a correção, para provar que ele
+  mede o que diz medir.
+
+**Estabilidade e regressão**
+
+- **Repetição**: um teste suspeito de intermitência roda em laço (800 a 1.600 vezes) até a
+  causa aparecer, e a suíte de tela roda três vezes seguidas antes da entrega, uma delas com a
+  CPU do navegador mais lenta (`SOPHIA_E2E_CPU_LENTA`).
+- **Regressão visual**: as telas são capturadas antes e depois de cada rodada, nas três
+  larguras, e comparadas pixel a pixel.
+- **Acessibilidade e responsividade**: a suíte de tela confere que nenhuma tela rola para o
+  lado e que todo alvo de toque no celular tem ao menos 44 px; contraste e leitores de tela
+  foram medidos com axe e Lighthouse nos dois temas.
+
+**Análise estática e esteira**
+
+- Analisadores do .NET e SonarAnalyzer, limites de complexidade e manutenibilidade,
+  `dotnet format` e ESLint, com aviso tratado como erro.
+- CI no GitHub Actions a cada PR: o job `testes` roda formatação, ESLint, build e a suíte
+  completa com SQL Server em contêiner; o job `docker` sobe o [Caminho A](#caminho-a--docker)
+  e confere o painel, a carga de demonstração e as permissões do login da aplicação.
+- Revisão independente do diff antes de cada PR, com cada achado corrigido junto de um teste.
+
+**Fora do escopo**: teste de mutação, meta de cobertura de código e testes de carga ou de
+desempenho.
 
 ---
 
