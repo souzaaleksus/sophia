@@ -107,6 +107,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     [Theory]
     [InlineData("12.5055", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("1.2.3", "Valor inválido. Use 12,50 ou 1.250,00.")]
+    [InlineData("12 50", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("1.25,0", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("0.500", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("10,", "Valor inválido. Use 12,50 ou 1.250,00.")]

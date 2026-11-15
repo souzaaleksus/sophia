@@ -151,6 +151,7 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
     [Theory]
     [InlineData("1.2.3")]
+    [InlineData("12 50")]
     [InlineData("10,")]
     [InlineData("1,234.56")]
     public async Task Valor_invalido_avisa_ao_sair_do_campo_e_o_aviso_some_ao_corrigir(string digitado)

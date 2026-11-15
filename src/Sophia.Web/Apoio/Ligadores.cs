@@ -38,9 +38,12 @@ public static partial class Ligadores
 
     private static (object? Valor, string? Recusa) LerDecimal(ModelBindingContext contexto, string texto)
     {
-        var limpo = Espacos().Replace(texto, string.Empty);
-        var negativo = limpo.StartsWith('-');
-        var numero = Normalizar(negativo ? limpo[1..] : limpo);
+        var aparado = texto.Trim();
+        var negativo = aparado.StartsWith('-');
+        var corpo = (negativo ? aparado[1..] : aparado).Trim();
+        var numero = Espacos().IsMatch(corpo) && !EspacoDeMilhar().IsMatch(corpo)
+            ? null
+            : Normalizar(Espacos().Replace(corpo, string.Empty));
         if (numero is null)
         {
             return (null, MensagensDeValidacao.ValorInvalido);
@@ -80,6 +83,9 @@ public static partial class Ligadores
 
     [GeneratedRegex(@"\s")]
     private static partial Regex Espacos();
+
+    [GeneratedRegex(@"^[0-9]{1,3}( [0-9]{3})+(,[0-9]+)?$")]
+    private static partial Regex EspacoDeMilhar();
 
     [GeneratedRegex(@"^([1-9][0-9]{0,2}(\.[0-9]{3})+|[0-9]+),[0-9]+$")]
     private static partial Regex ComVirgula();

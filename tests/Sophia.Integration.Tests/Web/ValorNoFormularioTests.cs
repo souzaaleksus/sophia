@@ -17,6 +17,8 @@ public sealed class ValorNoFormularioTests
     [InlineData("18,90", "18.90")]
     [InlineData("0,75", "0.75")]
     [InlineData(" 2,50 ", "2.50")]
+    [InlineData("1 250,00", "1250")]
+    [InlineData("1 250 000", "1250000")]
     [InlineData("-2,50", "-2.50")]
     [InlineData("1.250", "1250")]
     [InlineData("1.250.000", "1250000")]
@@ -34,6 +36,9 @@ public sealed class ValorNoFormularioTests
 
     [Theory]
     [InlineData("1.2.3")]
+    [InlineData("12 50")]
+    [InlineData("1 25,00")]
+    [InlineData("1  250,00")]
     [InlineData("12.5055")]
     [InlineData("1.25,0")]
     [InlineData("12,50.00")]
