@@ -256,7 +256,8 @@ cd sophia
 
 Pré-requisito: Docker com o plugin Compose (Docker Desktop no Windows/macOS ou Docker Engine
 no Linux/WSL). No Windows, o Docker pode estar instalado dentro da WSL mesmo sem aparecer no
-PowerShell: `wsl docker version` confere, e os comandos abaixo rodam igual dentro da WSL. Sem Docker na máquina, o caminho pode ser conferido no job `docker` do
+PowerShell: `wsl docker version` confere, e os comandos abaixo rodam igual dentro da WSL, a partir
+da pasta do repositório. Sem Docker na máquina, o caminho pode ser conferido no job `docker` do
 [CI](https://github.com/souzaaleksus/sophia/actions/workflows/testes.yml), que a cada PR sobe
 este mesmo `docker compose`, abre o painel com a carga de demonstração e confere que o login da
 aplicação não consegue criar tabela.
@@ -293,7 +294,7 @@ aplicação não consegue criar tabela.
 4. Para parar: `docker compose down`. Os dados ficam no volume `dados-do-banco` e voltam na
    próxima subida. Quando o Docker reinicia, o `banco` e o `web` voltam sozinhos, se não
    tiverem sido parados com `docker compose stop` ou `down`. Com o Docker instalado dentro da
-   WSL, eles voltam quando a WSL volta a rodar. Para começar do zero, use `docker compose down -v`.
+   WSL, eles voltam quando a WSL volta a rodar e o serviço do Docker sobe com ela. Para começar do zero, use `docker compose down -v`.
    Um volume criado pela versão imediatamente anterior do Sophia é atualizado pelo `criar-banco`
    na subida, sem perder dados; um volume mais antigo é recusado (o `criar-banco` termina com erro
    e diz o que falta), e nesse caso `docker compose down -v` começa do zero.
@@ -319,7 +320,7 @@ Pré-requisitos:
 1. Crie o banco com o script entregue:
 
    ```powershell
-   sqlcmd -S .\SQLEXPRESS -E -C -b -i database/create-database.sql
+   sqlcmd -S .\SQLEXPRESS -E -C -b -d master -i database/create-database.sql
    ```
 
    No SSMS, abra `database/create-database.sql` e execute (F5). O script cria o banco `Sophia`,
@@ -339,13 +340,13 @@ Pré-requisitos:
    No PowerShell (Windows PowerShell 5.1 ou PowerShell 7):
 
    ```powershell
-   $f = New-TemporaryFile; [IO.File]::WriteAllText($f.FullName, ((Get-Content database/create-database.sql -Raw -Encoding UTF8) -replace 'Sophia', 'SophiaAvaliacao'), [Text.UTF8Encoding]::new($true)); sqlcmd -S .\SQLEXPRESS -E -C -b -i $f.FullName; Remove-Item $f
+   $f = New-TemporaryFile; [IO.File]::WriteAllText($f.FullName, ((Get-Content database/create-database.sql -Raw -Encoding UTF8) -replace 'Sophia', 'SophiaAvaliacao'), [Text.UTF8Encoding]::new($true)); sqlcmd -S .\SQLEXPRESS -E -C -b -d master -i $f.FullName; Remove-Item $f
    ```
 
    No bash (Linux, macOS ou WSL), com a senha do `sa` em `SQLCMDPASSWORD`:
 
    ```bash
-   tail -c +4 database/create-database.sql | sed 's/Sophia/SophiaAvaliacao/g' | sqlcmd -S localhost -U sa -C -b
+   tail -c +4 database/create-database.sql | sed 's/Sophia/SophiaAvaliacao/g' | sqlcmd -S localhost -U sa -C -b -d master
    ```
 
    O `tail -c +4` tira a marca de UTF-8 (BOM) do começo do arquivo, que o `sqlcmd` só reconhece
@@ -513,10 +514,13 @@ Métodos, técnicas e verificações usados nesta entrega. Os números de cada n
   até a causa aparecer. Antes da entrega, a suíte de tela roda cinco vezes seguidas com outra
   suíte de tela rodando ao mesmo tempo na mesma máquina, e duas com a CPU do navegador mais
   lenta (`SOPHIA_E2E_CPU_LENTA`).
-- **Esperar estado, nunca tempo**: um teste só age depois de a tela mostrar o estado de que
-  precisa, visível ou de acessibilidade (por exemplo, o link de exclusão só é clicado para abrir
-  o diálogo depois de ganhar `aria-haspopup="dialog"`, que o módulo põe ao ligar). Não há
-  `sleep` nem prazo aumentado; o preparo dos dados por SQL não tem prazo, porque não é o que o
+- **Esperar estado, não tempo**: um teste age depois de a tela mostrar o estado de que precisa,
+  visível ou de acessibilidade (por exemplo, o link de exclusão só é clicado para abrir o
+  diálogo depois de ganhar `aria-haspopup="dialog"`, que o módulo põe ao ligar). As poucas
+  esperas por tempo que restam provam ausência, quando não há estado para esperar (o duplo envio
+  não grava uma segunda venda, a busca abandonada não abre a lista, nenhum aviso de saída
+  aparece), ou deixam terminar uma rolagem ou uma troca de foco antes de medir; um único prazo
+  maior, de 15 s, cobre a navegação depois do duplo envio. O preparo dos dados por SQL não tem prazo, porque não é o que o
   teste mede.
 - **Regressão visual**: as telas são capturadas antes e depois de cada rodada, nas três
   larguras, e comparadas pixel a pixel.
@@ -668,7 +672,8 @@ Caminho de uma venda:
   domínio, têm CHECK no banco e chegam à tela pelos atributos do campo, que avisa ao sair dele.
   Com os dois tetos, o maior subtotal cabe com exatidão num número do JavaScript, e a tela mostra
   sempre o mesmo que o servidor grava. A soma na tela é exata até 2^53 centavos (uns R$ 90
-  trilhões, cerca de 900 itens no teto); quem calcula o que é gravado é sempre o servidor.
+  trilhões: cerca de 900 itens no teto padrão de quantidade, ou 90 com o teto configurado no
+  máximo); quem calcula o que é gravado é sempre o servidor.
 - **Identidade visual da Sophia.** Paleta, fonte e logo seguem o site da marca; o azul-petróleo
   foi escurecido de `#007B9E` para `#007596` porque o original não atingia contraste AA sobre o
   fundo claro.

@@ -7,7 +7,7 @@ GO
 
 IF DB_ID() > 4
 BEGIN
-    RAISERROR(N'Este script cria o próprio banco e não prepara o banco em que está conectado; nada foi alterado. Rode-o conectado ao master (sem -d); para outro nome de banco sem editar o arquivo, use o comando pronto do README.', 16, 1);
+    RAISERROR(N'Este script cria o próprio banco e não prepara o banco em que está conectado; nada foi alterado. Rode-o conectado ao master (-d master); para outro nome de banco sem editar o arquivo, use o comando pronto do README.', 16, 1);
     SET NOEXEC ON;
 END
 ELSE IF DB_ID(N'Sophia') IS NULL CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;

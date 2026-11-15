@@ -128,8 +128,8 @@ A tela de venda foi pensada para ser operada só pelo teclado, como um caixa.
    - quando o valor tem ponto e não tem vírgula, e depois do ponto vêm três algarismos (`12.505`,
      `1.250`), o ponto é lido como separador de milhar. Enquanto você digita, o campo mostra uma
      nota, sem bloquear: **Lido como R$ 12.505,00: o ponto separa o milhar. Para centavos, use a
-     vírgula.** Se a intenção era centavos, escreva com vírgula (`12,50`). A nota some assim que o
-     valor deixa de ser lido como milhar. Vale também no cadastro de produto.
+     vírgula.** Se a intenção era centavos, escreva com vírgula (`12,50`). A nota continua ao sair
+     do campo, junto do valor já reescrito (`12.505,00`), e some quando você muda o valor. Vale também no cadastro de produto.
 5. Acompanhe os totais:
    - o **subtotal** de cada linha (quantidade × valor unitário);
    - o **Total da venda** no visor, com o número de itens e de unidades.
