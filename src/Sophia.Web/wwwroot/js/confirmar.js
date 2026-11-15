@@ -16,6 +16,11 @@ if (dialogo) {
         cancelar.focus();
     };
 
+    const marcarLinks = () => document.querySelectorAll('a[data-confirmar]:not([aria-haspopup])')
+        .forEach(link => link.setAttribute('aria-haspopup', 'dialog'));
+    marcarLinks();
+    new MutationObserver(marcarLinks).observe(document.body, { childList: true, subtree: true });
+
     document.addEventListener('click', evento => {
         const link = evento.target.closest('a[data-confirmar]');
         if (link) {
