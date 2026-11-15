@@ -7,6 +7,7 @@
   <ItemGroup>
     <None Include="..\..\database\create-database.sql" Link="create-database.sql" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\database\carga-de-demonstracao.sql" Link="carga-de-demonstracao.sql" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\database\usuario-da-aplicacao.sql" Link="usuario-da-aplicacao.sql" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

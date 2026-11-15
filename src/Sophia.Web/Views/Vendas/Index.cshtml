@@ -65,15 +65,7 @@
 }
 else if (Model.TotalDeItens == 0)
 {
-    <div class="vazio">
-        <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-vendas" /></svg>
-        <p class="vazio-titulo">Nenhuma venda registrada ainda.</p>
-        <p>Escolha o cliente, lance os produtos e a primeira venda aparece aqui.</p>
-        <a class="btn btn-primary" asp-action="Nova">
-            <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-            Registrar a primeira venda
-        </a>
-    </div>
+    <partial name="_SemVendas" model="false" />
 }
 else
 {

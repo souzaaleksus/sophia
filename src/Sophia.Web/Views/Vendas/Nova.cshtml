@@ -7,7 +7,7 @@
     var erroDosItens = ViewData.ModelState.PrimeiroErro("Itens");
     var totalDaVenda = Model.Total();
 
-    void LinhaDoItem(int indice, ItemDaVendaFormulario item, bool comErros)
+    async Task LinhaDoItem(int indice, ItemDaVendaFormulario item, bool comErros)
     {
         string? ErroDe(string campo) => comErros ? ViewData.ModelState.PrimeiroErro($"Itens[{indice}].{campo}") : null;
         string Valor(string campo, string formatado) => comErros ? ValorTentado.Ou(ViewData.ModelState, $"Itens[{indice}].{campo}", formatado) : formatado;
@@ -31,7 +31,7 @@
                     <span class="input-group-text">R$</span>
                     <input id="item-@indice-ValorUnitario" name="Itens[@indice].ValorUnitario" value="@Valor("ValorUnitario", Formato.Numero(item.ValorUnitario))"
                            type="text" class="form-control valor" inputmode="decimal" autocomplete="off"
-                           data-valor-maximo="@Formato.Invariante(Sophia.Domain.RegrasComuns.MaiorValorAceito)"
+                           data-valor-maximo="@Formato.Invariante(RegrasDeEntrada.MaiorValorAceito)"
                            placeholder="0,00" data-campo="ValorUnitario" />
                 </div>
                 <span class="erro" data-erro="ValorUnitario" data-valmsg-for="Itens[@indice].ValorUnitario">@ErroDe("ValorUnitario")</span>
@@ -54,6 +54,7 @@
             <button type="button" class="caixa-remover" data-acao="remover-item" aria-label="Remover este produto" title="Remover este produto">
                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
             </button>
+            <partial name="_NotaDoMilhar" />
         </div>
     }
 }
@@ -89,9 +90,9 @@
       data-texto-produto-somado="{produto} já estava na venda: quantidade somada na linha {linha}."
       data-texto-produto-no-maximo="{produto} já está na linha {linha} com a quantidade máxima por item; nada foi somado."
       data-texto-valor-invalido="@MensagensDeValidacao.ValorInvalido"
-      data-texto-valor-com-mais-de-duas-casas="@Sophia.Domain.Recursos.Mensagens.ValorUnitarioComMaisDeDuasCasas"
-      data-texto-quantidade-acima-do-maximo="@Mensagens.QuantidadeAcimaDoMaximo(Parametros.QuantidadeMaximaPorItem)"
-      data-texto-valor-acima-do-permitido="@Mensagens.ValorUnitarioAcimaDoMaximo"
+      data-texto-valor-com-mais-de-duas-casas="@RegrasDeEntrada.ValorUnitarioComMaisDeDuasCasas"
+      data-texto-quantidade-acima-do-maximo="@RegrasDeEntrada.QuantidadeAcimaDoMaximo(Parametros.QuantidadeMaximaPorItem)"
+      data-texto-valor-acima-do-permitido="@RegrasDeEntrada.ValorUnitarioAcimaDoMaximo"
       data-texto-item="item"
       data-texto-itens="itens"
       data-texto-unidade="unidade"
@@ -163,7 +164,7 @@
         <div class="caixa-lista-de-itens" data-itens>
             @for (var indice = 0; indice < Model.Itens.Count; indice++)
             {
-                LinhaDoItem(indice, Model.Itens[indice], comErros: true);
+                await LinhaDoItem(indice, Model.Itens[indice], comErros: true);
             }
         </div>
 
@@ -197,7 +198,7 @@
 </form>
 
 <template id="modelo-de-item">
-    @{ LinhaDoItem(0, new ItemDaVendaFormulario(), comErros: false); }
+    @{ await LinhaDoItem(0, new ItemDaVendaFormulario(), comErros: false); }
 </template>
 
 @section Scripts {

@@ -21,7 +21,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
 
     private const string OutroSistema = "já tem tabelas de outro sistema";
 
-    private const string VersaoAnterior = "versão anterior";
+    private const string VersaoAntiga = "versão antiga";
 
     private const string UmaVendaSemItens = """
         INSERT INTO dbo.Clientes (Cpf, Nome) VALUES ('52998224725', N'Maria Santos');
@@ -146,7 +146,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     }
 
     [Fact]
-    public async Task Banco_criado_por_versao_anterior_do_script_e_recusado_sem_nada_gravado()
+    public async Task Banco_criado_por_versao_antiga_do_script_e_recusado_sem_nada_gravado()
     {
         await using var antigo = await BancoAvulso.CriarPeloScriptAsync(BancoDeTestes.Servidor, "Loja_Antiga");
         await antigo.ConsultarAsync($"""
@@ -159,13 +159,13 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         var rodar = antigo.ExecutarScriptDoBancoAsync;
 
         (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should()
-            .Contain(VersaoAnterior).And.Contain("CK_VendaItens_QuantidadeMaxima");
+            .Contain(VersaoAntiga).And.Contain("CK_VendaItens_QuantidadeMaxima");
         (await antigo.ConsultarAsync(ObjetosComData)).Should().Equal(antes);
         (await antigo.ConsultarAsync("SELECT Nome FROM dbo.Clientes")).Should().Equal("Maria Santos");
     }
 
     [Fact]
-    public async Task Banco_sem_o_nome_do_produto_gravado_na_venda_e_recusado_sem_nada_gravado()
+    public async Task Banco_sem_so_o_nome_do_produto_gravado_na_venda_e_recusado_sem_nada_gravado()
     {
         await using var antigo = await BancoAvulso.CriarPeloScriptAsync(BancoDeTestes.Servidor, "Loja_Antiga");
         await antigo.ConsultarAsync("ALTER TABLE dbo.VendaItens DROP COLUMN NomeDoProduto; SELECT N'pronto';");
@@ -174,7 +174,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         var rodar = antigo.ExecutarScriptDoBancoAsync;
 
         (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should()
-            .Contain(VersaoAnterior).And.Contain("VendaItens.NomeDoProduto");
+            .Contain(VersaoAntiga).And.Contain("VendaItens.NomeDoProduto");
         (await antigo.ConsultarAsync(ObjetosComData)).Should().Equal(antes);
     }
 
@@ -196,7 +196,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
 
         var rodar = antigo.ExecutarScriptDoBancoAsync;
 
-        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain(VersaoAnterior).And.Contain("Produtos.Nome");
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain(VersaoAntiga).And.Contain("Produtos.Nome");
         (await antigo.ConsultarAsync(Tabelas)).Should().Equal("dbo.Clientes");
     }
 
@@ -217,7 +217,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     {
         await using var novo = BancoAvulso.Reservar(BancoDeTestes.Servidor, "Loja_Sqlcmd");
 
-        var (saida, texto) = await RodarPeloSqlcmdAsync(novo);
+        var (saida, texto) = await Sqlcmd.RodarScriptDoBancoAsync(novo);
 
         saida.Should().Be(0, texto);
         (await novo.ConsultarAsync(TabelasDoSophia)).Should().Equal("Clientes", "Produtos", "VendaItens", "Vendas");
@@ -229,7 +229,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         await using var outro = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Acentos");
         await outro.ConsultarAsync("CREATE TABLE dbo.Pedidos (Id INT); SELECT N'criada';");
 
-        var (saida, texto) = await RodarPeloSqlcmdAsync(outro);
+        var (saida, texto) = await Sqlcmd.RodarScriptDoBancoAsync(outro);
 
         saida.Should().NotBe(0);
         texto.Should().Contain(OutroSistema).And.Contain("nada foi alterado");
@@ -242,7 +242,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         await using var outro = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_SemParar");
         await outro.ConsultarAsync("CREATE TABLE dbo.Pedidos (Id INT); SELECT N'criada';");
 
-        var (_, texto) = await RodarPeloSqlcmdAsync(outro, pararNoErro: false);
+        var (_, texto) = await Sqlcmd.RodarScriptDoBancoAsync(outro, pararNoErro: false);
 
         texto.Should().Contain(OutroSistema);
         (await outro.ConsultarAsync(Tabelas)).Should().Equal("dbo.Pedidos");
@@ -254,10 +254,10 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         await using var conectado = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Conectada");
         await using var alvo = BancoAvulso.Reservar(BancoDeTestes.Servidor, "Loja_Alvo");
 
-        var (saida, texto) = await RodarPeloSqlcmdAsync(alvo, banco: conectado.Nome, pararNoErro: false);
+        var (saida, texto) = await Sqlcmd.RodarScriptDoBancoAsync(alvo, banco: conectado.Nome, pararNoErro: false);
 
         saida.Should().Be(0, "sem -b o sqlcmd não devolve erro, e por isso o lote de criação também tem de ficar parado");
-        texto.Should().Contain("conectado ao master");
+        texto.Should().Contain("conectado ao master").And.Contain("comando pronto do README");
         (await conectado.ConsultarAsync(Tabelas)).Should().BeEmpty();
         (await BancoAvulso.ExisteAsync(BancoDeTestes.Servidor, alvo.Nome)).Should().BeFalse();
     }
@@ -337,22 +337,5 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         (await banco.ConsultarAsync("SELECT CAST(COUNT(*) AS VARCHAR(10)) FROM dbo.Clientes WHERE Nome = N'jose antonio'"))
             .Should().Equal("2");
         await banco.LimparAsync();
-    }
-
-    private static async Task<(int Saida, string Texto)> RodarPeloSqlcmdAsync(
-        BancoAvulso alvo, string? banco = null, bool pararNoErro = true)
-    {
-        var original = BancoAvulso.CaminhoDoArquivo(BancoAvulso.ScriptDoBanco);
-        var comMarca = (await File.ReadAllBytesAsync(original)).Take(3).SequenceEqual(Encoding.UTF8.Preamble.ToArray());
-        var copia = Path.Combine(Path.GetTempPath(), $"script_{Guid.NewGuid():N}.sql");
-        await File.WriteAllTextAsync(copia, BancoAvulso.ScriptDoBancoPara(alvo.Nome), new UTF8Encoding(comMarca));
-        try
-        {
-            return await Sqlcmd.RodarAsync(BancoDeTestes.Servidor, copia, banco, pararNoErro);
-        }
-        finally
-        {
-            File.Delete(copia);
-        }
     }
 }

@@ -31,11 +31,24 @@ function normalizarDecimal(numero) {
     return comPontoDecimal.test(numero) || soDigitos.test(numero) ? numero : null;
 }
 
+const espacoDeMilhar = /^\d{1,3}( \d{3})+(,\d+)?$/;
+
+function semSinal(texto) {
+    const aparado = String(texto ?? '').trim();
+    const negativo = aparado.startsWith('-');
+    const corpo = (negativo ? aparado.slice(1) : aparado).trim();
+    const valido = !/\s/.test(corpo) || espacoDeMilhar.test(corpo);
+    return { negativo, digitado: valido ? corpo.replace(/\s/g, '') : null };
+}
+
 function separarDecimal(texto) {
-    const limpo = String(texto ?? '').replace(/\s/g, '');
-    const negativo = limpo.startsWith('-');
-    const numero = normalizarDecimal(negativo ? limpo.slice(1) : limpo);
+    const { negativo, digitado } = semSinal(texto);
+    const numero = digitado === null ? null : normalizarDecimal(digitado);
     return numero === null ? null : { numero, negativo, casas: numero.split('.')[1]?.length ?? 0 };
+}
+
+export function lidoComoMilhar(texto) {
+    return comMilhar.test(semSinal(texto).digitado ?? '');
 }
 
 export function escritaDecimalValida(texto) {

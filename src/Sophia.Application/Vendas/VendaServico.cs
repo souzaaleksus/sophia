@@ -4,7 +4,6 @@ using Sophia.Application.Produtos;
 using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Vendas;
-using MensagensDoDominio = Sophia.Domain.Recursos.Mensagens;
 
 namespace Sophia.Application.Vendas;
 
@@ -42,8 +41,7 @@ public sealed class VendaServico(
 
     public async Task<Resultado<int>> RegistrarAsync(DadosVenda dados, CancellationToken cancelamento = default)
     {
-        var nomes = await produtos.ObterNomesAsync(ProdutosInformados(dados), cancelamento);
-        var registro = Venda.Registrar(dados, relogio.Hoje, parametros.QuantidadeMaximaPorItem, nomes);
+        var registro = await ValidarAsync(dados, cancelamento);
         if (!registro.Sucesso)
         {
             return Resultado.Falha<int>(registro.Erros);
@@ -57,7 +55,13 @@ public sealed class VendaServico(
 
         return await ClienteAusenteAsync(venda, cancelamento) is { } ausente
             ? Resultado.Falha<int>(ausente)
-            : await GravarAsync(venda, cancelamento);
+            : await GravarAsync(dados, venda, cancelamento);
+    }
+
+    private async Task<Resultado<Venda>> ValidarAsync(DadosVenda dados, CancellationToken cancelamento)
+    {
+        var nomes = await produtos.ObterNomesAsync(ProdutosInformados(dados), cancelamento);
+        return Venda.Registrar(dados, relogio.Hoje, parametros.QuantidadeMaximaPorItem, nomes);
     }
 
     private static IEnumerable<int> ProdutosInformados(DadosVenda dados) =>
@@ -68,7 +72,7 @@ public sealed class VendaServico(
             ? Resultado.Ok(registrada.Id)
             : Resultado.Falha<int>(new Erro(nameof(DadosVenda.Chave), Mensagens.FormularioJaUsado(registrada.Id)));
 
-    private async Task<Resultado<int>> GravarAsync(Venda venda, CancellationToken cancelamento)
+    private async Task<Resultado<int>> GravarAsync(DadosVenda dados, Venda venda, CancellationToken cancelamento)
     {
         vendas.Adicionar(venda);
         try
@@ -88,7 +92,7 @@ public sealed class VendaServico(
         }
         catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.RestricaoViolada)
         {
-            var ausentes = await VerificarCadastrosAsync(venda, cancelamento);
+            var ausentes = await VerificarCadastrosAsync(dados, venda, cancelamento);
             if (ausentes.Count == 0)
             {
                 throw;
@@ -106,7 +110,7 @@ public sealed class VendaServico(
             ? null
             : new Erro(nameof(DadosVenda.ClienteId), Mensagens.ClienteNaoEncontrado);
 
-    private async Task<List<Erro>> VerificarCadastrosAsync(Venda venda, CancellationToken cancelamento)
+    private async Task<List<Erro>> VerificarCadastrosAsync(DadosVenda dados, Venda venda, CancellationToken cancelamento)
     {
         var erros = new List<Erro>();
         if (await ClienteAusenteAsync(venda, cancelamento) is { } clienteAusente)
@@ -114,16 +118,7 @@ public sealed class VendaServico(
             erros.Add(clienteAusente);
         }
 
-        var itens = venda.Itens.ToList();
-        var existentes = await produtos.ObterNomesAsync(itens.Select(i => i.ProdutoId), cancelamento);
-        for (var linha = 0; linha < itens.Count; linha++)
-        {
-            if (!existentes.ContainsKey(itens[linha].ProdutoId))
-            {
-                erros.Add(new Erro(nameof(DadosItemVenda.ProdutoId), MensagensDoDominio.ProdutoNaoEncontrado, linha));
-            }
-        }
-
+        erros.AddRange((await ValidarAsync(dados, cancelamento)).Erros);
         return erros;
     }
 }

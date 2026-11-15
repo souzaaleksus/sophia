@@ -7,7 +7,7 @@ GO
 
 IF DB_ID() > 4
 BEGIN
-    RAISERROR(N'Este script cria o próprio banco e não prepara o banco em que está conectado; nada foi alterado. Rode-o conectado ao master (sem -d) e, para outro nome, troque o nome nas linhas do topo do script.', 16, 1);
+    RAISERROR(N'Este script cria o próprio banco e não prepara o banco em que está conectado; nada foi alterado. Rode-o conectado ao master (-d master); para outro nome de banco sem editar o arquivo, use o comando pronto do README.', 16, 1);
     SET NOEXEC ON;
 END
 ELSE IF DB_ID(N'Sophia') IS NULL CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;
@@ -45,6 +45,8 @@ DECLARE @agrupamento SYSNAME = CONVERT(SYSNAME, DATABASEPROPERTYEX(DB_NAME(), N'
 DECLARE @faltam NVARCHAR(MAX) = (
     SELECT STRING_AGG(Item, N', ') WITHIN GROUP (ORDER BY Item)
     FROM (SELECT Item FROM @esperado EXCEPT SELECT Item FROM @existente) AS falta);
+DECLARE @daVersaoAnterior BIT = IIF(COL_LENGTH(N'dbo.VendaItens', N'NomeDoProduto') IS NULL
+    AND @faltam = N'Produtos.CK_Produtos_ValorUnitarioMaximo, VendaItens.CK_VendaItens_ValorUnitarioMaximo, VendaItens.NomeDoProduto Latin1_General_CI_AI', 1, 0);
 DECLARE @recusa NVARCHAR(2000);
 
 IF DB_ID() <= 4
@@ -52,17 +54,17 @@ IF DB_ID() <= 4
 ELSE IF @agrupamento <> N'Latin1_General_CI_AS'
     SET @recusa = CONCAT(N'O banco ', QUOTENAME(DB_NAME()), N' usa o agrupamento ', @agrupamento,
         N', e as tabelas precisam de Latin1_General_CI_AS; nada foi alterado. ',
-        N'Use outro nome, trocado nas linhas do topo do script, ou guarde o que precisar e apague o banco antes de rodar de novo.');
+        N'Use outro nome, com o comando pronto do README, ou guarde o que precisar e apague o banco antes de rodar de novo.');
 ELSE IF EXISTS (
     SELECT 1 FROM sys.tables
     WHERE is_ms_shipped = 0
       AND NOT (schema_id = SCHEMA_ID(N'dbo') AND name IN (N'Clientes', N'Produtos', N'Vendas', N'VendaItens')))
     SET @recusa = CONCAT(N'O banco ', QUOTENAME(DB_NAME()), N' já tem tabelas de outro sistema; nada foi alterado. ',
-        N'Use um banco vazio: troque o nome do banco nas linhas do topo do script.');
-ELSE IF EXISTS (SELECT 1 FROM @existente) AND @faltam IS NOT NULL
+        N'Use outro nome, com o comando pronto do README.');
+ELSE IF EXISTS (SELECT 1 FROM @existente) AND @faltam IS NOT NULL AND @daVersaoAnterior = 0
     SET @recusa = LEFT(CONCAT(N'O banco ', QUOTENAME(DB_NAME()),
-        N' tem as tabelas de uma versão anterior do script; nada foi alterado. ',
-        N'Guarde os dados que precisar, apague o banco (no Docker, docker compose down -v) e rode o script de novo, ou use outro nome, trocado nas linhas do topo. Falta: ', @faltam, N'.'), 2000);
+        N' tem as tabelas de uma versão antiga do script, e este só atualiza a versão imediatamente anterior; nada foi alterado. ',
+        N'Guarde os dados que precisar, apague o banco (no Docker, docker compose down -v) e rode o script de novo, ou use outro nome, com o comando pronto do README. Falta: ', @faltam, N'.'), 2000);
 
 IF @recusa IS NOT NULL
 BEGIN
@@ -71,12 +73,27 @@ BEGIN
 END
 GO
 
+IF OBJECT_ID(N'dbo.VendaItens', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.VendaItens', N'NomeDoProduto') IS NULL
+BEGIN
+    DECLARE @acimaDoTeto NVARCHAR(200) = CONCAT_WS(N', ',
+        (SELECT CONCAT(COUNT(*), N' em Produtos') FROM dbo.Produtos WHERE ValorUnitario > 999999.99 HAVING COUNT(*) > 0),
+        (SELECT CONCAT(COUNT(*), N' em VendaItens') FROM dbo.VendaItens WHERE ValorUnitario > 999999.99 HAVING COUNT(*) > 0));
+    IF @acimaDoTeto <> N''
+    BEGIN
+        DECLARE @recusaDoTeto NVARCHAR(2000) = CONCAT(N'O banco ', QUOTENAME(DB_NAME()),
+            N' é da versão anterior e não pode ser atualizado, porque há registros com valor unitário acima de R$ 999.999,99: ',
+            @acimaDoTeto, N'; nada foi alterado. Corrija esses valores e rode o script de novo.');
+        RAISERROR(N'%s', 16, 1, @recusaDoTeto);
+        SET NOEXEC ON;
+    END
+END
+GO
+
 SET XACT_ABORT ON;
+BEGIN TRANSACTION;
 
 IF OBJECT_ID(N'dbo.Clientes', N'U') IS NULL
 BEGIN
-    BEGIN TRANSACTION;
-
     CREATE TABLE dbo.Clientes
     (
         Id             INT           IDENTITY(1, 1) NOT NULL,
@@ -135,9 +152,19 @@ BEGIN
         CONSTRAINT CK_VendaItens_ValorUnitarioMaximo CHECK (ValorUnitario <= 999999.99)
     );
     CREATE NONCLUSTERED INDEX IX_VendaItens_ProdutoId ON dbo.VendaItens (ProdutoId);
-
-    COMMIT TRANSACTION;
 END
+ELSE IF COL_LENGTH(N'dbo.VendaItens', N'NomeDoProduto') IS NULL
+BEGIN
+    SELECT Id, Nome INTO #Produtos FROM dbo.Produtos;
+    ALTER TABLE dbo.VendaItens ADD NomeDoProduto NVARCHAR(150) COLLATE Latin1_General_CI_AI NULL;
+    UPDATE item SET NomeDoProduto = produto.Nome
+    FROM dbo.VendaItens item JOIN #Produtos produto ON produto.Id = item.ProdutoId;
+    ALTER TABLE dbo.VendaItens ALTER COLUMN NomeDoProduto NVARCHAR(150) COLLATE Latin1_General_CI_AI NOT NULL;
+    ALTER TABLE dbo.Produtos ADD CONSTRAINT CK_Produtos_ValorUnitarioMaximo CHECK (ValorUnitario <= 999999.99);
+    ALTER TABLE dbo.VendaItens ADD CONSTRAINT CK_VendaItens_ValorUnitarioMaximo CHECK (ValorUnitario <= 999999.99);
+END
+
+COMMIT TRANSACTION;
 GO
 
 SET NOEXEC OFF;

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Sophia.Application;
 using Sophia.Application.Produtos;
 using Sophia.Domain.Produtos;
-using Sophia.Domain.Recursos;
 using Sophia.Web.Apoio;
 
 namespace Sophia.Web.Models;
@@ -11,12 +11,12 @@ public sealed class ProdutoFormulario : IFormularioDeCadastro<DadosProduto>
     public int? Id { get; set; }
 
     [Display(Name = "Nome")]
-    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.NomeObrigatorio))]
+    [Required(ErrorMessageResourceType = typeof(RegrasDeEntrada), ErrorMessageResourceName = nameof(RegrasDeEntrada.NomeObrigatorio))]
     [TamanhoDoNome(Produto.TamanhoMaximoNome)]
     public string? Nome { get; set; }
 
     [Display(Name = "Valor unitário")]
-    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.ValorUnitarioObrigatorio))]
+    [Required(ErrorMessageResourceType = typeof(RegrasDeEntrada), ErrorMessageResourceName = nameof(RegrasDeEntrada.ValorUnitarioObrigatorio))]
     public decimal? ValorUnitario { get; set; }
 
     public bool EhNovo => Id is null;

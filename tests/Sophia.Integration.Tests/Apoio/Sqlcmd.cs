@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Data.SqlClient;
+using Sophia.Testes.Banco;
 
 namespace Sophia.Integration.Tests.Apoio;
 
@@ -9,12 +10,12 @@ internal static class Sqlcmd
     private static readonly string[] PastasConhecidas = ["/opt/mssql-tools18/bin", "/opt/mssql-tools/bin"];
 
     public static async Task<(int Saida, string Texto)> RodarAsync(
-        string servidor, string arquivo, string? banco = null, bool pararNoErro = true)
+        string servidor, string arquivo, string? banco = null, bool pararNoErro = true, params string[] outros)
     {
         var conexao = new SqlConnectionStringBuilder(servidor);
         var saida = Path.Combine(Path.GetTempPath(), $"sqlcmd_{Guid.NewGuid():N}.txt");
         var inicio = new ProcessStartInfo(Executavel()) { UseShellExecute = false };
-        foreach (var argumento in Argumentos(conexao, arquivo, saida, banco, pararNoErro))
+        foreach (var argumento in Argumentos(conexao, arquivo, saida, banco, pararNoErro).Concat(outros))
         {
             inicio.ArgumentList.Add(argumento);
         }
@@ -29,6 +30,23 @@ internal static class Sqlcmd
         finally
         {
             File.Delete(saida);
+        }
+    }
+
+    public static async Task<(int Saida, string Texto)> RodarScriptDoBancoAsync(
+        BancoAvulso alvo, string? banco = null, bool pararNoErro = true)
+    {
+        var original = BancoAvulso.CaminhoDoArquivo(BancoAvulso.ScriptDoBanco);
+        var comMarca = (await File.ReadAllBytesAsync(original)).Take(3).SequenceEqual(Encoding.UTF8.Preamble.ToArray());
+        var copia = Path.Combine(Path.GetTempPath(), $"script_{Guid.NewGuid():N}.sql");
+        await File.WriteAllTextAsync(copia, BancoAvulso.ScriptDoBancoPara(alvo.Nome), new UTF8Encoding(comMarca));
+        try
+        {
+            return await RodarAsync(BancoDeTestes.Servidor, copia, banco, pararNoErro);
+        }
+        finally
+        {
+            File.Delete(copia);
         }
     }
 

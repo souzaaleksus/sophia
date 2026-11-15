@@ -27,7 +27,7 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
         await _pagina.GotoAsync("/Clientes");
         await _pagina.EvaluateAsync("() => window.addEventListener('submit', evento => evento.preventDefault())");
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos" }).ClickAsync();
+        await Exclusao.AbrirDialogoAsync(_pagina, "Maria Santos");
         var dialogo = _pagina.GetByRole(AriaRole.Dialog);
         var excluir = dialogo.Locator("[type=submit]");
 
@@ -46,11 +46,12 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
         await _pagina.GotoAsync("/Clientes");
 
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos" }).ClickAsync();
+        await Exclusao.AbrirDialogoAsync(_pagina, "Maria Santos");
 
         await Expect(Dialogo).ToBeVisibleAsync();
         await Expect(Dialogo).ToContainTextAsync("Excluir cliente?");
         await Expect(Dialogo).ToContainTextAsync("Maria Santos");
+        await Expect(Dialogo).ToContainTextAsync("A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.");
         await Expect(Dialogo.GetByRole(AriaRole.Button, new() { Name = "Cancelar" })).ToBeFocusedAsync();
         await Expect(_pagina).ToHaveURLAsync(ListaDeClientes());
     }
@@ -60,9 +61,8 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
     {
         await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
         await _pagina.GotoAsync("/Clientes");
-        var excluir = _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos" });
-        await excluir.ClickAsync();
-        await Expect(Dialogo).ToBeVisibleAsync();
+        var excluir = Exclusao.Link(_pagina, "Maria Santos");
+        await Exclusao.AbrirDialogoAsync(_pagina, "Maria Santos");
 
         await _pagina.Keyboard.PressAsync("Escape");
 
@@ -77,8 +77,7 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
         await _cadastro.ClienteAsync("111.444.777-35", "João Lima");
         await _pagina.GotoAsync("/Clientes");
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos" }).ClickAsync();
-        await Expect(Dialogo).ToBeVisibleAsync();
+        await Exclusao.AbrirDialogoAsync(_pagina, "Maria Santos");
 
         await Dialogo.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
 
@@ -95,8 +94,7 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         var produto = await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
         await _cadastro.VendaAsync(Cadastro.Hoje, cliente, new DadosItemVenda(produto, 1, 2.50m));
         await _pagina.GotoAsync("/Clientes");
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos" }).ClickAsync();
-        await Expect(Dialogo).ToBeVisibleAsync();
+        await Exclusao.AbrirDialogoAsync(_pagina, "Maria Santos");
 
         await Dialogo.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
 
@@ -110,11 +108,12 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
         await _pagina.GotoAsync("/Produtos");
 
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Caneta azul" }).ClickAsync();
+        await Exclusao.AbrirDialogoAsync(_pagina, "Caneta azul");
 
         await Expect(Dialogo).ToBeVisibleAsync();
         await Expect(Dialogo).ToContainTextAsync("Excluir produto?");
         await Expect(Dialogo).ToContainTextAsync("Caneta azul");
+        await Expect(Dialogo).ToContainTextAsync("A exclusão não pode ser desfeita. Produtos já vendidos não podem ser excluídos.");
         await Expect(Dialogo.GetByRole(AriaRole.Button, new() { Name = "Cancelar" })).ToBeFocusedAsync();
     }
 
@@ -124,8 +123,7 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
         await _cadastro.ProdutoAsync("Caderno 96 folhas", 18.90m);
         await _pagina.GotoAsync("/Produtos");
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Caneta azul" }).ClickAsync();
-        await Expect(Dialogo).ToBeVisibleAsync();
+        await Exclusao.AbrirDialogoAsync(_pagina, "Caneta azul");
 
         await Dialogo.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
 
@@ -142,8 +140,7 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         var produto = await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
         await _cadastro.VendaAsync(Cadastro.Hoje, cliente, new DadosItemVenda(produto, 1, 2.50m));
         await _pagina.GotoAsync("/Produtos");
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Caneta azul" }).ClickAsync();
-        await Expect(Dialogo).ToBeVisibleAsync();
+        await Exclusao.AbrirDialogoAsync(_pagina, "Caneta azul");
 
         await Dialogo.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
 
@@ -159,6 +156,7 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         await _pagina.GotoAsync($"/Clientes/Excluir/{cliente}");
 
         await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Excluir cliente?");
+        await Expect(_pagina.Locator("main")).ToContainTextAsync("A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.");
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
         await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Cliente excluído.");
     }
@@ -171,8 +169,52 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
         await _pagina.GotoAsync($"/Produtos/Excluir/{produto}");
 
         await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Excluir produto?");
+        await Expect(_pagina.Locator("main")).ToContainTextAsync("A exclusão não pode ser desfeita. Produtos já vendidos não podem ser excluídos.");
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
         await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Produto excluído.");
+    }
+
+    [Fact]
+    public async Task Antes_de_o_modulo_marcar_o_link_o_clique_segue_para_a_pagina_de_exclusao_e_depois_abre_o_dialogo()
+    {
+        await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        var modulo = new TaskCompletionSource();
+        await _pagina.RouteAsync("**/js/confirmar.js**", async rota =>
+        {
+            await modulo.Task;
+            await rota.FallbackAsync();
+        });
+        await _pagina.GotoAsync("/Clientes", new() { WaitUntil = WaitUntilState.Commit });
+        var excluir = Exclusao.Link(_pagina, "Maria Santos");
+        await Expect(excluir).ToBeVisibleAsync();
+        await Expect(excluir).Not.ToHaveAttributeAsync("aria-haspopup", "dialog");
+
+        await excluir.ClickAsync();
+
+        await Expect(_pagina).ToHaveURLAsync(PaginaDeExclusaoDoCliente());
+        await Expect(_pagina.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Excluir cliente?");
+
+        await _pagina.UnrouteAllAsync(new() { Behavior = UnrouteBehavior.IgnoreErrors });
+        modulo.SetResult();
+        await _pagina.GotoAsync("/Clientes");
+
+        await Exclusao.AbrirDialogoAsync(_pagina, "Maria Santos");
+        await Expect(Dialogo).ToContainTextAsync("Maria Santos");
+        await Expect(_pagina).ToHaveURLAsync(ListaDeClientes());
+    }
+
+    [Fact]
+    public async Task O_link_que_chega_pela_busca_ao_vivo_tambem_abre_o_dialogo()
+    {
+        await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        await _cadastro.ClienteAsync("111.444.777-35", "João Lima");
+        await _pagina.GotoAsync("/Clientes");
+
+        await _pagina.GetByRole(AriaRole.Searchbox).PressSequentiallyAsync("lima");
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Maria Santos" })).ToHaveCountAsync(0);
+
+        await Exclusao.AbrirDialogoAsync(_pagina, "João Lima");
+        await Expect(Dialogo).ToContainTextAsync("João Lima");
     }
 
     [GeneratedRegex(@"/Clientes(\?.*)?$")]
@@ -180,4 +222,7 @@ public sealed partial class DialogoDeExclusaoTests(AplicacaoEmExecucao aplicacao
 
     [GeneratedRegex(@"/Produtos(\?.*)?$")]
     private static partial Regex ListaDeProdutos();
+
+    [GeneratedRegex(@"/Clientes/Excluir/\d+$")]
+    private static partial Regex PaginaDeExclusaoDoCliente();
 }

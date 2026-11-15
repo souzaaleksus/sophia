@@ -39,22 +39,25 @@ export function criarVisor(formulario, textos, movimentoReduzido) {
     return { mostrar };
 }
 
+const ateOTeto = (numero, teto) => (numero !== null && numero <= (teto ?? Infinity) ? numero : null);
+
 export function lerLinha(item) {
     const campo = nome => item.querySelector(`[data-campo=${nome}]`);
     const valor = campo('ValorUnitario');
-    const centavos = lerCentavos(valor.value);
+    const quantidade = campo('Quantidade');
     return {
-        centavos: centavos !== null && centavos <= lerCentavos(valor.dataset.valorMaximo) ? centavos : null,
-        quantidade: lerInteiro(campo('Quantidade').value),
+        centavos: ateOTeto(lerCentavos(valor.value), lerCentavos(valor.dataset.valorMaximo)),
+        quantidade: ateOTeto(lerInteiro(quantidade.value), lerInteiro(quantidade.max)),
         produtoEscolhido: campo('ProdutoId').value !== '',
     };
 }
 
-export function mostrarSubtotal(item, subtotalEmCentavos, quantidade) {
+export function mostrarSubtotal(item, subtotalEmCentavos) {
     escreverQuebrandoNoMilhar(item.querySelector('[data-campo=Subtotal]'), formatarMoeda(subtotalEmCentavos / 100));
-    const maximo = lerInteiro(item.querySelector('[data-campo=Quantidade]').max) ?? Infinity;
-    item.querySelector('[data-acao=menos]').disabled = (quantidade ?? 0) <= 1;
-    item.querySelector('[data-acao=mais]').disabled = (quantidade ?? 0) >= maximo;
+    const campo = item.querySelector('[data-campo=Quantidade]');
+    const quantidade = lerInteiro(campo.value) ?? 0;
+    item.querySelector('[data-acao=menos]').disabled = quantidade <= 1;
+    item.querySelector('[data-acao=mais]').disabled = quantidade >= (lerInteiro(campo.max) ?? Infinity);
 }
 
 function escreverQuebrandoNoMilhar(elemento, texto) {

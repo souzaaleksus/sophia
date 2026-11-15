@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SOPHIA_SENHA_DA_APLICACAO: Sophia#AplicacaoCI2026
+      SOPHIA_SENHA_DA_APLICACAO: "Sophia;Aplicacao#CI2026"
 
     steps:
       - uses: actions/checkout@v4
@@ -115,9 +115,19 @@ jobs:
           echo "Tabelas no banco Sophia: $tabelas"
           test "$tabelas" = "Clientes,Produtos,VendaItens,Vendas"
 
-      - name: Conferir que a aplicação conecta com o usuário sophia_app
+      - name: Conferir que a aplicação conecta com o usuário sophia_app e a senha com ponto e vírgula
         run: |
-          docker compose exec -T web printenv ConnectionStrings__Sophia | grep -q 'User Id=sophia_app;'
+          case "$SOPHIA_SENHA_DA_APLICACAO" in *";"*) ;; *) exit 1 ;; esac
+          docker compose exec -T web printenv ConnectionStrings__Sophia | grep -qF "User Id=sophia_app;Password='$SOPHIA_SENHA_DA_APLICACAO';"
+
+      - name: Conferir que senha da aplicação com aspa simples é recusada
+        run: |
+          if recusa="$(docker compose run --rm --no-deps -e "SOPHIA_SENHA_DA_APLICACAO=Sophia'Aspa#2026" criar-banco 2>&1)"; then
+            echo "O criar-banco aceitou senha com aspa simples."
+            exit 1
+          fi
+          echo "$recusa"
+          echo "$recusa" | grep -q "não pode ter aspa simples"
 
       - name: Conferir que o usuário sophia_app lê e grava mas não cria tabela
         run: |

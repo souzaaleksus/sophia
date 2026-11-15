@@ -255,7 +255,9 @@ cd sophia
 ### Caminho A — Docker
 
 Pré-requisito: Docker com o plugin Compose (Docker Desktop no Windows/macOS ou Docker Engine
-no Linux/WSL). Sem Docker na máquina, o caminho pode ser conferido no job `docker` do
+no Linux/WSL). No Windows, o Docker pode estar instalado dentro da WSL mesmo sem aparecer no
+PowerShell: `wsl docker version` confere, e os comandos abaixo rodam igual dentro da WSL, a partir
+da pasta do repositório. Sem Docker na máquina, o caminho pode ser conferido no job `docker` do
 [CI](https://github.com/souzaaleksus/sophia/actions/workflows/testes.yml), que a cada PR sobe
 este mesmo `docker compose`, abre o painel com a carga de demonstração e confere que o login da
 aplicação não consegue criar tabela.
@@ -292,9 +294,10 @@ aplicação não consegue criar tabela.
 4. Para parar: `docker compose down`. Os dados ficam no volume `dados-do-banco` e voltam na
    próxima subida. Quando o Docker reinicia, o `banco` e o `web` voltam sozinhos, se não
    tiverem sido parados com `docker compose stop` ou `down`. Com o Docker instalado dentro da
-   WSL, eles voltam quando a WSL volta a rodar. Para começar do zero, use `docker compose down -v`.
-   Um volume criado por uma versão anterior do Sophia é recusado pelo script (o `criar-banco`
-   termina com erro e diz o que falta); nesse caso, `docker compose down -v` e suba de novo.
+   WSL, eles voltam quando a WSL volta a rodar e o serviço do Docker sobe com ela. Para começar do zero, use `docker compose down -v`.
+   Um volume criado pela versão imediatamente anterior do Sophia é atualizado pelo `criar-banco`
+   na subida, sem perder dados; um volume mais antigo é recusado (o `criar-banco` termina com erro
+   e diz o que falta), e nesse caso `docker compose down -v` começa do zero.
 
 A aplicação não conecta como `sa`: o `criar-banco` cria o login `sophia_app`
 (`database/usuario-da-aplicacao.sql`), que só lê e grava no banco `Sophia`, e o `sa` fica só para
@@ -317,18 +320,37 @@ Pré-requisitos:
 1. Crie o banco com o script entregue:
 
    ```powershell
-   sqlcmd -S .\SQLEXPRESS -E -C -b -i database/create-database.sql
+   sqlcmd -S .\SQLEXPRESS -E -C -b -d master -i database/create-database.sql
    ```
 
    No SSMS, abra `database/create-database.sql` e execute (F5). O script cria o banco `Sophia`,
    entra nele e cria as tabelas numa transação só: ou cria todas, ou nenhuma. Rodar de novo não
    muda nada. O `-b` faz o `sqlcmd` terminar com erro quando o script recusa o banco; sem ele, a
    recusa aparece na tela e nada é alterado do mesmo jeito. O script não prepara o banco em que
-   você está conectado: rodado com `-d` de outro banco, ele recusa e não grava nada. Se o banco `Sophia` já existir com outras tabelas, com outro agrupamento ou criado por uma
-   versão anterior do script, ele para com uma mensagem que diz o que fazer, sem alterar nada.
+   você está conectado: rodado com `-d` de outro banco, ele recusa e não grava nada. Um banco `Sophia` criado pela versão imediatamente anterior do script é atualizado na mesma
+   transação, sem perder dados: os itens de venda ganham o nome do produto da época (preenchido
+   com o nome atual) e o valor unitário ganha o teto da RN32. Se algum valor já gravado passar do
+   teto, ou se o banco tiver outras tabelas, outro agrupamento ou uma versão mais antiga, o script
+   para com uma mensagem que diz o que fazer, sem alterar nada.
 
-   Já existe um banco `Sophia` na instância? Use outro nome: troque `Sophia` no topo do script (as
-   duas linhas que citam o nome, a do `CREATE DATABASE` e a do `USE`) e aponte a aplicação para ele com
+   Já existe um banco `Sophia` na instância? Use outro nome sem editar o script: o comando abaixo
+   troca `Sophia` pelo nome escolhido (aqui, `SophiaAvaliacao`) numa cópia temporária e a entrega ao
+   `sqlcmd`. O nome só aparece nas duas linhas do topo do script, a do `CREATE DATABASE` e a do `USE`.
+
+   No PowerShell (Windows PowerShell 5.1 ou PowerShell 7):
+
+   ```powershell
+   $f = New-TemporaryFile; [IO.File]::WriteAllText($f.FullName, ((Get-Content database/create-database.sql -Raw -Encoding UTF8) -replace 'Sophia', 'SophiaAvaliacao'), [Text.UTF8Encoding]::new($true)); sqlcmd -S .\SQLEXPRESS -E -C -b -d master -i $f.FullName; Remove-Item $f
+   ```
+
+   No bash (Linux, macOS ou WSL), com a senha do `sa` em `SQLCMDPASSWORD`:
+
+   ```bash
+   tail -c +4 database/create-database.sql | sed 's/Sophia/SophiaAvaliacao/g' | sqlcmd -S localhost -U sa -C -b -d master
+   ```
+
+   O `tail -c +4` tira a marca de UTF-8 (BOM) do começo do arquivo, que o `sqlcmd` só reconhece
+   quando lê de um arquivo. Depois aponte a aplicação para o banco novo com
    `ConnectionStrings__Sophia="Server=.\SQLEXPRESS;Database=SophiaAvaliacao;Integrated Security=true;TrustServerCertificate=true"`.
 
 2. Confira se a conexão aponta para a sua instância. Ela fica em
@@ -401,13 +423,13 @@ dotnet test
 
 | Projeto | Tipo | Testes | O que cobre | Precisa de |
 |---|---|---|---|---|
-| `Sophia.Domain.Tests` | unidade | 98 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
-| `Sophia.Application.Tests` | aplicação | 173 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
+| `Sophia.Domain.Tests` | unidade | 99 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
+| `Sophia.Application.Tests` | aplicação | 176 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
 | `Sophia.Specs` | BDD (Gherkin) | 90 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 171 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
-| `Sophia.E2E` | tela | 291 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
+| `Sophia.Integration.Tests` | integração | 199 | script do banco e atualização da versão anterior, comando de outro nome lido do README, script do login, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
+| `Sophia.E2E` | tela | 306 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
 
-São 823 casos executados, vindos de 511 testes distintos (métodos e cenários): as teorias
+São 870 casos executados, vindos de 536 testes distintos (métodos e cenários): as teorias
 repetem o mesmo teste para cada borda de uma regra, como os formatos de número aceitos e
 recusados, e cada caso é contado uma vez.
 
@@ -488,9 +510,18 @@ Métodos, técnicas e verificações usados nesta entrega. Os números de cada n
 
 **Estabilidade e regressão**
 
-- **Repetição**: um teste suspeito de intermitência roda em laço (800 a 1.600 vezes) até a
-  causa aparecer, e a suíte de tela roda três vezes seguidas antes da entrega, uma delas com a
-  CPU do navegador mais lenta (`SOPHIA_E2E_CPU_LENTA`).
+- **Repetição e carga**: um teste suspeito de intermitência roda em laço (800 a 1.600 vezes)
+  até a causa aparecer. Antes da entrega, a suíte de tela roda cinco vezes seguidas com outra
+  suíte de tela rodando ao mesmo tempo na mesma máquina, e duas com a CPU do navegador mais
+  lenta (`SOPHIA_E2E_CPU_LENTA`).
+- **Esperar estado, não tempo**: um teste age depois de a tela mostrar o estado de que precisa,
+  visível ou de acessibilidade (por exemplo, o link de exclusão só é clicado para abrir o
+  diálogo depois de ganhar `aria-haspopup="dialog"`, que o módulo põe ao ligar). As poucas
+  esperas por tempo que restam provam ausência, quando não há estado para esperar (o duplo envio
+  não grava uma segunda venda, a busca abandonada não abre a lista, nenhum aviso de saída
+  aparece), ou deixam terminar uma rolagem ou uma troca de foco antes de medir; um único prazo
+  maior, de 15 s, cobre a navegação depois do duplo envio. O preparo dos dados por SQL não tem prazo, porque não é o que o
+  teste mede.
 - **Regressão visual**: as telas são capturadas antes e depois de cada rodada, nas três
   larguras, e comparadas pixel a pixel.
 - **Acessibilidade e responsividade**: a suíte de tela confere que nenhuma tela rola para o
@@ -576,9 +607,14 @@ Caminho de uma venda:
   à quantidade da linha existente, avisa em qual linha e a realça.
 - **Números no formato brasileiro, com a mesma regra no navegador e no servidor.** Vírgula é
   decimal e ponto é milhar (`1.250,00`). Sem vírgula, um ponto seguido de uma ou duas casas é
-  decimal (`12.50` vale 12,50) e grupos de três depois do ponto são milhar (`1.250`); qualquer
-  outra forma é recusada com aviso, em vez de virar outro valor. A regra mora em `formato.js` e
-  em `Apoio/Ligadores.cs`, e um teste de integração confere os mesmos casos no servidor.
+  decimal (`12.50` vale 12,50) e grupos de três depois do ponto são milhar (`1.250`); espaço só
+  vale como separador de milhar (`1 250,00`), e `12 50` é recusado; qualquer outra forma é
+  recusada com aviso, em vez de virar outro valor. Quando o ponto é lido como milhar
+  (`12.505`), o campo mostra uma nota enquanto se digita, sem bloquear: "Lido como R$ 12.505,00: o
+  ponto separa o milhar. Para centavos, use a vírgula." A regra mora em `formato.js` e em
+  `Apoio/Ligadores.cs`, e um teste de integração confere os mesmos casos no servidor. Número que
+  nem cabe no tipo do campo recebe uma mensagem da leitura ("O número é maior do que o campo
+  aceita."); o ligador não conhece nenhum formulário, e a regra de negócio continua no domínio.
 - **O domínio fala de campo e de linha, não de tela.** Um erro diz o campo (`ProdutoId`) e,
   num item da venda, a linha; só a Web monta a chave do formulário (`Itens[2].ProdutoId`), em
   `Apoio/ModelStateExtensions.cs`. Mudar o nome de um campo na tela não mexe no domínio.
@@ -595,7 +631,9 @@ Caminho de uma venda:
   corrida entre duas gravações é provocada de verdade, com dois contextos. O custo é precisar de
   SQL Server para quase toda a suíte; só o domínio roda sem banco.
 - **Nada fixo no código, sem maquinaria a mais.** Cada mensagem de regra mora num lugar só, o
-  `Mensagens.resx` do domínio ou da aplicação, e a tela a referencia; um teste varre as views e
+  `Mensagens.resx` do domínio ou da aplicação. O domínio não expõe essas mensagens: a tela lê só
+  o contrato `RegrasDeEntrada`, da aplicação, com os limites e textos que ela repete antes do
+  envio; um teste varre as views e
   o código da Web e quebra se algum texto repetir uma dessas mensagens. Os demais textos da tela
   (títulos, rótulos, botões, avisos de sucesso) ficam escritos na view ou no controller que os
   mostra, e as mensagens genéricas de formato só em `Apoio/MensagensDeValidacao.cs`: a aplicação tem um idioma só, e um arquivo
@@ -622,18 +660,21 @@ Caminho de uma venda:
   lê e grava (`db_datareader` e `db_datawriter`); o `sa` só cria o banco. O job `docker` do CI
   confere que a aplicação funciona com esse login e que ele não consegue criar tabela.
 - **Script em T-SQL direto, criação atômica.** O script cria o banco `Sophia`, entra nele, confere
-  o que já existe e cria tudo numa transação só; roda no SSMS com F5, sem modo SQLCMD. Ele não
-  migra versões anteriores, porque não há banco de produção a preservar: banco de versão anterior,
-  com outro agrupamento ou com tabelas de outro sistema é recusado com a instrução de recriar, sem
-  nada alterado. O nome do banco aparece só nas duas linhas do topo; quem precisar de outro
-  nome troca ali. O arquivo vai em UTF-8 com BOM, para as mensagens acentuadas saírem certas no
+  o que já existe e cria tudo numa transação só; roda no SSMS com F5, sem modo SQLCMD. Ele
+  atualiza só a versão imediatamente anterior, na mesma transação e sem SQL dinâmico; versões mais
+  antigas, banco com outro agrupamento ou com tabelas de outro sistema são recusados com a
+  instrução do que fazer, sem nada alterado. Manter uma cadeia de migrações para versões que não
+  existem em produção seria código sem uso. O nome do banco aparece só nas duas linhas do topo, e o
+  comando pronto do Caminho B troca o nome sem editar o arquivo; um teste executa esse comando
+  lido do próprio README. O arquivo vai em UTF-8 com BOM, para as mensagens acentuadas saírem certas no
   `sqlcmd` do Windows.
 - **Quantidade e valor têm teto de negócio (RN31 e RN32).** A quantidade vai até 99.999 por
   item (configurável até 999.999) e o valor unitário até R$ 999.999,99; os dois limites moram no
   domínio, têm CHECK no banco e chegam à tela pelos atributos do campo, que avisa ao sair dele.
   Com os dois tetos, o maior subtotal cabe com exatidão num número do JavaScript, e a tela mostra
   sempre o mesmo que o servidor grava. A soma na tela é exata até 2^53 centavos (uns R$ 90
-  trilhões, cerca de 900 itens no teto); quem calcula o que é gravado é sempre o servidor.
+  trilhões: cerca de 900 itens no teto padrão de quantidade, ou 90 com o teto configurado no
+  máximo); quem calcula o que é gravado é sempre o servidor.
 - **Identidade visual da Sophia.** Paleta, fonte e logo seguem o site da marca; o azul-petróleo
   foi escurecido de `#007B9E` para `#007596` porque o original não atingia contraste AA sobre o
   fundo claro.

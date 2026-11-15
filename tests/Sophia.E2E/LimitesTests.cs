@@ -28,9 +28,12 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
     {
         var maria = await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
         await aplicacao.Banco.ExecutarAsync($"""
+            WITH Digitos AS (SELECT Digito FROM (VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9)) AS d (Digito)),
+            Numeros AS (
+                SELECT milhar.Digito * 1000 + centena.Digito * 100 + dezena.Digito * 10 + unidade.Digito + 1 AS Numero
+                FROM Digitos milhar CROSS JOIN Digitos centena CROSS JOIN Digitos dezena CROSS JOIN Digitos unidade)
             INSERT INTO dbo.Produtos (Nome, ValorUnitario)
-            SELECT TOP (2200) CONCAT(N'Produto ', FORMAT(ROW_NUMBER() OVER (ORDER BY (SELECT NULL)), '0000')), 0.01
-            FROM sys.all_objects a CROSS JOIN sys.all_objects b;
+            SELECT CONCAT(N'Produto ', RIGHT(CONCAT('000', Numero), 4)), 0.01 FROM Numeros WHERE Numero <= 2200;
             INSERT INTO dbo.Vendas (Data, ClienteId) SELECT '{Cadastro.Hoje:yyyy-MM-dd}', {maria} FROM dbo.Produtos;
             DECLARE @primeiraVenda INT = (SELECT MIN(Id) FROM dbo.Vendas);
             DECLARE @primeiroProduto INT = (SELECT MIN(Id) FROM dbo.Produtos);
@@ -108,6 +111,30 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
         await Expect(caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToBeEmptyAsync();
         await Expect(caixa.Linha(0).GetByTestId("subtotal")).ToHaveTextAsync("R$ 99.998.999.000,01");
         await Expect(caixa.Total).ToHaveTextAsync("R$ 99.998.999.000,01");
+    }
+
+    [Theory]
+    [InlineData(576)]
+    [InlineData(1280)]
+    public async Task A_partir_de_576_px_os_valores_dos_itens_do_comprovante_ficam_numa_linha_so(int largura)
+    {
+        var maria = await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        var itens = new List<DadosItemVenda>();
+        foreach (var nome in new[] { "Notebook de ouro com nome comprido para a coluna", "Relógio de ouro" })
+        {
+            itens.Add(new DadosItemVenda(await _cadastro.ProdutoAsync(nome, PrecoAlto), 99_999, PrecoAlto));
+        }
+
+        itens.Add(new DadosItemVenda(await _cadastro.ProdutoAsync("Caderno", 12_505m), 1, 12_505m));
+        var venda = await _cadastro.VendaAsync(Cadastro.Hoje, maria, [.. itens]);
+        var pagina = await aplicacao.NovaPaginaAsync(largura, 900);
+        await pagina.GotoAsync($"/Vendas/Detalhe/{venda}");
+        await Expect(pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caderno" })).ToContainTextAsync("R$ 12.505,00");
+
+        (await Medidas.LinhasDeTextoAsync(pagina, ".cupom-itens td.valor"))
+            .Should().OnlyContain(medida => medida.Linhas == 1, $"a {largura} px quantidade, valor unitário e subtotal cabem numa linha");
+        (await Medidas.RolagemLateralAsync(pagina)).Should().BeEmpty($"o comprovante em {largura} px não pode rolar para o lado");
+        await pagina.Context.CloseAsync();
     }
 
     [Fact]

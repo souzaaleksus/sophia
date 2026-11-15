@@ -7,7 +7,7 @@
 <div class="cabecalho-da-pagina">
     <div>
         <h1>@ViewData["Title"]</h1>
-        <p class="subtitulo">Quem compra da loja.</p>
+        <partial name="_Subtitulo" />
     </div>
 </div>
 
@@ -20,7 +20,7 @@
         <div class="campo">
             <label asp-for="Cpf" class="form-label">CPF <span class="obrigatorio" aria-hidden="true">*</span></label>
             <input asp-for="Cpf" class="form-control" inputmode="numeric" autocomplete="off" autofocus
-                   aria-required="true" placeholder="000.000.000-00" data-mascara="cpf" data-val-cpf="@Sophia.Domain.Recursos.Mensagens.CpfInvalido" />
+                   aria-required="true" placeholder="000.000.000-00" data-mascara="cpf" data-val-cpf="@RegrasDeEntrada.CpfInvalido" />
             <span asp-validation-for="Cpf" class="erro"></span>
         </div>
 
@@ -48,7 +48,7 @@
             <label asp-for="Telefone" class="form-label"></label>
             <input asp-for="Telefone" type="tel" class="form-control" inputmode="tel"
                    placeholder="(11) 98765-4321" data-mascara="telefone"
-                   data-val="true" data-val-telefone="@Sophia.Domain.Recursos.Mensagens.TelefoneSemDdd" />
+                   data-val="true" data-val-telefone="@RegrasDeEntrada.TelefoneSemDdd" />
             <span asp-validation-for="Telefone" class="erro"></span>
         </div>
     </div>

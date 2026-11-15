@@ -1,6 +1,5 @@
 @model int
 @using Microsoft.AspNetCore.Diagnostics
-@using Sophia.Web.Controllers
 @{
     var naoEncontrado = Model == StatusCodes.Status404NotFound;
     var metodo = Context.Request.Method;
@@ -10,12 +9,12 @@
     var caminho = Context.Features.Get<IStatusCodeReExecuteFeature>()?.OriginalPath
         ?? Context.Features.Get<IExceptionHandlerPathFeature>()?.Path
         ?? Context.Request.Path.Value;
-    var area = ErroController.AreaDe(caminho);
+    var area = AreaDoEndereco.De(caminho);
     var rotuloDoDestino = area switch
     {
-        ErroController.Clientes => "Ir para os clientes",
-        ErroController.Produtos => "Ir para os produtos",
-        ErroController.Vendas => "Ir para as vendas",
+        AreaDoEndereco.Clientes => "Ir para os clientes",
+        AreaDoEndereco.Produtos => "Ir para os produtos",
+        AreaDoEndereco.Vendas => "Ir para as vendas",
         _ => "Ir para o painel",
     };
     ViewData["Title"] = naoEncontrado ? "Página não encontrada" : "Algo deu errado";
@@ -28,7 +27,7 @@
     {
         <p>O endereço não existe ou o registro foi excluído.</p>
     }
-    else if (consultaInvalida && area == ErroController.Painel)
+    else if (consultaInvalida && area == AreaDoEndereco.Painel)
     {
         <p>O endereço tem um valor que não foi entendido. Volte ao painel e tente de novo.</p>
     }

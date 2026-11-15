@@ -7,6 +7,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Sophia.Infrastructure" />
     <InternalsVisibleTo Include="Sophia.Domain.Tests" />
+    <InternalsVisibleTo Include="Sophia.Application" />
+    <InternalsVisibleTo Include="Sophia.Application.Tests" />
   </ItemGroup>
 
 </Project>

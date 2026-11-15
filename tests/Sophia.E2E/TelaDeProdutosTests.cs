@@ -107,6 +107,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     [Theory]
     [InlineData("12.5055", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("1.2.3", "Valor inválido. Use 12,50 ou 1.250,00.")]
+    [InlineData("12 50", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("1.25,0", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("0.500", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("10,", "Valor inválido. Use 12,50 ou 1.250,00.")]
@@ -183,7 +184,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
-    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_enviado_direto_avisa_que_esta_acima_do_permitido()
+    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_enviado_direto_avisa_que_o_numero_passa_do_campo()
     {
         await _pagina.GotoAsync("/Produtos/Novo");
         await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
@@ -191,7 +192,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
 
-        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O valor unitário aceita no máximo R$ 999.999,99.");
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O número é maior do que o campo aceita.");
         await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("1000000000000000000000000000000");
     }
 
@@ -206,6 +207,41 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("Valor inválido. Use 12,50 ou 1.250,00.");
         await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("2,5x");
+    }
+
+    [Fact]
+    public async Task Valor_lido_como_milhar_mostra_a_nota_ligada_ao_campo_sem_impedir_o_cadastro()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
+        var valor = _pagina.GetByLabel("Valor unitário");
+
+        await valor.FillAsync("12.505");
+        await valor.BlurAsync();
+
+        await Expect(valor).ToHaveAccessibleDescriptionAsync("Lido como R$ 12.505,00: o ponto separa o milhar. Para centavos, use a vírgula.");
+        await Expect(_pagina.GetByText("Lido como R$ 12.505,00")).ToHaveAttributeAsync("aria-live", "polite");
+
+        await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Produto cadastrado.");
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" })).ToContainTextAsync("R$ 12.505,00");
+    }
+
+    [Theory]
+    [InlineData("12,50")]
+    [InlineData("12.50")]
+    public async Task Valor_com_virgula_ou_com_ponto_de_centavos_nao_mostra_a_nota(string digitado)
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        var valor = _pagina.GetByLabel("Valor unitário");
+
+        await valor.FillAsync(digitado);
+        await valor.BlurAsync();
+
+        await Expect(valor).ToHaveValueAsync("12,50");
+        await Expect(valor).ToHaveAccessibleDescriptionAsync(string.Empty);
+        await Expect(_pagina.GetByText("Lido como")).ToHaveCountAsync(0);
     }
 
     private async Task CadastrarAsync(string nome, string valor)

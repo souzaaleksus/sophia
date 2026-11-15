@@ -92,7 +92,7 @@ ordenação por **Nome** ou **Valor unitário** e exclusão com confirmação.
 | Campo | Obrigatório | Observação |
 |---|---|---|
 | Nome | sim | não pode se repetir; maiúsculas, acentos e espaços a mais não contam ("Cafe Torrado" repete "Café Torrado") |
-| Valor unitário | sim | maior que zero e até R$ 999.999,99, com até duas casas decimais: `1,75`, `1.250,00` ou `12.50` (ponto com uma ou duas casas também é decimal); formas ambíguas, como `1.2.3`, são recusadas assim que você sai do campo. `12.505` é lido como doze mil quinhentos e cinco e o campo mostra `12.505,00` |
+| Valor unitário | sim | maior que zero e até R$ 999.999,99, com até duas casas decimais: `1,75`, `1.250,00` ou `12.50` (ponto com uma ou duas casas também é decimal); formas ambíguas, como `1.2.3`, são recusadas assim que você sai do campo. `12.505` é lido como doze mil quinhentos e cinco, o campo mostra `12.505,00` e avisa com a nota do milhar |
 
 ![Novo produto](imagens/06-novo-produto.png)
 
@@ -125,6 +125,11 @@ A tela de venda foi pensada para ser operada só pelo teclado, como um caixa.
    - informe a **quantidade**, até 99.999 por item (ou use os botões **−** e **+**), e pressione
      `Enter`: o sistema abre a próxima linha para o próximo produto;
    - valor mal escrito avisa ao sair do campo: **Valor inválido. Use 12,50 ou 1.250,00.**
+   - quando o valor tem ponto e não tem vírgula, e depois do ponto vêm três algarismos (`12.505`,
+     `1.250`), o ponto é lido como separador de milhar. Enquanto você digita, o campo mostra uma
+     nota, sem bloquear: **Lido como R$ 12.505,00: o ponto separa o milhar. Para centavos, use a
+     vírgula.** Se a intenção era centavos, escreva com vírgula (`12,50`). A nota continua ao sair
+     do campo, junto do valor já reescrito (`12.505,00`), e some quando você muda o valor. Vale também no cadastro de produto.
 5. Acompanhe os totais:
    - o **subtotal** de cada linha (quantidade × valor unitário);
    - o **Total da venda** no visor, com o número de itens e de unidades.
@@ -228,6 +233,8 @@ Valem na tela de venda:
 | A quantidade deve ser maior que zero. | quantidade zero ou vazia | informe a quantidade |
 | A quantidade aceita no máximo 99.999 por item. | quantidade acima do máximo por item; o aviso aparece ao sair do campo, e o botão **+** fica desligado no máximo | confira a quantidade |
 | Valor inválido. Use 12,50 ou 1.250,00. | o valor não está num formato de número | escreva com vírgula nos centavos |
+| Lido como R$ 12.505,00: o ponto separa o milhar. Para centavos, use a vírgula. | é só uma nota: o ponto foi lido como milhar | se eram centavos, escreva com vírgula (`12,50`) |
+| O número é maior do que o campo aceita. | o número tem algarismos demais até para ser lido | confira o que foi digitado |
 | O valor unitário aceita no máximo duas casas decimais. | o valor tem três casas ou mais depois da vírgula | arredonde para os centavos |
 | … já está na linha … com a quantidade máxima por item; nada foi somado. | o produto foi lançado de novo, mas a linha dele já está no máximo | confira a quantidade da linha |
 | Não foi possível conferir o envio do formulário. Recarregue a página e tente de novo. | o formulário ficou aberto muito tempo ou o sistema foi reiniciado | recarregue a página e preencha de novo |

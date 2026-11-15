@@ -218,6 +218,26 @@ public sealed class VendaServicoTests(BancoDeTestes banco) : IAsyncLifetime, IDi
     }
 
     [Fact]
+    public async Task Cliente_e_produto_excluidos_na_corrida_sao_apontados_juntos_com_a_mensagem_do_dominio_para_o_produto()
+    {
+        var lapis = (await _sistema.Produtos.CadastrarAsync(new DadosProduto("Lápis preto", 1.20m))).Valor;
+        var joao = (await _sistema.Clientes.CadastrarAsync(new DadosCliente("111.444.777-35", "João Lima", null, null, null))).Valor;
+        _sistema.AntesDoProximoSalvamento(async () =>
+        {
+            (await _sistema.Clientes.ExcluirAsync(joao)).Sucesso.Should().BeTrue();
+            (await _sistema.Produtos.ExcluirAsync(lapis)).Sucesso.Should().BeTrue();
+        });
+
+        var resultado = await Servico.RegistrarAsync(
+            new DadosVenda(Hoje, joao, [new(_caneta, 1, 2.50m), new(lapis, 2, 1.20m)], Guid.NewGuid()));
+
+        resultado.Erros.Should().Equal(
+            new Erro("ClienteId", "Cliente não encontrado."),
+            new Erro("ProdutoId", "Produto não encontrado.", 1));
+        (await PrimeiraPaginaAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task Renomear_o_produto_nao_muda_o_nome_no_detalhe_da_venda_antiga()
     {
         var venda = await VenderAsync(Hoje, (_caneta, 4));

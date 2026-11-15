@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Sophia.Application;
-using Sophia.Domain;
 using Sophia.Integration.Tests.Apoio;
 using Sophia.Testes.Banco;
 
@@ -108,7 +107,7 @@ public sealed class MapeamentoContraOScriptTests(BancoDeTestes banco)
     public async Task O_teto_do_valor_unitario_no_mapeamento_e_no_banco_e_o_maior_valor_aceito_pelo_dominio(string tabela, string restricao)
     {
         await using var contexto = banco.NovoContexto();
-        var teto = RegrasComuns.MaiorValorAceito.ToString(CultureInfo.InvariantCulture);
+        var teto = RegrasDeEntrada.MaiorValorAceito.ToString(CultureInfo.InvariantCulture);
 
         var doModelo = ModeloCompleto(contexto).GetEntityTypes()
             .Where(entidade => entidade.GetTableName() == tabela)

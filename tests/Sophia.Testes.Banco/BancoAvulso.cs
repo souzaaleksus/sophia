@@ -78,6 +78,14 @@ public sealed class BancoAvulso : IAsyncDisposable
             new SqlConnectionStringBuilder(Servidor) { InitialCatalog = "master" }.ConnectionString,
             ScriptDoBancoPara(Nome));
 
+    public async Task ExecutarScriptDeOutraVersaoAsync(string arquivo)
+    {
+        var script = (await File.ReadAllTextAsync(CaminhoDoArquivo(arquivo)))
+            .Replace("[Sophia]", $"[{Nome}]", StringComparison.Ordinal)
+            .Replace("N'Sophia'", $"N'{Nome}'", StringComparison.Ordinal);
+        await ExecutarLotesAsync(new SqlConnectionStringBuilder(Servidor) { InitialCatalog = "master" }.ConnectionString, script);
+    }
+
     public static async Task ExecutarArquivoAsync(string textoDeConexao, string arquivo) =>
         await ExecutarLotesAsync(textoDeConexao, await File.ReadAllTextAsync(CaminhoDoArquivo(arquivo)));
 
@@ -112,7 +120,7 @@ public sealed class BancoAvulso : IAsyncDisposable
         await conexao.OpenAsync();
         foreach (var lote in Lotes.Separar(script))
         {
-            await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 120 };
+            await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 0 };
             await comando.ExecuteNonQueryAsync();
         }
     }
@@ -121,7 +129,7 @@ public sealed class BancoAvulso : IAsyncDisposable
     {
         await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(servidor) { Pooling = false }.ConnectionString);
         await conexao.OpenAsync();
-        await using var comando = new SqlCommand(sql, conexao);
+        await using var comando = new SqlCommand(sql, conexao) { CommandTimeout = 0 };
         await comando.ExecuteNonQueryAsync();
     }
 }

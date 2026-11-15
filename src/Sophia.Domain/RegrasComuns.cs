@@ -2,7 +2,7 @@ using Sophia.Domain.Recursos;
 
 namespace Sophia.Domain;
 
-public static class RegrasComuns
+internal static class RegrasComuns
 {
     public const decimal MaiorValorAceito = 999_999.99m;
 
