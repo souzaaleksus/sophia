@@ -78,6 +78,14 @@ public sealed class BancoAvulso : IAsyncDisposable
             new SqlConnectionStringBuilder(Servidor) { InitialCatalog = "master" }.ConnectionString,
             ScriptDoBancoPara(Nome));
 
+    public async Task ExecutarScriptDeOutraVersaoAsync(string arquivo)
+    {
+        var script = (await File.ReadAllTextAsync(CaminhoDoArquivo(arquivo)))
+            .Replace("[Sophia]", $"[{Nome}]", StringComparison.Ordinal)
+            .Replace("N'Sophia'", $"N'{Nome}'", StringComparison.Ordinal);
+        await ExecutarLotesAsync(new SqlConnectionStringBuilder(Servidor) { InitialCatalog = "master" }.ConnectionString, script);
+    }
+
     public static async Task ExecutarArquivoAsync(string textoDeConexao, string arquivo) =>
         await ExecutarLotesAsync(textoDeConexao, await File.ReadAllTextAsync(CaminhoDoArquivo(arquivo)));
 
