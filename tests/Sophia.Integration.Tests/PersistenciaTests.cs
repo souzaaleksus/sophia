@@ -164,6 +164,25 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
+    public async Task O_comprovante_le_o_nome_gravado_na_venda_e_os_mais_vendidos_o_nome_atual()
+    {
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        var vendaId = await RegistrarVendaAsync(maria, [new(caneta, 4, 2.50m)]);
+        await banco.ExecutarAsync($"UPDATE dbo.Produtos SET Nome = N'Caneta azul fina' WHERE Id = {caneta};");
+        var comandos = new List<string>();
+
+        await using var contexto = banco.NovoContexto(comandos.Add);
+        var detalhe = await new ConsultasDeVendas(contexto).ObterDetalheAsync(vendaId);
+        var sqlDoDetalhe = string.Join(Environment.NewLine, comandos);
+        var maisVendidos = await new ConsultasDoPainel(contexto).MaisVendidosAsync(Hoje, Hoje, 5);
+
+        detalhe!.Itens.Should().Equal(new ItemVendaDto("Caneta azul", 4, 2.50m, 10.00m));
+        sqlDoDetalhe.Should().Contain("[NomeDoProduto]").And.NotContain("[Produtos]");
+        maisVendidos.Should().Equal(new ProdutoMaisVendido(caneta, "Caneta azul fina", 4, 10.00m));
+    }
+
+    [Fact]
     public async Task Resume_as_vendas_do_periodo_e_limita_as_ultimas()
     {
         var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
@@ -197,7 +216,8 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         (await clientes.PossuiVendasAsync(joao)).Should().BeFalse();
         (await produtos.FoiVendidoAsync(caneta)).Should().BeTrue();
         (await produtos.FoiVendidoAsync(lapis)).Should().BeFalse();
-        (await produtos.FiltrarExistentesAsync([caneta, lapis, 999])).Should().BeEquivalentTo([caneta, lapis]);
+        (await produtos.ObterNomesAsync([caneta, lapis, 999, caneta])).Should().BeEquivalentTo(
+            new Dictionary<int, string> { [caneta] = "Caneta azul", [lapis] = "Lápis" });
     }
 
     [Fact]
@@ -217,18 +237,18 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Venda_que_aponta_para_cadastro_inexistente_e_um_conflito_de_referencia()
+    public async Task Venda_que_aponta_para_cadastro_inexistente_e_restricao_violada()
     {
         var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
 
         var gravar = () => RegistrarVendaAsync(999, [new(caneta, 1, 2.50m)]);
 
         (await gravar.Should().ThrowAsync<ConflitoAoSalvarException>())
-            .Which.Tipo.Should().Be(TipoDeConflito.ReferenciaInexistente);
+            .Which.Tipo.Should().Be(TipoDeConflito.RestricaoViolada);
     }
 
     [Fact]
-    public async Task Restricao_de_verificacao_violada_por_fora_do_dominio_nao_vira_conflito_de_referencia()
+    public async Task Restricao_de_verificacao_violada_por_fora_do_dominio_e_restricao_violada_com_a_causa_do_banco()
     {
         await using var contexto = banco.NovoContexto();
         var produto = Produto.Criar(new DadosProduto("Caneta azul", 2.50m)).Valor;
@@ -237,29 +257,27 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
 
         var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
 
-        (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
-            .WithInnerException<SqlException>().Which.Message.Should().Contain("CK_Produtos_ValorUnitario_Positivo");
+        var conflito = (await salvar.Should().ThrowAsync<ConflitoAoSalvarException>()).Which;
+        conflito.Tipo.Should().Be(TipoDeConflito.RestricaoViolada);
+        conflito.InnerException.Should().BeOfType<DbUpdateException>()
+            .Which.InnerException.Should().BeOfType<SqlException>()
+            .Which.Message.Should().Contain("CK_Produtos_ValorUnitario_Positivo");
     }
 
     [Fact]
-    public async Task Restricao_que_o_mapeamento_nao_conhece_nao_vira_conflito_mesmo_com_nome_de_chave_estrangeira()
+    public async Task A_chave_estrangeira_impede_excluir_produto_vendido()
     {
-        await banco.ExecutarAsync(
-            "ALTER TABLE dbo.Produtos ADD CONSTRAINT FK_Produtos_ForaDoMapeamento CHECK (ValorUnitario < 1000);");
-        try
-        {
-            await using var contexto = banco.NovoContexto();
-            new ProdutoRepositorio(contexto).Adicionar(Produto.Criar(new DadosProduto("Notebook", 5000m)).Valor);
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
 
-            var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ProdutoRepositorio(contexto);
+        repositorio.Remover((await repositorio.ObterAsync(caneta))!);
+        var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
 
-            (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
-                .WithInnerException<SqlException>().Which.Message.Should().Contain("FK_Produtos_ForaDoMapeamento");
-        }
-        finally
-        {
-            await banco.ExecutarAsync("ALTER TABLE dbo.Produtos DROP CONSTRAINT FK_Produtos_ForaDoMapeamento;");
-        }
+        (await salvar.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.RegistroEmUso);
     }
 
     [Fact]
@@ -359,8 +377,8 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
             INSERT INTO dbo.Vendas (Data, ClienteId)
             SELECT TOP (2148) IIF(ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) % 2 = 0, '2026-11-02', '2026-11-13'), {maria}
             FROM sys.all_objects a CROSS JOIN sys.all_objects b;
-            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario)
-            SELECT Id, {caneta}, 999999, 0.01 FROM dbo.Vendas;
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+            SELECT Id, {caneta}, N'Caneta azul', 999999, 0.01 FROM dbo.Vendas;
             """);
 
         await using var contexto = banco.NovoContexto();
@@ -565,7 +583,9 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
         DateOnly? data = null)
     {
         await using var contexto = banco.NovoContexto();
-        var venda = Venda.Registrar(new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje, new ParametrosDoSophia().QuantidadeMaximaPorItem).Valor;
+        var nomes = await new ProdutoRepositorio(contexto).ObterNomesAsync(itens.Select(i => i.ProdutoId!.Value));
+        var venda = Venda.Registrar(
+            new DadosVenda(data ?? Hoje, clienteId, itens, chave), Hoje, new ParametrosDoSophia().QuantidadeMaximaPorItem, nomes).Valor;
         new VendaRepositorio(contexto).Adicionar(venda);
         await new UnidadeDeTrabalho(contexto).SalvarAsync();
         return venda.Id;

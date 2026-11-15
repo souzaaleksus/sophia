@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Sophia.Application;
+using Sophia.Domain;
 using Sophia.Domain.Clientes;
 using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
@@ -61,20 +61,30 @@ internal sealed class ItemVendaConfiguracao : IEntityTypeConfiguration<ItemVenda
         ConfigurarProduto(item);
     }
 
+    private static void ConfigurarNomeDoProduto(EntityTypeBuilder<ItemVenda> item) =>
+        item.Property(i => i.NomeDoProduto)
+            .HasMaxLength(Produto.TamanhoMaximoNome)
+            .IsRequired()
+            .UseCollation(Agrupamento.SemAcentoNemCaixa);
+
     private static void ConfigurarTabela(EntityTypeBuilder<ItemVenda> item) =>
         item.ToTable("VendaItens", tabela =>
         {
             tabela.HasCheckConstraint("CK_VendaItens_Quantidade_Positiva", "Quantidade > 0");
             tabela.HasCheckConstraint(
                 "CK_VendaItens_QuantidadeMaxima",
-                string.Create(CultureInfo.InvariantCulture, $"Quantidade <= {ParametrosDoSophia.QuantidadeMaximaAceita}"));
+                string.Create(CultureInfo.InvariantCulture, $"Quantidade <= {Venda.QuantidadeMaximaAceita}"));
             tabela.HasCheckConstraint("CK_VendaItens_ValorUnitario_Positivo", "ValorUnitario > 0");
+            tabela.HasCheckConstraint("CK_VendaItens_ValorUnitarioMaximo", TetoDoValor.Sql);
         });
 
-    private static void ConfigurarProduto(EntityTypeBuilder<ItemVenda> item) =>
+    private static void ConfigurarProduto(EntityTypeBuilder<ItemVenda> item)
+    {
+        ConfigurarNomeDoProduto(item);
         item.HasOne<Produto>()
             .WithMany()
             .HasForeignKey(i => i.ProdutoId)
             .OnDelete(DeleteBehavior.NoAction)
             .HasConstraintName(ChavesEstrangeiras.ProdutoDoItem);
+    }
 }

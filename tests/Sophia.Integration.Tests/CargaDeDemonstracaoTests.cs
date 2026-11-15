@@ -25,6 +25,11 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
         (await banco.ConsultarAsync("SELECT CAST(MAX(Quantidade) AS VARCHAR(10)) FROM dbo.VendaItens"))
             .Select(maior => int.Parse(maior, System.Globalization.CultureInfo.InvariantCulture))
             .Should().ContainSingle().Which.Should().BeLessThanOrEqualTo(new Sophia.Application.ParametrosDoSophia().QuantidadeMaximaPorItem);
+        (await banco.ConsultarAsync("""
+            SELECT CAST(COUNT(*) AS VARCHAR(10)) FROM dbo.VendaItens i
+            JOIN dbo.Produtos p ON p.Id = i.ProdutoId
+            WHERE i.NomeDoProduto <> p.Nome COLLATE Latin1_General_BIN2
+            """)).Should().Equal("0");
     }
 
     [Fact]
@@ -45,7 +50,7 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
     {
         await using var vazio = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_SemTabelas");
 
-        var carregar = () => BancoAvulso.ExecutarScriptAsync(vazio.TextoDeConexao, Carga);
+        var carregar = () => BancoAvulso.ExecutarArquivoAsync(vazio.TextoDeConexao, Carga);
 
         (await carregar.Should().ThrowAsync<SqlException>()).Which.Number.Should().Be(50001);
         (await vazio.ConsultarAsync("SELECT name FROM sys.tables")).Should().BeEmpty();

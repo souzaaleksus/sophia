@@ -23,12 +23,18 @@ Funcionalidade: Cadastro de produtos
     Então o cadastro é recusado com a mensagem "<Mensagem>" no campo "<Campo>"
 
     Exemplos:
-      | Nome  | Valor | Campo         | Mensagem                                               |
-      |       | 10,00 | Nome          | Informe o nome.                                        |
-      | Lápis |       | ValorUnitario | Informe o valor unitário.                              |
-      | Lápis | 0,00  | ValorUnitario | O valor unitário deve ser maior que zero.              |
-      | Lápis | -1,00 | ValorUnitario | O valor unitário deve ser maior que zero.              |
-      | Lápis | 1,999 | ValorUnitario | O valor unitário aceita no máximo duas casas decimais. |
+      | Nome  | Valor        | Campo         | Mensagem                                               |
+      |       | 10,00        | Nome          | Informe o nome.                                        |
+      | Lápis |              | ValorUnitario | Informe o valor unitário.                              |
+      | Lápis | 0,00         | ValorUnitario | O valor unitário deve ser maior que zero.              |
+      | Lápis | -1,00        | ValorUnitario | O valor unitário deve ser maior que zero.              |
+      | Lápis | 1,999        | ValorUnitario | O valor unitário aceita no máximo duas casas decimais. |
+      | Lápis | 1.000.000,00 | ValorUnitario | O valor unitário aceita no máximo R$ 999.999,99.       |
+
+  Cenário: O valor unitário vai até R$ 999.999,99
+    Quando eu cadastrar o produto "Servidor de rack" com valor unitário de "999.999,99"
+    Então o cadastro é aceito
+    E o produto "Servidor de rack" aparece na lista com o valor "999.999,99"
 
   Cenário: Alterar o valor de um produto
     Dado que existe o produto "Caneta azul" de R$ 2,50

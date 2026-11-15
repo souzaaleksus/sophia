@@ -42,8 +42,8 @@
   <data name="ValorUnitarioNaoPositivo" xml:space="preserve">
     <value>O valor unitário deve ser maior que zero.</value>
   </data>
-  <data name="ValorUnitarioAcimaDoPermitido" xml:space="preserve">
-    <value>O valor unitário está acima do permitido.</value>
+  <data name="ValorUnitarioAcimaDoMaximo" xml:space="preserve">
+    <value>O valor unitário aceita no máximo R$ {0}.</value>
   </data>
   <data name="ValorUnitarioComMaisDeDuasCasas" xml:space="preserve">
     <value>O valor unitário aceita no máximo duas casas decimais.</value>
@@ -65,6 +65,9 @@
   </data>
   <data name="ProdutoRepetidoNaVenda" xml:space="preserve">
     <value>Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior.</value>
+  </data>
+  <data name="ProdutoNaoEncontrado" xml:space="preserve">
+    <value>Produto não encontrado.</value>
   </data>
   <data name="QuantidadeObrigatoria" xml:space="preserve">
     <value>Informe a quantidade.</value>

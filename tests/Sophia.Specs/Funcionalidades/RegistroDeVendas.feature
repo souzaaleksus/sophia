@@ -57,6 +57,13 @@ Funcionalidade: Registro de vendas
     Quando eu alterar o valor do produto "Caneta azul" para "3,00"
     Então a última venda continua com o total "10,00"
 
+  Cenário: Renomear o produto não muda o comprovante de vendas antigas
+    Dado que o cliente "Maria Santos" comprou 4 "Caneta azul"
+    Quando eu renomear o produto "Caneta azul" para "Caneta azul fina"
+    Então a alteração é aceita
+    E a última venda continua com o item "Caneta azul"
+    E o produto "Caneta azul fina" aparece na lista com o valor "2,50"
+
   Cenário: Não registrar venda sem itens
     Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 sem itens
     Então a venda é recusada com a mensagem "Lance ao menos um produto na venda." no campo "Itens"
@@ -80,9 +87,17 @@ Funcionalidade: Registro de vendas
     Então a venda é recusada com a mensagem "<Mensagem>" no campo "<Campo>"
 
     Exemplos:
-      | Quantidade | Valor | Campo                  | Mensagem                                  |
-      | 0          | 2,50  | Itens[0].Quantidade    | A quantidade deve ser maior que zero.     |
-      | 1          | 0,00  | Itens[0].ValorUnitario | O valor unitário deve ser maior que zero. |
+      | Quantidade | Valor        | Campo                  | Mensagem                                         |
+      | 0          | 2,50         | Itens[0].Quantidade    | A quantidade deve ser maior que zero.            |
+      | 1          | 0,00         | Itens[0].ValorUnitario | O valor unitário deve ser maior que zero.        |
+      | 1          | 1.000.000,00 | Itens[0].ValorUnitario | O valor unitário aceita no máximo R$ 999.999,99. |
+
+  Cenário: O valor unitário do item vai até R$ 999.999,99
+    Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 2          | 999.999,99    |
+    Então a venda é registrada
+    E o total da venda é "1.999.999,98"
 
   Cenário: Quantidade acima do máximo por item é recusada
     Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens

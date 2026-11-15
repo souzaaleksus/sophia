@@ -24,9 +24,6 @@
   <data name="NomeDeProdutoDuplicado" xml:space="preserve">
     <value>Já existe um produto com este nome.</value>
   </data>
-  <data name="ProdutoNaoEncontrado" xml:space="preserve">
-    <value>Produto não encontrado.</value>
-  </data>
   <data name="ProdutoJaVendido" xml:space="preserve">
     <value>Este produto já foi vendido e não pode ser excluído.</value>
   </data>

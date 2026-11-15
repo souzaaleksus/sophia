@@ -45,12 +45,11 @@ public sealed class ConsultasDeVendas(SophiaDbContext contexto) : IConsultasDeVe
             .FirstOrDefaultAsync(cancelamento);
 
     private Task<List<ItemVendaDto>> ItensDaVendaAsync(int vendaId, CancellationToken cancelamento) =>
-        (from item in contexto.VendaItens
-         join produto in contexto.Produtos on item.ProdutoId equals produto.Id
-         where item.VendaId == vendaId
-         orderby item.Id
-         select new ItemVendaDto(produto.Nome, item.Quantidade, item.ValorUnitario, item.Quantidade * item.ValorUnitario))
-        .ToListAsync(cancelamento);
+        contexto.VendaItens
+            .Where(item => item.VendaId == vendaId)
+            .OrderBy(item => item.Id)
+            .Select(item => new ItemVendaDto(item.NomeDoProduto, item.Quantidade, item.ValorUnitario, item.Quantidade * item.ValorUnitario))
+            .ToListAsync(cancelamento);
 
     private async Task<List<VendaResumoDto>> ResumirAsync(
         IQueryable<Venda> vendas,

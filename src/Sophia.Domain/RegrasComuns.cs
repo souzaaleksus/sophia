@@ -2,11 +2,11 @@ using Sophia.Domain.Recursos;
 
 namespace Sophia.Domain;
 
-internal static class RegrasComuns
+public static class RegrasComuns
 {
-    private const decimal MaiorValorAceito = 9_999_999_999_999_999.99m;
+    public const decimal MaiorValorAceito = 999_999.99m;
 
-    public static string? ValidarNome(string? nome, string campo, int tamanhoMaximo, List<Erro> erros)
+    internal static string? ValidarNome(string? nome, string campo, int tamanhoMaximo, List<Erro> erros)
     {
         var aparado = Texto.Aparar(nome);
         if (aparado is null)
@@ -24,13 +24,13 @@ internal static class RegrasComuns
         return aparado;
     }
 
-    public static decimal? ValidarValorUnitario(decimal? valor, string campo, int? linha, List<Erro> erros)
+    internal static decimal? ValidarValorUnitario(decimal? valor, string campo, int? linha, List<Erro> erros)
     {
         string? problema = valor switch
         {
             null => Mensagens.ValorUnitarioObrigatorio,
             <= 0 => Mensagens.ValorUnitarioNaoPositivo,
-            > MaiorValorAceito => Mensagens.ValorUnitarioAcimaDoPermitido,
+            > MaiorValorAceito => Mensagens.ValorUnitarioAcimaDoMaximo,
             _ when decimal.Round(valor.Value, 2) != valor.Value => Mensagens.ValorUnitarioComMaisDeDuasCasas,
             _ => null,
         };

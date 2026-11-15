@@ -17,8 +17,6 @@ internal static class Mensagens
 
     public static string NomeDeProdutoDuplicado => Ler(nameof(NomeDeProdutoDuplicado));
 
-    public static string ProdutoNaoEncontrado => Ler(nameof(ProdutoNaoEncontrado));
-
     public static string ProdutoJaVendido => Ler(nameof(ProdutoJaVendido));
 
     public static string FormularioJaUsado(int venda) =>
