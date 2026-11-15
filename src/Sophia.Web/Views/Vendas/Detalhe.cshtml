@@ -55,9 +55,9 @@
                 <tr>
                     <td>
                         <span class="destaque">@item.Produto</span>
-                        <span class="cupom-conta numero apenas-no-celular">@item.Quantidade × @Formato.Moeda(item.ValorUnitario)</span>
+                        <span class="cupom-conta numero apenas-no-celular">@item.Quantidade.ToString("N0", Formato.Cultura) × @Formato.Moeda(item.ValorUnitario)</span>
                     </td>
-                    <td class="valor coluna-opcional">@item.Quantidade</td>
+                    <td class="valor coluna-opcional">@item.Quantidade.ToString("N0", Formato.Cultura)</td>
                     <td class="valor coluna-opcional">@Formato.QuebrarNoMilhar(Formato.Moeda(item.ValorUnitario))</td>
                     <td class="valor">@Formato.QuebrarNoMilhar(Formato.Moeda(item.Subtotal))</td>
                 </tr>

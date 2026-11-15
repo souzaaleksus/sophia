@@ -390,13 +390,13 @@ dotnet test
 
 | Projeto | Tipo | Testes | O que cobre | Precisa de |
 |---|---|---|---|---|
-| `Sophia.Domain.Tests` | unidade | 86 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
-| `Sophia.Application.Tests` | aplicação | 172 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
-| `Sophia.Specs` | BDD (Gherkin) | 85 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 159 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
-| `Sophia.E2E` | tela | 277 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
+| `Sophia.Domain.Tests` | unidade | 98 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
+| `Sophia.Application.Tests` | aplicação | 173 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
+| `Sophia.Specs` | BDD (Gherkin) | 90 | os cenários da especificação, em português, sobre o banco real | SQL Server |
+| `Sophia.Integration.Tests` | integração | 171 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
+| `Sophia.E2E` | tela | 290 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
 
-São 779 casos executados, vindos de 480 testes distintos (métodos e cenários): as teorias
+São 822 casos executados, vindos de 510 testes distintos (métodos e cenários): as teorias
 repetem o mesmo teste para cada borda de uma regra, como os formatos de número aceitos e
 recusados, e cada caso é contado uma vez.
 
@@ -413,7 +413,16 @@ pwsh tests/Sophia.E2E/bin/Debug/net10.0/playwright.ps1 install chromium
 
 Para usar o Google Chrome já instalado, defina `SOPHIA_E2E_CANAL=chrome`. Para **ver** o
 navegador trabalhando, defina `SOPHIA_E2E_VISIVEL=1`: a janela abre e cada passo é
-desacelerado.
+desacelerado. Para rodar com a CPU do navegador mais lenta, defina `SOPHIA_E2E_CPU_LENTA` com
+o fator (por exemplo, `4`).
+
+O navegador dos testes de tela não abre conexão com a aplicação: cada requisição é feita pelo
+próprio Playwright e entregue à página. No Windows, quando um adaptador de rede troca de
+endereço (o do Hyper-V faz isso a cada poucos minutos), o Chrome derruba as conexões abertas
+e a página carrega sem parte dos scripts; era essa a causa de uma falha a cada centenas de
+testes, e um teste com o navegador desligado da rede confere o isolamento. Quando uma
+sugestão da busca não aparece, o teste anexa ao erro o estado do campo, as requisições, o
+console e o rastro do Playwright.
 
 Formatação e JavaScript, como no CI:
 
@@ -549,7 +558,8 @@ Caminho de uma venda:
   item (configurável até 999.999) e o valor unitário até R$ 999.999,99; os dois limites moram no
   domínio, têm CHECK no banco e chegam à tela pelos atributos do campo, que avisa ao sair dele.
   Com os dois tetos, o maior subtotal cabe com exatidão num número do JavaScript, e a tela mostra
-  sempre o mesmo que o servidor grava.
+  sempre o mesmo que o servidor grava. A soma na tela é exata até 2^53 centavos (uns R$ 90
+  trilhões, cerca de 900 itens no teto); quem calcula o que é gravado é sempre o servidor.
 - **Identidade visual da Sophia.** Paleta, fonte e logo seguem o site da marca; o azul-petróleo
   foi escurecido de `#007B9E` para `#007596` porque o original não atingia contraste AA sobre o
   fundo claro.

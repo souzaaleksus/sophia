@@ -187,6 +187,23 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData(360, 740, "99.999 × R$ 999.999,99")]
+    [InlineData(1280, 860, "99.999")]
+    public async Task A_quantidade_no_comprovante_aparece_com_o_ponto_de_milhar(int largura, int altura, string esperado)
+    {
+        var maria = await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        var produto = await _cadastro.ProdutoAsync("Notebook de ouro", PrecoAlto);
+        var venda = await _cadastro.VendaAsync(Cadastro.Hoje, maria, new DadosItemVenda(produto, 99_999, PrecoAlto));
+
+        var pagina = await aplicacao.NovaPaginaAsync(largura, altura);
+        await pagina.GotoAsync($"/Vendas/Detalhe/{venda}");
+
+        await Expect(pagina.Locator(".cupom-itens tbody tr").First).ToContainTextAsync(esperado);
+        await Expect(pagina.Locator(".cupom-itens tbody tr").First).Not.ToContainTextAsync("99999");
+        await pagina.Context.CloseAsync();
+    }
+
+    [Theory]
     [InlineData("/Clientes/Editar/abc")]
     [InlineData("/Clientes/Excluir/abc")]
     [InlineData("/Produtos/Editar/abc")]
