@@ -14,7 +14,10 @@ public static class Rede
     public static Task BuscarForaDoNavegadorAsync(IBrowserContext contexto) =>
         contexto.RouteAsync("**/*", async rota =>
         {
-            var resposta = await rota.FetchAsync(new() { MaxRedirects = 0 });
+            var cabecalhos = (await rota.Request.AllHeadersAsync())
+                .Where(cabecalho => !string.Equals(cabecalho.Key, "cookie", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary();
+            var resposta = await rota.FetchAsync(new() { Headers = cabecalhos, MaxRedirects = 0 });
             await rota.FulfillAsync(new() { Response = resposta });
         });
 }
