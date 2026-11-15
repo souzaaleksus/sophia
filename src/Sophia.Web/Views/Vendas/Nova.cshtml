@@ -35,7 +35,6 @@
                            placeholder="0,00" data-campo="ValorUnitario" />
                 </div>
                 <span class="erro" data-erro="ValorUnitario" data-valmsg-for="Itens[@indice].ValorUnitario">@ErroDe("ValorUnitario")</span>
-                <partial name="_NotaDoMilhar" />
             </div>
             <div class="campo caixa-quantidade">
                 <label class="form-label caixa-rotulo" for="item-@indice-Quantidade">Quantidade</label>
@@ -55,6 +54,7 @@
             <button type="button" class="caixa-remover" data-acao="remover-item" aria-label="Remover este produto" title="Remover este produto">
                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
             </button>
+            <partial name="_NotaDoMilhar" />
         </div>
     }
 }

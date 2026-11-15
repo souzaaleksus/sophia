@@ -140,6 +140,16 @@
     }
 }
 
+@media (min-width: 576px) {
+    .cupom-itens td.valor {
+        white-space: nowrap;
+    }
+
+    .cupom-itens td.valor wbr {
+        display: none;
+    }
+}
+
 @media (max-width: 575.98px) {
     .cupom {
         padding-inline: 1.1rem;

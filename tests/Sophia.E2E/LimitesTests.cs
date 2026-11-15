@@ -113,6 +113,30 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
         await Expect(caixa.Total).ToHaveTextAsync("R$ 99.998.999.000,01");
     }
 
+    [Theory]
+    [InlineData(576)]
+    [InlineData(1280)]
+    public async Task A_partir_de_576_px_os_valores_dos_itens_do_comprovante_ficam_numa_linha_so(int largura)
+    {
+        var maria = await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        var itens = new List<DadosItemVenda>();
+        foreach (var nome in new[] { "Notebook de ouro com nome comprido para a coluna", "Relógio de ouro" })
+        {
+            itens.Add(new DadosItemVenda(await _cadastro.ProdutoAsync(nome, PrecoAlto), 99_999, PrecoAlto));
+        }
+
+        itens.Add(new DadosItemVenda(await _cadastro.ProdutoAsync("Caderno", 12_505m), 1, 12_505m));
+        var venda = await _cadastro.VendaAsync(Cadastro.Hoje, maria, [.. itens]);
+        var pagina = await aplicacao.NovaPaginaAsync(largura, 900);
+        await pagina.GotoAsync($"/Vendas/Detalhe/{venda}");
+        await Expect(pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caderno" })).ToContainTextAsync("R$ 12.505,00");
+
+        (await Medidas.LinhasDeTextoAsync(pagina, ".cupom-itens td.valor"))
+            .Should().OnlyContain(medida => medida.Linhas == 1, $"a {largura} px quantidade, valor unitário e subtotal cabem numa linha");
+        (await Medidas.RolagemLateralAsync(pagina)).Should().BeEmpty($"o comprovante em {largura} px não pode rolar para o lado");
+        await pagina.Context.CloseAsync();
+    }
+
     [Fact]
     public async Task No_comprovante_a_375_px_o_maior_total_e_os_subtotais_ocupam_no_maximo_duas_linhas()
     {

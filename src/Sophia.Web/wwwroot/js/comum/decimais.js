@@ -6,7 +6,7 @@ let notas = 0;
 const campoDecimal = alvo => alvo instanceof HTMLInputElement && alvo.inputMode === 'decimal';
 
 export function atualizarNotaDoMilhar(campo) {
-    const nota = campo.closest('.campo')?.querySelector('[data-nota-do-milhar]');
+    const nota = (campo.closest('[data-item]') ?? campo.closest('.campo'))?.querySelector('[data-nota-do-milhar]');
     const texto = lidoComoMilhar(campo.value)
         ? nota?.dataset.textoLidoComoMilhar.replace('{valor}', () => formatarMoeda(lerDecimal(campo.value)))
         : '';

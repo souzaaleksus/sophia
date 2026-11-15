@@ -281,6 +281,20 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task A_nota_do_milhar_ocupa_a_largura_da_linha_e_cabe_em_uma_linha_de_texto()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+
+        await valor.FillAsync("12.505");
+
+        await Expect(_caixa.Linha(0).GetByText(NotaDoMilhar)).ToBeVisibleAsync();
+        (await Medidas.LinhasDeTextoAsync(_pagina, "[data-nota-do-milhar]"))
+            .Should().OnlyContain(medida => medida.Linhas == 1, "a nota não pode virar uma coluna estreita de várias linhas");
+    }
+
+    [Fact]
     public async Task A_nota_do_milhar_some_quando_o_valor_muda_ou_o_produto_e_trocado()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
