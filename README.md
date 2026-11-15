@@ -509,9 +509,15 @@ Métodos, técnicas e verificações usados nesta entrega. Os números de cada n
 
 **Estabilidade e regressão**
 
-- **Repetição**: um teste suspeito de intermitência roda em laço (800 a 1.600 vezes) até a
-  causa aparecer, e a suíte de tela roda três vezes seguidas antes da entrega, uma delas com a
-  CPU do navegador mais lenta (`SOPHIA_E2E_CPU_LENTA`).
+- **Repetição e carga**: um teste suspeito de intermitência roda em laço (800 a 1.600 vezes)
+  até a causa aparecer. Antes da entrega, a suíte de tela roda cinco vezes seguidas com outra
+  suíte de tela rodando ao mesmo tempo na mesma máquina, e duas com a CPU do navegador mais
+  lenta (`SOPHIA_E2E_CPU_LENTA`).
+- **Esperar estado, nunca tempo**: um teste só age depois de a tela mostrar o estado de que
+  precisa, visível ou de acessibilidade (por exemplo, o link de exclusão só é clicado para abrir
+  o diálogo depois de ganhar `aria-haspopup="dialog"`, que o módulo põe ao ligar). Não há
+  `sleep` nem prazo aumentado; o preparo dos dados por SQL não tem prazo, porque não é o que o
+  teste mede.
 - **Regressão visual**: as telas são capturadas antes e depois de cada rodada, nas três
   larguras, e comparadas pixel a pixel.
 - **Acessibilidade e responsividade**: a suíte de tela confere que nenhuma tela rola para o
@@ -598,8 +604,12 @@ Caminho de uma venda:
 - **Números no formato brasileiro, com a mesma regra no navegador e no servidor.** Vírgula é
   decimal e ponto é milhar (`1.250,00`). Sem vírgula, um ponto seguido de uma ou duas casas é
   decimal (`12.50` vale 12,50) e grupos de três depois do ponto são milhar (`1.250`); qualquer
-  outra forma é recusada com aviso, em vez de virar outro valor. A regra mora em `formato.js` e
-  em `Apoio/Ligadores.cs`, e um teste de integração confere os mesmos casos no servidor.
+  outra forma é recusada com aviso, em vez de virar outro valor. Quando o ponto é lido como milhar
+  (`12.505`), o campo mostra uma nota enquanto se digita, sem bloquear: "Lido como R$ 12.505,00: o
+  ponto separa o milhar. Para centavos, use a vírgula." A regra mora em `formato.js` e em
+  `Apoio/Ligadores.cs`, e um teste de integração confere os mesmos casos no servidor. Número que
+  nem cabe no tipo do campo recebe uma mensagem da leitura ("O número é maior do que o campo
+  aceita."); o ligador não conhece nenhum formulário, e a regra de negócio continua no domínio.
 - **O domínio fala de campo e de linha, não de tela.** Um erro diz o campo (`ProdutoId`) e,
   num item da venda, a linha; só a Web monta a chave do formulário (`Itens[2].ProdutoId`), em
   `Apoio/ModelStateExtensions.cs`. Mudar o nome de um campo na tela não mexe no domínio.
@@ -616,7 +626,9 @@ Caminho de uma venda:
   corrida entre duas gravações é provocada de verdade, com dois contextos. O custo é precisar de
   SQL Server para quase toda a suíte; só o domínio roda sem banco.
 - **Nada fixo no código, sem maquinaria a mais.** Cada mensagem de regra mora num lugar só, o
-  `Mensagens.resx` do domínio ou da aplicação, e a tela a referencia; um teste varre as views e
+  `Mensagens.resx` do domínio ou da aplicação. O domínio não expõe essas mensagens: a tela lê só
+  o contrato `RegrasDeEntrada`, da aplicação, com os limites e textos que ela repete antes do
+  envio; um teste varre as views e
   o código da Web e quebra se algum texto repetir uma dessas mensagens. Os demais textos da tela
   (títulos, rótulos, botões, avisos de sucesso) ficam escritos na view ou no controller que os
   mostra, e as mensagens genéricas de formato só em `Apoio/MensagensDeValidacao.cs`: a aplicação tem um idioma só, e um arquivo
