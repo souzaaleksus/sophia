@@ -23,7 +23,7 @@ internal static class FormularioNoServidor
         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("pt-BR");
         try
         {
-            await using var servicos = new ServiceCollection().AddLogging().AddSingleton(new ParametrosDoSophia()).AdicionarMvc().AdicionarNumerosDoBrasil().BuildServiceProvider();
+            await using var servicos = new ServiceCollection().AddLogging().AddSingleton(new ParametrosDoSophia()).AdicionarMvc().BuildServiceProvider();
             var metadados = servicos.GetRequiredService<IModelMetadataProvider>().GetMetadataForProperty(typeof(Formulario), propriedade);
             var ligador = servicos.GetRequiredService<IModelBinderFactory>().CreateBinder(new ModelBinderFactoryContext
             {
