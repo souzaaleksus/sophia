@@ -31,7 +31,7 @@
                     <span class="input-group-text">R$</span>
                     <input id="item-@indice-ValorUnitario" name="Itens[@indice].ValorUnitario" value="@Valor("ValorUnitario", Formato.Numero(item.ValorUnitario))"
                            type="text" class="form-control valor" inputmode="decimal" autocomplete="off"
-                           data-valor-maximo="@Formato.Invariante(Sophia.Domain.RegrasComuns.MaiorValorAceito)"
+                           data-valor-maximo="@Formato.Invariante(RegrasDeEntrada.MaiorValorAceito)"
                            placeholder="0,00" data-campo="ValorUnitario" />
                 </div>
                 <span class="erro" data-erro="ValorUnitario" data-valmsg-for="Itens[@indice].ValorUnitario">@ErroDe("ValorUnitario")</span>
@@ -89,9 +89,9 @@
       data-texto-produto-somado="{produto} já estava na venda: quantidade somada na linha {linha}."
       data-texto-produto-no-maximo="{produto} já está na linha {linha} com a quantidade máxima por item; nada foi somado."
       data-texto-valor-invalido="@MensagensDeValidacao.ValorInvalido"
-      data-texto-valor-com-mais-de-duas-casas="@Sophia.Domain.Recursos.Mensagens.ValorUnitarioComMaisDeDuasCasas"
-      data-texto-quantidade-acima-do-maximo="@Mensagens.QuantidadeAcimaDoMaximo(Parametros.QuantidadeMaximaPorItem)"
-      data-texto-valor-acima-do-permitido="@Mensagens.ValorUnitarioAcimaDoMaximo"
+      data-texto-valor-com-mais-de-duas-casas="@RegrasDeEntrada.ValorUnitarioComMaisDeDuasCasas"
+      data-texto-quantidade-acima-do-maximo="@RegrasDeEntrada.QuantidadeAcimaDoMaximo(Parametros.QuantidadeMaximaPorItem)"
+      data-texto-valor-acima-do-permitido="@RegrasDeEntrada.ValorUnitarioAcimaDoMaximo"
       data-texto-item="item"
       data-texto-itens="itens"
       data-texto-unidade="unidade"

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Sophia.Application;
 using Sophia.Application.Clientes;
 using Sophia.Domain.Clientes;
-using Sophia.Domain.Recursos;
 using Sophia.Web.Apoio;
 
 namespace Sophia.Web.Models;
@@ -11,21 +11,21 @@ public sealed class ClienteFormulario : IFormularioDeCadastro<DadosCliente>
     public int? Id { get; set; }
 
     [Display(Name = "CPF")]
-    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.CpfObrigatorio))]
+    [Required(ErrorMessageResourceType = typeof(RegrasDeEntrada), ErrorMessageResourceName = nameof(RegrasDeEntrada.CpfObrigatorio))]
     public string? Cpf { get; set; }
 
     [Display(Name = "Nome")]
-    [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.NomeObrigatorio))]
+    [Required(ErrorMessageResourceType = typeof(RegrasDeEntrada), ErrorMessageResourceName = nameof(RegrasDeEntrada.NomeObrigatorio))]
     [TamanhoDoNome(Cliente.TamanhoMaximoNome)]
     public string? Nome { get; set; }
 
     [Display(Name = "Data de nascimento")]
-    [DataBrasileira(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.DataDeNascimentoInvalida))]
+    [DataBrasileira(ErrorMessageResourceType = typeof(RegrasDeEntrada), ErrorMessageResourceName = nameof(RegrasDeEntrada.DataDeNascimentoInvalida))]
     public string? DataNascimento { get; set; }
 
     [Display(Name = "E-mail")]
-    [EmailAddress(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.EmailInvalido))]
-    [StringLength(Cliente.TamanhoMaximoEmail, ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.EmailInvalido))]
+    [EmailAddress(ErrorMessageResourceType = typeof(RegrasDeEntrada), ErrorMessageResourceName = nameof(RegrasDeEntrada.EmailInvalido))]
+    [StringLength(Cliente.TamanhoMaximoEmail, ErrorMessageResourceType = typeof(RegrasDeEntrada), ErrorMessageResourceName = nameof(RegrasDeEntrada.EmailInvalido))]
     public string? Email { get; set; }
 
     [Display(Name = "Telefone")]

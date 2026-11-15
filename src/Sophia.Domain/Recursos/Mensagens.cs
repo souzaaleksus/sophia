@@ -3,7 +3,7 @@ using System.Resources;
 
 namespace Sophia.Domain.Recursos;
 
-public static class Mensagens
+internal static class Mensagens
 {
     private static readonly CultureInfo PortuguesDoBrasil = CultureInfo.GetCultureInfo("pt-BR");
     private static readonly ResourceManager Textos = new(typeof(Mensagens));
