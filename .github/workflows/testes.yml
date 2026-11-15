@@ -79,6 +79,9 @@ jobs:
   docker:
     runs-on: ubuntu-latest
 
+    env:
+      SOPHIA_SENHA_DA_APLICACAO: Sophia#AplicacaoCI2026
+
     steps:
       - uses: actions/checkout@v4
 
@@ -111,6 +114,23 @@ jobs:
           tabelas="$(docker compose exec -T banco bash -c '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -C -b -h -1 -W -Q "SET NOCOUNT ON; SELECT STRING_AGG(name, N'"','"') WITHIN GROUP (ORDER BY name) FROM Sophia.sys.tables"' | tr -d '\r')"
           echo "Tabelas no banco Sophia: $tabelas"
           test "$tabelas" = "Clientes,Produtos,VendaItens,Vendas"
+
+      - name: Conferir que a aplicação conecta com o usuário sophia_app
+        run: |
+          docker compose exec -T web printenv ConnectionStrings__Sophia | grep -q 'User Id=sophia_app;'
+
+      - name: Conferir que o usuário sophia_app lê e grava mas não cria tabela
+        run: |
+          comoAplicacao() {
+            docker compose exec -T -e SENHA="$SOPHIA_SENHA_DA_APLICACAO" banco bash -c \
+              '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sophia_app -P "$SENHA" -C -b -d Sophia -Q "$0"' "$1"
+          }
+          comoAplicacao "SET NOCOUNT ON; SELECT COUNT(*) FROM dbo.Produtos;"
+          comoAplicacao "SET NOCOUNT ON; BEGIN TRAN; UPDATE dbo.Produtos SET Nome = Nome; ROLLBACK;"
+          if comoAplicacao "CREATE TABLE dbo.Intrusa (Id INT);"; then
+            echo "O usuário sophia_app conseguiu criar tabela."
+            exit 1
+          fi
 
       - name: Registrar o estado dos serviços
         if: failure()
