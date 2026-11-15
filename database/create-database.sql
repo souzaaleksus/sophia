@@ -5,7 +5,12 @@ SET NOCOUNT ON;
 SET NOEXEC OFF;
 GO
 
-IF DB_ID(N'Sophia') IS NULL CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;
+IF DB_ID() > 4
+BEGIN
+    RAISERROR(N'Este script cria o próprio banco e não prepara o banco em que está conectado; nada foi alterado. Rode-o conectado ao master (sem -d) e, para outro nome, troque o nome nas linhas do topo do script.', 16, 1);
+    SET NOEXEC ON;
+END
+ELSE IF DB_ID(N'Sophia') IS NULL CREATE DATABASE [Sophia] COLLATE Latin1_General_CI_AS;
 GO
 
 USE [Sophia];
@@ -42,10 +47,12 @@ DECLARE @faltam NVARCHAR(MAX) = (
     FROM (SELECT Item FROM @esperado EXCEPT SELECT Item FROM @existente) AS falta);
 DECLARE @recusa NVARCHAR(2000);
 
-IF @agrupamento <> N'Latin1_General_CI_AS'
+IF DB_ID() <= 4
+    SET @recusa = N'O banco do sistema não pôde ser criado nem aberto, e o script parou sem alterar nada. Confira a mensagem anterior e se o login pode criar bancos.';
+ELSE IF @agrupamento <> N'Latin1_General_CI_AS'
     SET @recusa = CONCAT(N'O banco ', QUOTENAME(DB_NAME()), N' usa o agrupamento ', @agrupamento,
         N', e as tabelas precisam de Latin1_General_CI_AS; nada foi alterado. ',
-        N'Apague o banco ou troque o nome dele nas linhas do topo do script e rode de novo.');
+        N'Use outro nome, trocado nas linhas do topo do script, ou guarde o que precisar e apague o banco antes de rodar de novo.');
 ELSE IF EXISTS (
     SELECT 1 FROM sys.tables
     WHERE is_ms_shipped = 0
@@ -55,7 +62,7 @@ ELSE IF EXISTS (
 ELSE IF EXISTS (SELECT 1 FROM @existente) AND @faltam IS NOT NULL
     SET @recusa = LEFT(CONCAT(N'O banco ', QUOTENAME(DB_NAME()),
         N' tem as tabelas de uma versão anterior do script; nada foi alterado. ',
-        N'Apague o banco e rode o script de novo para criá-lo na forma atual. Falta: ', @faltam, N'.'), 2000);
+        N'Guarde os dados que precisar, apague o banco (no Docker, docker compose down -v) e rode o script de novo, ou use outro nome, trocado nas linhas do topo. Falta: ', @faltam, N'.'), 2000);
 
 IF @recusa IS NOT NULL
 BEGIN

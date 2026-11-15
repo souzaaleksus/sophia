@@ -177,7 +177,7 @@ para compilar, testar ou rodar.
 | Testes de integração | xUnit · SQL Server real | Conferem o que um dublê não conferiria: o script do banco, os índices, o SQL que o EF gera e a corrida entre duas gravações. |
 | Testes de tela (E2E) | Playwright para .NET | Opera um Chromium de verdade, na mesma linguagem dos outros testes. Espera os elementos sozinho, o que evita testes instáveis, e emula celular, toque, rede lenta e tema escuro. |
 | Contêineres | Docker · Docker Compose | Quem avalia sobe o banco, cria as tabelas, carrega os dados de demonstração e abre a aplicação com um comando, sem instalar .NET nem SQL Server. |
-| Mensagens de regra | arquivos `.resx` do domínio e da aplicação | A mensagem nasce junto da regra e a tela só a referencia; um teste varre a Web e quebra se alguma view repetir o texto de uma regra. Os demais textos da tela ficam escritos na própria view, onde são lidos. |
+| Mensagens de regra | arquivos `.resx` do domínio e da aplicação | A mensagem nasce junto da regra e a tela só a referencia; um teste varre a Web e quebra se alguma view repetir o texto de uma regra. Os demais textos da tela ficam escritos onde são usados: na view, e os avisos de sucesso no controller; as poucas mensagens genéricas de formato ("Valor inválido…", "Informe…") ficam só em `Apoio/MensagensDeValidacao.cs`. |
 | Análise estática | analisadores do .NET · SonarAnalyzer.CSharp · métricas de código · ESLint · `dotnet format` | Defeito comum, complexidade alta e formatação fora do padrão quebram o build, na máquina e no CI. As regras do SonarQube rodam como analisador, sem depender de servidor. |
 | Integração contínua | GitHub Actions | O repositório está no GitHub. A cada PR roda formatação, ESLint, build e a suíte completa, com SQL Server em contêiner, e um segundo job sobe a aplicação pelo `docker compose` do Caminho A e confere o painel e a carga de demonstração: o caminho Docker fica provado a cada mudança. O merge só acontece com tudo verde. |
 
@@ -282,6 +282,8 @@ no Linux/WSL).
 
 4. Para parar: `docker compose down`. Os dados ficam no volume `dados-do-banco` e voltam na
    próxima subida. Para começar do zero, use `docker compose down -v`.
+   Um volume criado por uma versão anterior do Sophia é recusado pelo script (o `criar-banco`
+   termina com erro e diz o que falta); nesse caso, `docker compose down -v` e suba de novo.
 
 A aplicação não conecta como `sa`: o `criar-banco` cria o login `sophia_app`
 (`database/usuario-da-aplicacao.sql`), que só lê e grava no banco `Sophia`, e o `sa` fica só para
@@ -304,12 +306,14 @@ Pré-requisitos:
 1. Crie o banco com o script entregue:
 
    ```powershell
-   sqlcmd -S .\SQLEXPRESS -E -C -i database/create-database.sql
+   sqlcmd -S .\SQLEXPRESS -E -C -b -i database/create-database.sql
    ```
 
    No SSMS, abra `database/create-database.sql` e execute (F5). O script cria o banco `Sophia`,
-   entra nele e cria as tabelas numa transação só: ou cria tudo, ou nada. Rodar de novo não muda
-   nada. Se o banco `Sophia` já existir com outras tabelas, com outro agrupamento ou criado por uma
+   entra nele e cria as tabelas numa transação só: ou cria todas, ou nenhuma. Rodar de novo não
+   muda nada. O `-b` faz o `sqlcmd` terminar com erro quando o script recusa o banco; sem ele, a
+   recusa aparece na tela e nada é alterado do mesmo jeito. O script não prepara o banco em que
+   você está conectado: rodado com `-d` de outro banco, ele recusa e não grava nada. Se o banco `Sophia` já existir com outras tabelas, com outro agrupamento ou criado por uma
    versão anterior do script, ele para com uma mensagem que diz o que fazer, sem alterar nada.
 
    Já existe um banco `Sophia` na instância? Use outro nome: troque `Sophia` no topo do script (as
@@ -510,7 +514,8 @@ Caminho de uma venda:
 - **Nada fixo no código, sem maquinaria a mais.** Cada mensagem de regra mora num lugar só, o
   `Mensagens.resx` do domínio ou da aplicação, e a tela a referencia; um teste varre as views e
   o código da Web e quebra se algum texto repetir uma dessas mensagens. Os demais textos da tela
-  (títulos, rótulos, botões) ficam escritos na view: a aplicação tem um idioma só, e um arquivo
+  (títulos, rótulos, botões, avisos de sucesso) ficam escritos na view ou no controller que os
+  mostra, e as mensagens genéricas de formato só em `Apoio/MensagensDeValidacao.cs`: a aplicação tem um idioma só, e um arquivo
   de recursos para eles só acrescentaria uma indireção. Parâmetros de
   negócio na seção `Sophia` do `appsettings.json`, validados na subida: valor fora da faixa impede
   a aplicação de subir. O JavaScript recebe endereços e textos por atributos `data-*` gerados pela

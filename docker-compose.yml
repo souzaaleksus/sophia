@@ -36,7 +36,8 @@ services:
         set -e
         sqlcmd() { /opt/mssql-tools18/bin/sqlcmd -S banco -U sa -P "$$MSSQL_SA_PASSWORD" -C -b "$$@"; }
         sqlcmd -i /scripts/create-database.sql
-        sqlcmd -d Sophia -v SenhaDaAplicacao="$$SOPHIA_SENHA_DA_APLICACAO" -i /scripts/usuario-da-aplicacao.sql
+        aspa="'"
+        sqlcmd -d Sophia -v SenhaDaAplicacao="$${SOPHIA_SENHA_DA_APLICACAO//$$aspa/$$aspa$$aspa}" -i /scripts/usuario-da-aplicacao.sql
         if [ "$$SOPHIA_DADOS_DE_DEMONSTRACAO" = "sim" ]; then
           sqlcmd -d Sophia -i /scripts/carga-de-demonstracao.sql
         fi

@@ -23,9 +23,6 @@ dotnet_diagnostic.CA1506.severity = warning
 [src/**.cs]
 dotnet_diagnostic.S6967.severity = none
 
-[src/Sophia.Web/Controllers/ErroController.cs]
-dotnet_diagnostic.S4502.severity = none
-
 [tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1505.severity = none

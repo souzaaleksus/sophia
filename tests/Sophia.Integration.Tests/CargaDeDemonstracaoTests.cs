@@ -20,8 +20,8 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
 
         (await ContarAsync("Produtos")).Should().Be(97);
         (await ContarAsync("Clientes")).Should().Be(320);
-        (await ContarAsync("Vendas")).Should().BeGreaterThan(1000);
-        (await ContarAsync("VendaItens")).Should().BeGreaterThan(await ContarAsync("Vendas"));
+        (await ContarAsync("Vendas")).Should().Be(1461);
+        (await ContarAsync("VendaItens")).Should().Be(3618);
         (await banco.ConsultarAsync("SELECT CAST(MAX(Quantidade) AS VARCHAR(10)) FROM dbo.VendaItens"))
             .Select(maior => int.Parse(maior, System.Globalization.CultureInfo.InvariantCulture))
             .Should().ContainSingle().Which.Should().BeLessThanOrEqualTo(new Sophia.Application.ParametrosDoSophia().QuantidadeMaximaPorItem);

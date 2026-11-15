@@ -237,6 +237,32 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     }
 
     [Fact]
+    public async Task Pelo_sqlcmd_sem_parar_no_erro_a_recusa_tambem_nao_grava_nada()
+    {
+        await using var outro = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_SemParar");
+        await outro.ConsultarAsync("CREATE TABLE dbo.Pedidos (Id INT); SELECT N'criada';");
+
+        var (_, texto) = await RodarPeloSqlcmdAsync(outro, pararNoErro: false);
+
+        texto.Should().Contain(OutroSistema);
+        (await outro.ConsultarAsync(Tabelas)).Should().Equal("dbo.Pedidos");
+    }
+
+    [Fact]
+    public async Task Pelo_sqlcmd_conectado_a_outro_banco_e_recusado_sem_criar_nem_gravar_nada()
+    {
+        await using var conectado = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Conectada");
+        await using var alvo = BancoAvulso.Reservar(BancoDeTestes.Servidor, "Loja_Alvo");
+
+        var (saida, texto) = await RodarPeloSqlcmdAsync(alvo, banco: conectado.Nome, pararNoErro: false);
+
+        saida.Should().Be(0, "sem -b o sqlcmd não devolve erro, e por isso o lote de criação também tem de ficar parado");
+        texto.Should().Contain("conectado ao master");
+        (await conectado.ConsultarAsync(Tabelas)).Should().BeEmpty();
+        (await BancoAvulso.ExisteAsync(BancoDeTestes.Servidor, alvo.Nome)).Should().BeFalse();
+    }
+
+    [Fact]
     public void O_arquivo_do_script_comeca_com_a_marca_de_utf8()
     {
         var inicio = File.ReadAllBytes(BancoAvulso.CaminhoDoArquivo(BancoAvulso.ScriptDoBanco)).Take(3);
@@ -313,7 +339,8 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         await banco.LimparAsync();
     }
 
-    private static async Task<(int Saida, string Texto)> RodarPeloSqlcmdAsync(BancoAvulso alvo)
+    private static async Task<(int Saida, string Texto)> RodarPeloSqlcmdAsync(
+        BancoAvulso alvo, string? banco = null, bool pararNoErro = true)
     {
         var original = BancoAvulso.CaminhoDoArquivo(BancoAvulso.ScriptDoBanco);
         var comMarca = (await File.ReadAllBytesAsync(original)).Take(3).SequenceEqual(Encoding.UTF8.Preamble.ToArray());
@@ -321,7 +348,7 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         await File.WriteAllTextAsync(copia, BancoAvulso.ScriptDoBancoPara(alvo.Nome), new UTF8Encoding(comMarca));
         try
         {
-            return await Sqlcmd.RodarAsync(BancoDeTestes.Servidor, copia);
+            return await Sqlcmd.RodarAsync(BancoDeTestes.Servidor, copia, banco, pararNoErro);
         }
         finally
         {

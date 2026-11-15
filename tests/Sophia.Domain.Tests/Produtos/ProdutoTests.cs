@@ -86,7 +86,7 @@ public sealed class ProdutoTests
 
     [Theory]
     [InlineData(1_000_000.00)]
-    [InlineData(9_999_999_999_999_999.99)]
+    [InlineData(1_000_000.01)]
     public void Recusa_valor_acima_do_maior_valor_unitario(decimal valor)
     {
         var resultado = Produto.Criar(new DadosProduto("Lápis", valor));

@@ -127,10 +127,12 @@ jobs:
           }
           comoAplicacao "SET NOCOUNT ON; SELECT COUNT(*) FROM dbo.Produtos;"
           comoAplicacao "SET NOCOUNT ON; BEGIN TRAN; UPDATE dbo.Produtos SET Nome = Nome; ROLLBACK;"
-          if comoAplicacao "CREATE TABLE dbo.Intrusa (Id INT);"; then
+          if recusa="$(comoAplicacao "CREATE TABLE dbo.Intrusa (Id INT);" 2>&1)"; then
             echo "O usuário sophia_app conseguiu criar tabela."
             exit 1
           fi
+          echo "$recusa"
+          echo "$recusa" | grep -q "Msg 262," 
 
       - name: Registrar o estado dos serviços
         if: failure()
