@@ -112,7 +112,7 @@ public sealed class BancoAvulso : IAsyncDisposable
         await conexao.OpenAsync();
         foreach (var lote in Lotes.Separar(script))
         {
-            await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 120 };
+            await using var comando = new SqlCommand(lote, conexao) { CommandTimeout = 0 };
             await comando.ExecuteNonQueryAsync();
         }
     }
@@ -121,7 +121,7 @@ public sealed class BancoAvulso : IAsyncDisposable
     {
         await using var conexao = new SqlConnection(new SqlConnectionStringBuilder(servidor) { Pooling = false }.ConnectionString);
         await conexao.OpenAsync();
-        await using var comando = new SqlCommand(sql, conexao);
+        await using var comando = new SqlCommand(sql, conexao) { CommandTimeout = 0 };
         await comando.ExecuteNonQueryAsync();
     }
 }
