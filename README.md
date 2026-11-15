@@ -607,8 +607,9 @@ Caminho de uma venda:
   à quantidade da linha existente, avisa em qual linha e a realça.
 - **Números no formato brasileiro, com a mesma regra no navegador e no servidor.** Vírgula é
   decimal e ponto é milhar (`1.250,00`). Sem vírgula, um ponto seguido de uma ou duas casas é
-  decimal (`12.50` vale 12,50) e grupos de três depois do ponto são milhar (`1.250`); qualquer
-  outra forma é recusada com aviso, em vez de virar outro valor. Quando o ponto é lido como milhar
+  decimal (`12.50` vale 12,50) e grupos de três depois do ponto são milhar (`1.250`); espaço só
+  vale como separador de milhar (`1 250,00`), e `12 50` é recusado; qualquer outra forma é
+  recusada com aviso, em vez de virar outro valor. Quando o ponto é lido como milhar
   (`12.505`), o campo mostra uma nota enquanto se digita, sem bloquear: "Lido como R$ 12.505,00: o
   ponto separa o milhar. Para centavos, use a vírgula." A regra mora em `formato.js` e em
   `Apoio/Ligadores.cs`, e um teste de integração confere os mesmos casos no servidor. Número que
