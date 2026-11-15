@@ -8,7 +8,7 @@ namespace Sophia.Web.Controllers;
 
 public abstract class CadastroController<TDto, TFormulario, TDados>(
     IServicoDeCadastro<TDto, TDados> servico,
-    CadastroController<TDto, TFormulario, TDados>.AvisosDeCadastro avisos,
+    AvisosDeCadastro avisos,
     ParametrosDoSophia parametros)
     : Controller
     where TDto : class
@@ -109,6 +109,4 @@ public abstract class CadastroController<TDto, TFormulario, TDados>(
         TempData.Sucesso(aviso);
         return RedirectToAction(nameof(Index));
     }
-
-    public sealed record AvisosDeCadastro(string Cadastrado, string Alterado, string Excluido);
 }

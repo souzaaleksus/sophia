@@ -12,7 +12,7 @@
 <div class="cabecalho-da-pagina">
     <div>
         <h1>Clientes</h1>
-        <p class="subtitulo">Quem compra da loja.</p>
+        <partial name="_Subtitulo" />
     </div>
     <a class="btn btn-primary" asp-action="Novo">
         <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
@@ -88,8 +88,7 @@ else
                             </a>
                             <a class="acao perigo" asp-action="Excluir" asp-route-id="@cliente.Id" aria-label="Excluir @cliente.Nome"
                                data-confirmar data-confirmar-titulo="Excluir cliente?" data-confirmar-nome="@cliente.Nome"
-                               data-confirmar-detalhe="CPF @cliente.Cpf"
-                               data-confirmar-aviso="A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.">
+                               data-confirmar-detalhe="CPF @cliente.Cpf">
                                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
                                 <span class="acao-texto">Excluir</span>
                             </a>

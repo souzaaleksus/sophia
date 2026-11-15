@@ -11,7 +11,6 @@ if (dialogo) {
         parte('titulo').textContent = link.dataset.confirmarTitulo;
         parte('nome').textContent = link.dataset.confirmarNome;
         parte('detalhe').textContent = link.dataset.confirmarDetalhe ?? '';
-        parte('aviso').textContent = link.dataset.confirmarAviso;
         formulario.action = link.href;
         dialogo.showModal();
         cancelar.focus();
