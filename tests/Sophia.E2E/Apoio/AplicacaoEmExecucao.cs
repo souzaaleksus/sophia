@@ -82,7 +82,21 @@ public class AplicacaoEmExecucao : IAsyncLifetime
         opcoes.Locale = "pt-BR";
         opcoes.TimezoneId = "America/Sao_Paulo";
         var contexto = await Navegador.NewContextAsync(opcoes);
-        return await contexto.NewPageAsync();
+        var pagina = await contexto.NewPageAsync();
+        await DiarioDaPagina.AcompanharAsync(pagina, () => _saidaDaAplicacao);
+        await LimitarCpuAsync(pagina);
+        return pagina;
+    }
+
+    private static async Task LimitarCpuAsync(IPage pagina)
+    {
+        if (!int.TryParse(Environment.GetEnvironmentVariable("SOPHIA_E2E_CPU_LENTA"), out var vezes) || vezes <= 1)
+        {
+            return;
+        }
+
+        var protocolo = await pagina.Context.NewCDPSessionAsync(pagina);
+        await protocolo.SendAsync("Emulation.setCPUThrottlingRate", new Dictionary<string, object> { ["rate"] = vezes });
     }
 
     private Process IniciarAplicacao()
