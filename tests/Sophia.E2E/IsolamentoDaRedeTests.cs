@@ -22,7 +22,7 @@ public sealed class IsolamentoDaRedeTests(AplicacaoEmExecucao aplicacao) : IAsyn
     public Task DisposeAsync() => _pagina.Context.CloseAsync();
 
     [Fact]
-    public async Task A_tela_carrega_e_registra_a_venda_sem_depender_das_conexoes_do_navegador()
+    public async Task A_tela_carrega_busca_e_envia_a_venda_sem_depender_das_conexoes_do_navegador()
     {
         var caixa = new Caixa(_pagina);
         await _pagina.Context.SetOfflineAsync(true);
@@ -30,10 +30,13 @@ public sealed class IsolamentoDaRedeTests(AplicacaoEmExecucao aplicacao) : IAsyn
         await _pagina.GotoAsync("/Vendas/Nova");
         await caixa.EscolherClienteAsync("Maria", "Maria Santos");
         await caixa.LancarAsync(0, "Caneta", "Caneta azul", "2");
-        await caixa.Finalizar.ClickAsync();
+        await Expect(caixa.Total).ToHaveTextAsync("R$ 5,00");
+        var envio = await _pagina.RunAndWaitForResponseAsync(
+            () => caixa.Finalizar.ClickAsync(),
+            resposta => resposta.Request.Method == "POST");
 
-        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Venda registrada.");
-        await Expect(_pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 5,00");
+        envio.Status.Should().Be(302);
+        (await aplicacao.Banco.ConsultarAsync("SELECT CAST(COUNT(*) AS VARCHAR(10)) FROM dbo.Vendas")).Should().Equal("1");
     }
 
     [Fact]

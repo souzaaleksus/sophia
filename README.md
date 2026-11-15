@@ -425,7 +425,9 @@ O navegador dos testes de tela não abre conexão com a aplicação: cada requis
 próprio Playwright e entregue à página. No Windows, quando um adaptador de rede troca de
 endereço (o do Hyper-V faz isso a cada poucos minutos), o Chrome derruba as conexões abertas
 e a página carrega sem parte dos scripts; era essa a causa de uma falha a cada centenas de
-testes, e um teste com o navegador desligado da rede confere o isolamento. Endereços de fora
+testes, e um teste com o navegador desligado da rede confere que o caixa carrega, busca e
+envia a venda. O Playwright só intercepta o primeiro endereço de um redirecionamento: a página
+para onde o servidor manda depois de um envio o Chrome busca pelas próprias conexões. Endereços de fora
 da aplicação são recusados na hora: um antivírus que injeta script nas páginas fazia a rota
 esperar por um servidor que só ele alcança, e a página parava de carregar no meio. Quando uma
 sugestão da busca não aparece, o teste anexa ao erro o estado do campo, as requisições, o
