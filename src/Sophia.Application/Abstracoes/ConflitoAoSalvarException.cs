@@ -31,5 +31,5 @@ public enum TipoDeConflito
 {
     ValorDuplicado,
     RegistroEmUso,
-    ReferenciaInexistente,
+    RestricaoViolada,
 }

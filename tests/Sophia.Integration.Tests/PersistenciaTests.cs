@@ -217,18 +217,18 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Venda_que_aponta_para_cadastro_inexistente_e_um_conflito_de_referencia()
+    public async Task Venda_que_aponta_para_cadastro_inexistente_e_restricao_violada()
     {
         var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
 
         var gravar = () => RegistrarVendaAsync(999, [new(caneta, 1, 2.50m)]);
 
         (await gravar.Should().ThrowAsync<ConflitoAoSalvarException>())
-            .Which.Tipo.Should().Be(TipoDeConflito.ReferenciaInexistente);
+            .Which.Tipo.Should().Be(TipoDeConflito.RestricaoViolada);
     }
 
     [Fact]
-    public async Task Restricao_de_verificacao_violada_por_fora_do_dominio_nao_vira_conflito_de_referencia()
+    public async Task Restricao_de_verificacao_violada_por_fora_do_dominio_e_restricao_violada_com_a_causa_do_banco()
     {
         await using var contexto = banco.NovoContexto();
         var produto = Produto.Criar(new DadosProduto("Caneta azul", 2.50m)).Valor;
@@ -237,29 +237,27 @@ public sealed class PersistenciaTests(BancoDeTestes banco) : IAsyncLifetime
 
         var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
 
-        (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
-            .WithInnerException<SqlException>().Which.Message.Should().Contain("CK_Produtos_ValorUnitario_Positivo");
+        var conflito = (await salvar.Should().ThrowAsync<ConflitoAoSalvarException>()).Which;
+        conflito.Tipo.Should().Be(TipoDeConflito.RestricaoViolada);
+        conflito.InnerException.Should().BeOfType<DbUpdateException>()
+            .Which.InnerException.Should().BeOfType<SqlException>()
+            .Which.Message.Should().Contain("CK_Produtos_ValorUnitario_Positivo");
     }
 
     [Fact]
-    public async Task Restricao_que_o_mapeamento_nao_conhece_nao_vira_conflito_mesmo_com_nome_de_chave_estrangeira()
+    public async Task A_chave_estrangeira_impede_excluir_produto_vendido()
     {
-        await banco.ExecutarAsync(
-            "ALTER TABLE dbo.Produtos ADD CONSTRAINT FK_Produtos_ForaDoMapeamento CHECK (ValorUnitario < 1000);");
-        try
-        {
-            await using var contexto = banco.NovoContexto();
-            new ProdutoRepositorio(contexto).Adicionar(Produto.Criar(new DadosProduto("Notebook", 5000m)).Valor);
+        var maria = await CadastrarClienteAsync("529.982.247-25", "Maria Santos");
+        var caneta = await CadastrarProdutoAsync("Caneta azul", 2.50m);
+        await RegistrarVendaAsync(maria, [new(caneta, 1, 2.50m)]);
 
-            var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
+        await using var contexto = banco.NovoContexto();
+        var repositorio = new ProdutoRepositorio(contexto);
+        repositorio.Remover((await repositorio.ObterAsync(caneta))!);
+        var salvar = () => new UnidadeDeTrabalho(contexto).SalvarAsync();
 
-            (await salvar.Should().ThrowExactlyAsync<DbUpdateException>())
-                .WithInnerException<SqlException>().Which.Message.Should().Contain("FK_Produtos_ForaDoMapeamento");
-        }
-        finally
-        {
-            await banco.ExecutarAsync("ALTER TABLE dbo.Produtos DROP CONSTRAINT FK_Produtos_ForaDoMapeamento;");
-        }
+        (await salvar.Should().ThrowAsync<ConflitoAoSalvarException>())
+            .Which.Tipo.Should().Be(TipoDeConflito.RegistroEmUso);
     }
 
     [Fact]

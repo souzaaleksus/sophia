@@ -29,7 +29,7 @@ public sealed class GravacaoDeCadastroTests
     [Fact]
     public async Task Conflito_que_o_cadastro_nao_espera_e_relancado()
     {
-        var conflito = new ConflitoAoSalvarException(TipoDeConflito.ReferenciaInexistente);
+        var conflito = new ConflitoAoSalvarException(TipoDeConflito.RestricaoViolada);
 
         var salvar = () => new Unidade(conflito).SalvarCadastroAsync(Duplicado, EmUso);
 

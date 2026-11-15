@@ -82,7 +82,7 @@ public sealed class VendaServico(
 
             return ConferirReenvio(venda, vencedora);
         }
-        catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.ReferenciaInexistente)
+        catch (ConflitoAoSalvarException conflito) when (conflito.Tipo == TipoDeConflito.RestricaoViolada)
         {
             var ausentes = await VerificarCadastrosAsync(venda, cancelamento);
             if (ausentes.Count == 0)
