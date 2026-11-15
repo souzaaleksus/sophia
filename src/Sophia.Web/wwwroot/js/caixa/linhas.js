@@ -1,4 +1,5 @@
 import { buscarJson, criarAutocompletar } from '../autocompletar.js';
+import { apagarNotaDoMilhar } from '../comum/decimais.js';
 import { limparErro, mostrarErro } from '../comum/erros.js';
 import { escritaDecimalValida, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro, temMaisDeDuasCasas } from '../formato.js';
 
@@ -11,6 +12,11 @@ export function criarLinhas(opcoes) {
 const campoDe = (item, nome) => item.querySelector(`[data-campo=${nome}]`);
 
 const estaEmBranco = item => camposDaLinha.every(nome => campoDe(item, nome).value.trim() === '');
+
+const limparAvisos = (item, nome) => {
+    limparErro(item, campoDe(item, nome).name);
+    apagarNotaDoMilhar(campoDe(item, nome));
+};
 
 class Linhas {
     #area;
@@ -148,7 +154,7 @@ class Linhas {
     }
 
     #corrigido(item, campos) {
-        campos.forEach(nome => limparErro(item, campoDe(item, nome).name));
+        campos.forEach(nome => limparAvisos(item, nome));
         limparErro(this.#area.closest('form'), 'Itens');
         this.#aoMudar();
     }
@@ -160,7 +166,7 @@ class Linhas {
         quantidade.value = somada;
         camposDaLinha.forEach(nome => {
             campoDe(item, nome).value = '';
-            limparErro(item, campoDe(item, nome).name);
+            limparAvisos(item, nome);
         });
         selecionar(quantidade);
         this.#corrigido(existente, ['Quantidade']);

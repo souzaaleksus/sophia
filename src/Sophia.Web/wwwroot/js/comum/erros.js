@@ -1,9 +1,22 @@
 let avisosMostrados = 0;
 
-export function ligarMensagem(campo, mensagem) {
+export function descrever(campo, id) {
     const descricoes = new Set((campo.getAttribute('aria-describedby') ?? '').split(' ').filter(Boolean));
-    descricoes.add(mensagem.id);
+    descricoes.add(id);
     campo.setAttribute('aria-describedby', [...descricoes].join(' '));
+}
+
+export function deixarDeDescrever(campo, id) {
+    const restantes = (campo.getAttribute('aria-describedby') ?? '').split(' ').filter(parte => parte !== '' && parte !== id);
+    if (restantes.length > 0) {
+        campo.setAttribute('aria-describedby', restantes.join(' '));
+    } else {
+        campo.removeAttribute('aria-describedby');
+    }
+}
+
+export function ligarMensagem(campo, mensagem) {
+    descrever(campo, mensagem.id);
     campo.setAttribute('aria-invalid', 'true');
 }
 
@@ -33,12 +46,6 @@ export function limparErro(raiz, nome) {
 }
 
 function desligar(campo, id) {
-    const restantes = campo.getAttribute('aria-describedby').split(' ').filter(parte => parte !== '' && parte !== id);
-    if (restantes.length > 0) {
-        campo.setAttribute('aria-describedby', restantes.join(' '));
-    } else {
-        campo.removeAttribute('aria-describedby');
-    }
-
+    deixarDeDescrever(campo, id);
     campo.removeAttribute('aria-invalid');
 }
