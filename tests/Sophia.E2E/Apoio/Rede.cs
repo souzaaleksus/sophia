@@ -11,9 +11,15 @@ public static class Rede
             await rota.FallbackAsync();
         });
 
-    public static Task BuscarForaDoNavegadorAsync(IBrowserContext contexto) =>
+    public static Task BuscarForaDoNavegadorAsync(IBrowserContext contexto, string endereco) =>
         contexto.RouteAsync("**/*", async rota =>
         {
+            if (!rota.Request.Url.StartsWith(endereco + "/", StringComparison.OrdinalIgnoreCase))
+            {
+                await rota.AbortAsync();
+                return;
+            }
+
             var cabecalhos = (await rota.Request.AllHeadersAsync())
                 .Where(cabecalho => !string.Equals(cabecalho.Key, "cookie", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary();

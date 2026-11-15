@@ -399,9 +399,9 @@ dotnet test
 | `Sophia.Application.Tests` | aplicação | 173 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
 | `Sophia.Specs` | BDD (Gherkin) | 90 | os cenários da especificação, em português, sobre o banco real | SQL Server |
 | `Sophia.Integration.Tests` | integração | 171 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
-| `Sophia.E2E` | tela | 290 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
+| `Sophia.E2E` | tela | 291 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
 
-São 822 casos executados, vindos de 510 testes distintos (métodos e cenários): as teorias
+São 823 casos executados, vindos de 511 testes distintos (métodos e cenários): as teorias
 repetem o mesmo teste para cada borda de uma regra, como os formatos de número aceitos e
 recusados, e cada caso é contado uma vez.
 
@@ -425,7 +425,9 @@ O navegador dos testes de tela não abre conexão com a aplicação: cada requis
 próprio Playwright e entregue à página. No Windows, quando um adaptador de rede troca de
 endereço (o do Hyper-V faz isso a cada poucos minutos), o Chrome derruba as conexões abertas
 e a página carrega sem parte dos scripts; era essa a causa de uma falha a cada centenas de
-testes, e um teste com o navegador desligado da rede confere o isolamento. Quando uma
+testes, e um teste com o navegador desligado da rede confere o isolamento. Endereços de fora
+da aplicação são recusados na hora: um antivírus que injeta script nas páginas fazia a rota
+esperar por um servidor que só ele alcança, e a página parava de carregar no meio. Quando uma
 sugestão da busca não aparece, o teste anexa ao erro o estado do campo, as requisições, o
 console e o rastro do Playwright.
 

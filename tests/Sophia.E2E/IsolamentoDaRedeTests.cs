@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Playwright;
 using Sophia.E2E.Apoio;
 using static Microsoft.Playwright.Assertions;
@@ -33,5 +34,16 @@ public sealed class IsolamentoDaRedeTests(AplicacaoEmExecucao aplicacao) : IAsyn
 
         await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Venda registrada.");
         await Expect(_pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 5,00");
+    }
+
+    [Fact]
+    public async Task Endereco_fora_da_aplicacao_e_recusado_na_hora_sem_esperar_a_rede()
+    {
+        var relogio = Stopwatch.StartNew();
+
+        var abrir = () => _pagina.GotoAsync("http://192.0.2.1/script.js", new() { Timeout = 10_000 });
+
+        await abrir.Should().ThrowAsync<PlaywrightException>().WithMessage("*net::ERR_FAILED*");
+        relogio.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));
     }
 }
