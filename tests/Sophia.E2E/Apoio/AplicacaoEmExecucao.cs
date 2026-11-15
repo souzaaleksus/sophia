@@ -82,6 +82,7 @@ public class AplicacaoEmExecucao : IAsyncLifetime
         opcoes.Locale = "pt-BR";
         opcoes.TimezoneId = "America/Sao_Paulo";
         var contexto = await Navegador.NewContextAsync(opcoes);
+        await Rede.BuscarForaDoNavegadorAsync(contexto);
         var pagina = await contexto.NewPageAsync();
         await DiarioDaPagina.AcompanharAsync(pagina, () => _saidaDaAplicacao);
         await LimitarCpuAsync(pagina);

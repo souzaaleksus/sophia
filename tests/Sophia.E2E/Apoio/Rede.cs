@@ -4,16 +4,17 @@ namespace Sophia.E2E.Apoio;
 
 public static class Rede
 {
-    public static async Task DeixarLentaAsync(IPage pagina, TimeSpan atraso)
-    {
-        var protocolo = await pagina.Context.NewCDPSessionAsync(pagina);
-        await protocolo.SendAsync("Network.enable");
-        await protocolo.SendAsync("Network.emulateNetworkConditions", new Dictionary<string, object>
+    public static Task DeixarLentaAsync(IPage pagina, TimeSpan atraso) =>
+        pagina.RouteAsync("**/*", async rota =>
         {
-            ["offline"] = false,
-            ["latency"] = atraso.TotalMilliseconds,
-            ["downloadThroughput"] = -1,
-            ["uploadThroughput"] = -1,
+            await Task.Delay(atraso);
+            await rota.FallbackAsync();
         });
-    }
+
+    public static Task BuscarForaDoNavegadorAsync(IBrowserContext contexto) =>
+        contexto.RouteAsync("**/*", async rota =>
+        {
+            var resposta = await rota.FetchAsync(new() { MaxRedirects = 0 });
+            await rota.FulfillAsync(new() { Response = resposta });
+        });
 }
