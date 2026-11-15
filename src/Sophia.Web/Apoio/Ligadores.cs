@@ -2,9 +2,6 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Sophia.Application;
-using Sophia.Domain.Recursos;
-using Sophia.Web.Models;
 
 namespace Sophia.Web.Apoio;
 
@@ -36,7 +33,7 @@ public static partial class Ligadores
             return (valor, null);
         }
 
-        return (null, SoDigitos().IsMatch(limpo) ? ForaDoLimite(contexto, texto, limpo.StartsWith('-')) : ValorInvalido(contexto, texto));
+        return (null, SoDigitos().IsMatch(limpo) ? ForaDoLimite(limpo.StartsWith('-')) : ValorInvalido(contexto, texto));
     }
 
     private static (object? Valor, string? Recusa) LerDecimal(ModelBindingContext contexto, string texto)
@@ -51,7 +48,7 @@ public static partial class Ligadores
 
         if (!decimal.TryParse(numero, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var valor))
         {
-            return (null, ForaDoLimite(contexto, texto, negativo));
+            return (null, ForaDoLimite(negativo));
         }
 
         return (negativo ? -valor : valor, null);
@@ -72,16 +69,8 @@ public static partial class Ligadores
         return ComPontoDecimal().IsMatch(numero) || SoAlgarismos().IsMatch(numero) ? numero : null;
     }
 
-    private static string ForaDoLimite(ModelBindingContext contexto, string texto, bool abaixo) =>
-        (contexto.ModelMetadata.Name, abaixo) switch
-        {
-            (nameof(ItemDaVendaFormulario.Quantidade), true) => Mensagens.QuantidadeNaoPositiva,
-            (nameof(ItemDaVendaFormulario.Quantidade), false) => Mensagens.QuantidadeAcimaDoMaximo(
-                contexto.HttpContext.RequestServices.GetRequiredService<ParametrosDoSophia>().QuantidadeMaximaPorItem),
-            (nameof(ItemDaVendaFormulario.ValorUnitario), true) => Mensagens.ValorUnitarioNaoPositivo,
-            (nameof(ItemDaVendaFormulario.ValorUnitario), false) => Mensagens.ValorUnitarioAcimaDoMaximo,
-            _ => ValorInvalido(contexto, texto),
-        };
+    private static string ForaDoLimite(bool abaixo) =>
+        abaixo ? MensagensDeValidacao.NumeroMenorQueOCampo : MensagensDeValidacao.NumeroMaiorQueOCampo;
 
     private static string ValorInvalido(ModelBindingContext contexto, string texto)
     {
