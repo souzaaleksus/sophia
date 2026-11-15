@@ -23,6 +23,14 @@ public sealed class PassosDeProdutos(Cenario cenario)
         cenario.UltimoResultado = await cenario.Produtos.AlterarAsync(produto.Id, dados);
     }
 
+    [When("eu renomear o produto {string} para {string}")]
+    public async Task QuandoEuRenomearOProduto(string nome, string novoNome)
+    {
+        var produto = await cenario.ProdutoChamadoAsync(nome);
+        var dados = new DadosProduto(novoNome, produto.ValorUnitario);
+        cenario.UltimoResultado = await cenario.Produtos.AlterarAsync(produto.Id, dados);
+    }
+
     [When("eu excluir o produto {string}")]
     public async Task QuandoEuExcluirOProduto(string nome)
     {

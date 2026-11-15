@@ -61,6 +61,12 @@ internal sealed class ItemVendaConfiguracao : IEntityTypeConfiguration<ItemVenda
         ConfigurarProduto(item);
     }
 
+    private static void ConfigurarNomeDoProduto(EntityTypeBuilder<ItemVenda> item) =>
+        item.Property(i => i.NomeDoProduto)
+            .HasMaxLength(Produto.TamanhoMaximoNome)
+            .IsRequired()
+            .UseCollation(Agrupamento.SemAcentoNemCaixa);
+
     private static void ConfigurarTabela(EntityTypeBuilder<ItemVenda> item) =>
         item.ToTable("VendaItens", tabela =>
         {
@@ -72,10 +78,13 @@ internal sealed class ItemVendaConfiguracao : IEntityTypeConfiguration<ItemVenda
             tabela.HasCheckConstraint("CK_VendaItens_ValorUnitarioMaximo", TetoDoValor.Sql);
         });
 
-    private static void ConfigurarProduto(EntityTypeBuilder<ItemVenda> item) =>
+    private static void ConfigurarProduto(EntityTypeBuilder<ItemVenda> item)
+    {
+        ConfigurarNomeDoProduto(item);
         item.HasOne<Produto>()
             .WithMany()
             .HasForeignKey(i => i.ProdutoId)
             .OnDelete(DeleteBehavior.NoAction)
             .HasConstraintName(ChavesEstrangeiras.ProdutoDoItem);
+    }
 }

@@ -15,7 +15,7 @@ public interface IProdutoRepositorio
         int tamanho,
         CancellationToken cancelamento = default);
 
-    Task<IReadOnlySet<int>> FiltrarExistentesAsync(IEnumerable<int> ids, CancellationToken cancelamento = default);
+    Task<IReadOnlyDictionary<int, string>> ObterNomesAsync(IEnumerable<int> ids, CancellationToken cancelamento = default);
 
     Task<bool> ExisteComNomeAsync(string nome, int? excetoId, CancellationToken cancelamento = default);
 

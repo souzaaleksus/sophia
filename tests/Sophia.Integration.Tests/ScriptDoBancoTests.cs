@@ -165,6 +165,30 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     }
 
     [Fact]
+    public async Task Banco_sem_o_nome_do_produto_gravado_na_venda_e_recusado_sem_nada_gravado()
+    {
+        await using var antigo = await BancoAvulso.CriarPeloScriptAsync(BancoDeTestes.Servidor, "Loja_Antiga");
+        await antigo.ConsultarAsync("ALTER TABLE dbo.VendaItens DROP COLUMN NomeDoProduto; SELECT N'pronto';");
+        var antes = await antigo.ConsultarAsync(ObjetosComData);
+
+        var rodar = antigo.ExecutarScriptDoBancoAsync;
+
+        (await rodar.Should().ThrowAsync<SqlException>()).Which.Message.Should()
+            .Contain(VersaoAnterior).And.Contain("VendaItens.NomeDoProduto");
+        (await antigo.ConsultarAsync(ObjetosComData)).Should().Equal(antes);
+    }
+
+    [Fact]
+    public async Task O_nome_do_produto_gravado_na_venda_e_obrigatorio_e_ignora_acentos()
+    {
+        (await banco.ConsultarAsync("""
+            SELECT CONCAT(TYPE_NAME(system_type_id), ':', max_length / 2, ':', CAST(is_nullable AS INT), ':', collation_name)
+            FROM sys.columns
+            WHERE object_id = OBJECT_ID(N'dbo.VendaItens') AND name = N'NomeDoProduto'
+            """)).Should().Equal("nvarchar:150:0:Latin1_General_CI_AI");
+    }
+
+    [Fact]
     public async Task Banco_com_parte_das_tabelas_do_sophia_e_recusado_sem_nada_gravado()
     {
         await using var antigo = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_Parcial");
@@ -237,9 +261,9 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         await banco.LimparAsync();
         await banco.ExecutarAsync(UmaVendaSemItens);
 
-        await banco.ExecutarAsync("INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 1, 999999, 2.50);");
+        await banco.ExecutarAsync("INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario) VALUES (1, 1, N'Caneta azul', 999999, 2.50);");
         var acimaDoTeto = () => banco.ExecutarAsync(
-            "INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 2, 1000000, 2.50);");
+            "INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario) VALUES (1, 2, N'Caderno', 1000000, 2.50);");
 
         (await acimaDoTeto.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("CK_VendaItens_QuantidadeMaxima");
         await banco.LimparAsync();
@@ -252,12 +276,12 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
         await banco.ExecutarAsync($"""
             {UmaVendaSemItens}
             INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Notebook', 999999.99);
-            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 1, 1, 999999.99);
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario) VALUES (1, 1, N'Caneta azul', 1, 999999.99);
             """);
 
         var produtoAcima = () => banco.ExecutarAsync("INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Servidor', 1000000.00);");
         var itemAcima = () => banco.ExecutarAsync(
-            "INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 2, 1, 1000000.00);");
+            "INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario) VALUES (1, 2, N'Caderno', 1, 1000000.00);");
 
         (await produtoAcima.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("CK_Produtos_ValorUnitarioMaximo");
         (await itemAcima.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("CK_VendaItens_ValorUnitarioMaximo");

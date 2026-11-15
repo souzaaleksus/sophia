@@ -66,6 +66,9 @@
   <data name="ProdutoRepetidoNaVenda" xml:space="preserve">
     <value>Este produto já foi lançado nesta venda; ajuste a quantidade na linha anterior.</value>
   </data>
+  <data name="ProdutoNaoEncontrado" xml:space="preserve">
+    <value>Produto não encontrado.</value>
+  </data>
   <data name="QuantidadeObrigatoria" xml:space="preserve">
     <value>Informe a quantidade.</value>
   </data>

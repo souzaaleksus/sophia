@@ -2,6 +2,7 @@ using Sophia.Application.Abstracoes;
 using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Produtos;
+using MensagensDoDominio = Sophia.Domain.Recursos.Mensagens;
 
 namespace Sophia.Application.Produtos;
 
@@ -12,7 +13,7 @@ public sealed class ProdutoServico(
 {
     private static readonly Ordenacao<ColunaDeProdutos> OrdemPadrao = new(ColunaDeProdutos.Nome, Decrescente: false);
     private static readonly Erro NomeDuplicado = new(nameof(DadosProduto.Nome), Mensagens.NomeDeProdutoDuplicado);
-    private static readonly Erro NaoEncontrado = new(string.Empty, Mensagens.ProdutoNaoEncontrado);
+    private static readonly Erro NaoEncontrado = new(string.Empty, MensagensDoDominio.ProdutoNaoEncontrado);
     private static readonly Erro JaVendido = new(string.Empty, Mensagens.ProdutoJaVendido);
 
     public async Task<Lista<ProdutoDto>> ListarAsync(ConsultaDeLista consulta, CancellationToken cancelamento = default)

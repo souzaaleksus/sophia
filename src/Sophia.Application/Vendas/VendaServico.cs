@@ -4,6 +4,7 @@ using Sophia.Application.Produtos;
 using Sophia.Application.Recursos;
 using Sophia.Domain;
 using Sophia.Domain.Vendas;
+using MensagensDoDominio = Sophia.Domain.Recursos.Mensagens;
 
 namespace Sophia.Application.Vendas;
 
@@ -41,7 +42,8 @@ public sealed class VendaServico(
 
     public async Task<Resultado<int>> RegistrarAsync(DadosVenda dados, CancellationToken cancelamento = default)
     {
-        var registro = Venda.Registrar(dados, relogio.Hoje, parametros.QuantidadeMaximaPorItem);
+        var nomes = await produtos.ObterNomesAsync(ProdutosInformados(dados), cancelamento);
+        var registro = Venda.Registrar(dados, relogio.Hoje, parametros.QuantidadeMaximaPorItem, nomes);
         if (!registro.Sucesso)
         {
             return Resultado.Falha<int>(registro.Erros);
@@ -53,11 +55,13 @@ public sealed class VendaServico(
             return ConferirReenvio(venda, existente);
         }
 
-        var erros = await VerificarCadastrosAsync(venda, cancelamento);
-        return erros.Count > 0
-            ? Resultado.Falha<int>(erros)
+        return await ClienteAusenteAsync(venda, cancelamento) is { } ausente
+            ? Resultado.Falha<int>(ausente)
             : await GravarAsync(venda, cancelamento);
     }
+
+    private static IEnumerable<int> ProdutosInformados(DadosVenda dados) =>
+        dados.Itens.Select(item => item.ProdutoId).OfType<int>().Where(id => id > 0);
 
     private static Resultado<int> ConferirReenvio(Venda enviada, Venda registrada) =>
         registrada.TemOMesmoConteudoQue(enviada)
@@ -97,21 +101,26 @@ public sealed class VendaServico(
     private async Task<Venda?> RegistradaPelaMesmaChaveAsync(Venda venda, CancellationToken cancelamento) =>
         venda.ChaveDeRegistro is { } chave ? await vendas.ObterPelaChaveAsync(chave, cancelamento) : null;
 
+    private async Task<Erro?> ClienteAusenteAsync(Venda venda, CancellationToken cancelamento) =>
+        await clientes.ExisteAsync(venda.ClienteId, cancelamento)
+            ? null
+            : new Erro(nameof(DadosVenda.ClienteId), Mensagens.ClienteNaoEncontrado);
+
     private async Task<List<Erro>> VerificarCadastrosAsync(Venda venda, CancellationToken cancelamento)
     {
         var erros = new List<Erro>();
-        if (!await clientes.ExisteAsync(venda.ClienteId, cancelamento))
+        if (await ClienteAusenteAsync(venda, cancelamento) is { } clienteAusente)
         {
-            erros.Add(new Erro(nameof(DadosVenda.ClienteId), Mensagens.ClienteNaoEncontrado));
+            erros.Add(clienteAusente);
         }
 
         var itens = venda.Itens.ToList();
-        var existentes = await produtos.FiltrarExistentesAsync(itens.Select(i => i.ProdutoId), cancelamento);
+        var existentes = await produtos.ObterNomesAsync(itens.Select(i => i.ProdutoId), cancelamento);
         for (var linha = 0; linha < itens.Count; linha++)
         {
-            if (!existentes.Contains(itens[linha].ProdutoId))
+            if (!existentes.ContainsKey(itens[linha].ProdutoId))
             {
-                erros.Add(new Erro(nameof(DadosItemVenda.ProdutoId), Mensagens.ProdutoNaoEncontrado, linha));
+                erros.Add(new Erro(nameof(DadosItemVenda.ProdutoId), MensagensDoDominio.ProdutoNaoEncontrado, linha));
             }
         }
 

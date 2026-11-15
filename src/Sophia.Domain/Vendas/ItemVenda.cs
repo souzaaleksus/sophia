@@ -4,11 +4,13 @@ public sealed class ItemVenda
 {
     private ItemVenda()
     {
+        NomeDoProduto = null!;
     }
 
-    internal ItemVenda(int produtoId, int quantidade, decimal valorUnitario)
+    internal ItemVenda(int produtoId, string nomeDoProduto, int quantidade, decimal valorUnitario)
     {
         ProdutoId = produtoId;
+        NomeDoProduto = nomeDoProduto;
         Quantidade = quantidade;
         ValorUnitario = valorUnitario;
     }
@@ -18,6 +20,8 @@ public sealed class ItemVenda
     public int VendaId { get; }
 
     public int ProdutoId { get; private set; }
+
+    public string NomeDoProduto { get; private set; }
 
     public int Quantidade { get; private set; }
 

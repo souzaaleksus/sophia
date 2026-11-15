@@ -25,6 +25,11 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
         (await banco.ConsultarAsync("SELECT CAST(MAX(Quantidade) AS VARCHAR(10)) FROM dbo.VendaItens"))
             .Select(maior => int.Parse(maior, System.Globalization.CultureInfo.InvariantCulture))
             .Should().ContainSingle().Which.Should().BeLessThanOrEqualTo(new Sophia.Application.ParametrosDoSophia().QuantidadeMaximaPorItem);
+        (await banco.ConsultarAsync("""
+            SELECT CAST(COUNT(*) AS VARCHAR(10)) FROM dbo.VendaItens i
+            JOIN dbo.Produtos p ON p.Id = i.ProdutoId
+            WHERE i.NomeDoProduto <> p.Nome COLLATE Latin1_General_BIN2
+            """)).Should().Equal("0");
     }
 
     [Fact]

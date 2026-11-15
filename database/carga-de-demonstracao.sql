@@ -1908,7 +1908,9 @@ INSERT INTO dbo.Vendas (Id, Data, ClienteId) VALUES
     (1461, DATEADD(DAY, -0, @Hoje), 140);
 SET IDENTITY_INSERT dbo.Vendas OFF;
 
-INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES
+INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+SELECT item.VendaId, item.ProdutoId, produto.Nome, item.Quantidade, item.ValorUnitario
+FROM (VALUES
     (1, 44, 3, 195.00),
     (2, 73, 1, 470.00),
     (2, 80, 6, 130.00),
@@ -2808,8 +2810,12 @@ INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUE
     (348, 72, 2, 586.00),
     (348, 24, 2, 47.00),
     (349, 56, 3, 616.50),
-    (350, 17, 1, 180.00);
-INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES
+    (350, 17, 1, 180.00)
+) AS item (VendaId, ProdutoId, Quantidade, ValorUnitario)
+JOIN dbo.Produtos produto ON produto.Id = item.ProdutoId;
+INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+SELECT item.VendaId, item.ProdutoId, produto.Nome, item.Quantidade, item.ValorUnitario
+FROM (VALUES
     (350, 54, 1, 1341.00),
     (351, 9, 2, 72.00),
     (351, 4, 1, 108.00),
@@ -3709,8 +3715,12 @@ INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUE
     (720, 9, 3, 72.00),
     (720, 86, 1, 1855.00),
     (721, 9, 3, 72.00),
-    (721, 27, 4, 43.00);
-INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES
+    (721, 27, 4, 43.00)
+) AS item (VendaId, ProdutoId, Quantidade, ValorUnitario)
+JOIN dbo.Produtos produto ON produto.Id = item.ProdutoId;
+INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+SELECT item.VendaId, item.ProdutoId, produto.Nome, item.Quantidade, item.ValorUnitario
+FROM (VALUES
     (721, 84, 3, 2195.10),
     (721, 67, 1, 100.00),
     (722, 13, 2, 250.00),
@@ -4610,8 +4620,12 @@ INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUE
     (1080, 9, 1, 72.00),
     (1080, 21, 6, 117.00),
     (1080, 23, 2, 347.00),
-    (1081, 24, 1, 47.00);
-INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES
+    (1081, 24, 1, 47.00)
+) AS item (VendaId, ProdutoId, Quantidade, ValorUnitario)
+JOIN dbo.Produtos produto ON produto.Id = item.ProdutoId;
+INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+SELECT item.VendaId, item.ProdutoId, produto.Nome, item.Quantidade, item.ValorUnitario
+FROM (VALUES
     (1082, 90, 2, 4195.00),
     (1082, 13, 2, 250.00),
     (1082, 31, 1, 112.00),
@@ -5511,8 +5525,12 @@ INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUE
     (1454, 17, 3, 162.00),
     (1454, 47, 2, 486.00),
     (1454, 5, 4, 170.00),
-    (1454, 23, 3, 347.00);
-INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES
+    (1454, 23, 3, 347.00)
+) AS item (VendaId, ProdutoId, Quantidade, ValorUnitario)
+JOIN dbo.Produtos produto ON produto.Id = item.ProdutoId;
+INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+SELECT item.VendaId, item.ProdutoId, produto.Nome, item.Quantidade, item.ValorUnitario
+FROM (VALUES
     (1455, 56, 1, 685.00),
     (1456, 51, 4, 487.00),
     (1456, 70, 10, 202.00),
@@ -5530,7 +5548,9 @@ INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUE
     (1460, 24, 3, 47.00),
     (1460, 80, 1, 130.00),
     (1461, 9, 4, 72.00),
-    (1461, 30, 4, 57.66);
+    (1461, 30, 4, 57.66)
+) AS item (VendaId, ProdutoId, Quantidade, ValorUnitario)
+JOIN dbo.Produtos produto ON produto.Id = item.ProdutoId;
 
 COMMIT TRANSACTION;
 

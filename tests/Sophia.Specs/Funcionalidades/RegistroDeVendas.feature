@@ -57,6 +57,13 @@ Funcionalidade: Registro de vendas
     Quando eu alterar o valor do produto "Caneta azul" para "3,00"
     Então a última venda continua com o total "10,00"
 
+  Cenário: Renomear o produto não muda o comprovante de vendas antigas
+    Dado que o cliente "Maria Santos" comprou 4 "Caneta azul"
+    Quando eu renomear o produto "Caneta azul" para "Caneta azul fina"
+    Então a alteração é aceita
+    E a última venda continua com o item "Caneta azul"
+    E o produto "Caneta azul fina" aparece na lista com o valor "2,50"
+
   Cenário: Não registrar venda sem itens
     Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 sem itens
     Então a venda é recusada com a mensagem "Lance ao menos um produto na venda." no campo "Itens"

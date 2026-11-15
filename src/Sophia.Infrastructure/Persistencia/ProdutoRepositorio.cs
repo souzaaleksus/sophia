@@ -44,17 +44,14 @@ public sealed class ProdutoRepositorio(SophiaDbContext contexto) : IProdutoRepos
         return new Pagina<Produto>(itens, numero, tamanho, total);
     }
 
-    public async Task<IReadOnlySet<int>> FiltrarExistentesAsync(
+    public async Task<IReadOnlyDictionary<int, string>> ObterNomesAsync(
         IEnumerable<int> ids,
         CancellationToken cancelamento = default)
     {
         var procurados = ids.Distinct().ToList();
-        var existentes = await contexto.Produtos
+        return await contexto.Produtos
             .Where(p => procurados.Contains(p.Id))
-            .Select(p => p.Id)
-            .ToListAsync(cancelamento);
-
-        return existentes.ToHashSet();
+            .ToDictionaryAsync(p => p.Id, p => p.Nome, cancelamento);
     }
 
     public Task<bool> ExisteComNomeAsync(string nome, int? excetoId, CancellationToken cancelamento = default) =>

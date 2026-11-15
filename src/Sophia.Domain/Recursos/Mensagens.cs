@@ -43,6 +43,8 @@ public static class Mensagens
 
     public static string ProdutoRepetidoNaVenda => Ler(nameof(ProdutoRepetidoNaVenda));
 
+    public static string ProdutoNaoEncontrado => Ler(nameof(ProdutoNaoEncontrado));
+
     public static string QuantidadeObrigatoria => Ler(nameof(QuantidadeObrigatoria));
 
     public static string QuantidadeNaoPositiva => Ler(nameof(QuantidadeNaoPositiva));
