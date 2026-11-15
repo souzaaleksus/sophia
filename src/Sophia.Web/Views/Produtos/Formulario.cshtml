@@ -31,6 +31,8 @@
                        autocomplete="off" aria-required="true" placeholder="0,00"
                        data-val-number="@MensagensDeValidacao.ValorInvalido"
                        data-val-maximo="@Mensagens.ValorUnitarioAcimaDoMaximo"
+                       data-val-maximo-valor="@Formato.Invariante(Sophia.Domain.RegrasComuns.MaiorValorAceito)"
+                       data-val-duascasas="@Mensagens.ValorUnitarioComMaisDeDuasCasas"
                        value="@ValorTentado.Ou(ViewData.ModelState, nameof(Model.ValorUnitario), Formato.Numero(Model.ValorUnitario))" />
             </div>
             <span class="campo-dica">Preço sugerido no caixa; pode ser ajustado em cada venda.</span>

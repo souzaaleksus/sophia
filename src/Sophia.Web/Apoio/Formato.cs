@@ -10,6 +10,8 @@ public static class Formato
 
     public static CultureInfo Cultura => PortuguesDoBrasil;
 
+    public static string Invariante(decimal valor) => valor.ToString(CultureInfo.InvariantCulture);
+
     public static string Moeda(decimal valor) => valor.ToString("C", PortuguesDoBrasil);
 
     public static string Numero(decimal? valor) => valor?.ToString("N2", PortuguesDoBrasil) ?? string.Empty;

@@ -182,10 +182,10 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
         var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
 
-        await valor.FillAsync("99999999999999999");
+        await valor.FillAsync("1.000.000,00");
         await valor.BlurAsync();
 
-        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("O valor unitário está acima do permitido.");
+        await Expect(_caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("O valor unitário aceita no máximo R$ 999.999,99.");
         await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
     }
 
@@ -490,10 +490,63 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         var aumentar = BotaoDaLinha(0, "Aumentar a quantidade");
 
         await aumentar.ClickAsync();
-        await aumentar.ClickAsync();
 
         await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("99999");
+        await Expect(aumentar).ToBeDisabledAsync();
         await Expect(_caixa.Total).ToHaveTextAsync("R$ 249.997,50");
+    }
+
+    [Fact]
+    public async Task Quantidade_acima_do_maximo_avisa_ao_sair_do_campo_sem_mudar_o_que_foi_digitado()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "150000");
+
+        await _caixa.QuantidadeDaLinha(0).BlurAsync();
+
+        await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("A quantidade aceita no máximo 99.999 por item.");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("150000");
+        await Expect(BotaoDaLinha(0, "Aumentar a quantidade")).ToBeDisabledAsync();
+    }
+
+    [Fact]
+    public async Task Diminuir_a_quantidade_acima_do_maximo_traz_para_o_teto_e_limpa_o_aviso()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "150000");
+        await _caixa.QuantidadeDaLinha(0).BlurAsync();
+
+        await BotaoDaLinha(0, "Diminuir a quantidade").ClickAsync();
+
+        await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("99999");
+        await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToBeEmptyAsync();
+        await Expect(_caixa.QuantidadeDaLinha(0)).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(BotaoDaLinha(0, "Aumentar a quantidade")).ToBeDisabledAsync();
+    }
+
+    [Fact]
+    public async Task Quantidade_abaixo_do_maximo_deixa_o_botao_de_aumentar_habilitado()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "99998");
+
+        await Expect(BotaoDaLinha(0, "Aumentar a quantidade")).ToBeEnabledAsync();
+    }
+
+    [Fact]
+    public async Task O_avatar_do_cliente_escolhido_e_o_mesmo_que_o_servidor_desenha()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        var avatar = _pagina.Locator("[data-cliente=avatar]");
+        var naTela = (await avatar.TextContentAsync(), await avatar.GetAttributeAsync("class"));
+
+        await _caixa.Finalizar.ClickAsync();
+        await Expect(_pagina.GetByRole(AriaRole.Alert)).ToContainTextAsync("Lance ao menos um produto na venda.");
+
+        naTela.Item1.Should().Be("MS");
+        (await avatar.TextContentAsync(), await avatar.GetAttributeAsync("class")).Should().Be(naTela);
     }
 
     [Fact]

@@ -1,6 +1,5 @@
 import { buscarJson, criarAutocompletar } from '../autocompletar.js';
 import { limparErro } from '../comum/erros.js';
-import { iniciais, tomDoAvatar } from '../formato.js';
 
 export function criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, aoEscolher) {
     const parte = nome => formulario.querySelector(`[data-cliente=${nome}]`);
@@ -16,6 +15,7 @@ export function criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, a
         cadastro: { texto: configuracao.textoCadastrarCliente, endereco: configuracao.enderecoNovoCliente },
         aoEscolher: cliente => {
             anterior = null;
+            mostrarAvatar(parte('avatar'), cliente);
             mostrarEscolhido(cliente);
             limparErro(formulario, 'ClienteId');
             aoEscolher();
@@ -31,7 +31,6 @@ export function criarEscolhaDeCliente(formulario, configuracao, textosDaBusca, a
         parte('cpf').value = cliente.cpf;
         parte('nome-exibido').textContent = cliente.nome;
         parte('cpf-exibido').textContent = cliente.cpf;
-        mostrarAvatar(parte('avatar'), cliente.nome);
         busca.hidden = true;
         escolhido.hidden = false;
     }
@@ -78,7 +77,7 @@ function ligarDevolucao(busca, devolver, aoDevolverPeloTeclado) {
     });
 }
 
-function mostrarAvatar(avatar, nome) {
-    avatar.textContent = iniciais(nome);
-    avatar.className = `avatar avatar-tom-${tomDoAvatar(nome)}`;
+function mostrarAvatar(avatar, cliente) {
+    avatar.textContent = cliente.iniciais;
+    avatar.className = `avatar avatar-tom-${cliente.tomDoAvatar}`;
 }

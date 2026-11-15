@@ -111,8 +111,8 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     [InlineData("0.500", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("10,", "Valor inválido. Use 12,50 ou 1.250,00.")]
     [InlineData("1,234.56", "Valor inválido. Use 12,50 ou 1.250,00.")]
-    [InlineData("1000000000000000000000000000000", "O valor unitário está acima do permitido.")]
-    [InlineData("99999999999999999", "O valor unitário está acima do permitido.")]
+    [InlineData("1000000000000000000000000000000", "O valor unitário aceita no máximo R$ 999.999,99.")]
+    [InlineData("1.000.000,00", "O valor unitário aceita no máximo R$ 999.999,99.")]
     public async Task Valor_em_forma_ambigua_ou_acima_do_aceito_e_recusado_no_campo(string digitado, string aviso)
     {
         await _pagina.GotoAsync("/Produtos/Novo");
@@ -140,6 +140,35 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
     }
 
+    [Theory]
+    [InlineData("12,505", "O valor unitário aceita no máximo duas casas decimais.")]
+    [InlineData("1.000.000,00", "O valor unitário aceita no máximo R$ 999.999,99.")]
+    public async Task Valor_fora_da_regra_avisa_ao_sair_do_campo_com_a_mensagem_do_servidor(string digitado, string aviso)
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        var valor = _pagina.GetByLabel("Valor unitário");
+
+        await valor.FillAsync(digitado);
+        await valor.BlurAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync(aviso);
+        await Expect(valor).ToHaveAttributeAsync("aria-invalid", "true");
+        await Expect(valor).ToHaveValueAsync(digitado);
+    }
+
+    [Fact]
+    public async Task O_maior_valor_aceito_nao_avisa_ao_sair_do_campo()
+    {
+        await _pagina.GotoAsync("/Produtos/Novo");
+        var valor = _pagina.GetByLabel("Valor unitário");
+
+        await valor.FillAsync("999.999,99");
+        await valor.BlurAsync();
+
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToBeEmptyAsync();
+        await Expect(valor).Not.ToHaveAttributeAsync("aria-invalid", "true");
+    }
+
     [Fact]
     public async Task Valor_lido_como_milhar_e_reescrito_ao_sair_do_campo()
     {
@@ -162,7 +191,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
 
-        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O valor unitário está acima do permitido.");
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O valor unitário aceita no máximo R$ 999.999,99.");
         await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("1000000000000000000000000000000");
     }
 

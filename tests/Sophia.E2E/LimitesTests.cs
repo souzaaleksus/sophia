@@ -9,7 +9,7 @@ namespace Sophia.E2E;
 [Collection(ColecaoDaAplicacao.Nome)]
 public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
 {
-    private const decimal PrecoAlto = 99_999_999_999.99m;
+    private const decimal PrecoAlto = 999_999.99m;
 
     private IPage _pagina = null!;
     private Cadastro _cadastro = null!;
@@ -34,10 +34,10 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
             INSERT INTO dbo.Vendas (Data, ClienteId) SELECT '{Cadastro.Hoje:yyyy-MM-dd}', {maria} FROM dbo.Produtos;
             DECLARE @primeiraVenda INT = (SELECT MIN(Id) FROM dbo.Vendas);
             DECLARE @primeiroProduto INT = (SELECT MIN(Id) FROM dbo.Produtos);
-            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario)
-            SELECT @primeiraVenda, Id, 999999, 0.01 FROM dbo.Produtos;
-            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario)
-            SELECT Id, @primeiroProduto, 999999, 0.01 FROM dbo.Vendas WHERE Id <> @primeiraVenda;
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+            SELECT @primeiraVenda, Id, Nome, 999999, 0.01 FROM dbo.Produtos;
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, NomeDoProduto, Quantidade, ValorUnitario)
+            SELECT Id, @primeiroProduto, (SELECT Nome FROM dbo.Produtos WHERE Id = @primeiroProduto), 999999, 0.01 FROM dbo.Vendas WHERE Id <> @primeiraVenda;
             """);
         var venda = int.Parse((await aplicacao.Banco.ConsultarAsync("SELECT CAST(MIN(Id) AS VARCHAR(10)) FROM dbo.Vendas")).Single(),
             System.Globalization.CultureInfo.InvariantCulture);
@@ -74,6 +74,62 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
         await Expect(caixa.Itens).ToHaveCountAsync(2);
     }
 
+    [Fact]
+    public async Task Valor_acima_do_maximo_avisa_ao_sair_do_campo_e_fica_fora_do_total()
+    {
+        await _cadastro.ProdutoAsync("Notebook de ouro", PrecoAlto);
+        await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
+        var caixa = new Caixa(_pagina);
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await caixa.LancarAsync(0, "Notebook", "Notebook de ouro", "99999");
+        var valor = caixa.Linha(0).GetByLabel("Valor unitário");
+
+        await valor.FillAsync("9.999.999.999.999.999,99");
+        await valor.BlurAsync();
+        await caixa.LancarAsync(1, "Caneta", "Caneta azul", "1");
+
+        await Expect(caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToHaveTextAsync("O valor unitário aceita no máximo R$ 999.999,99.");
+        await Expect(valor).ToHaveValueAsync("9.999.999.999.999.999,99");
+        await Expect(caixa.Linha(0).GetByTestId("subtotal")).ToHaveTextAsync("R$ 0,00");
+        await Expect(caixa.Total).ToHaveTextAsync("R$ 2,50");
+    }
+
+    [Fact]
+    public async Task O_maior_valor_aceito_vezes_a_maior_quantidade_mostra_o_total_certo()
+    {
+        await _cadastro.ProdutoAsync("Notebook de ouro", PrecoAlto);
+        var caixa = new Caixa(_pagina);
+        await _pagina.GotoAsync("/Vendas/Nova");
+
+        await caixa.LancarAsync(0, "Notebook", "Notebook de ouro", "99999");
+        await caixa.Linha(0).GetByLabel("Valor unitário").BlurAsync();
+
+        await Expect(caixa.Linha(0).GetByLabel("Valor unitário")).ToHaveValueAsync("999.999,99");
+        await Expect(caixa.Linha(0).Locator("[data-erro=ValorUnitario]")).ToBeEmptyAsync();
+        await Expect(caixa.Linha(0).GetByTestId("subtotal")).ToHaveTextAsync("R$ 99.998.999.000,01");
+        await Expect(caixa.Total).ToHaveTextAsync("R$ 99.998.999.000,01");
+    }
+
+    [Fact]
+    public async Task No_comprovante_a_375_px_o_maior_total_e_os_subtotais_ocupam_no_maximo_duas_linhas()
+    {
+        var maria = await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
+        var itens = new List<DadosItemVenda>();
+        foreach (var nome in new[] { "Notebook de ouro", "Relógio de ouro", "Anel de ouro", "Colar de ouro" })
+        {
+            itens.Add(new DadosItemVenda(await _cadastro.ProdutoAsync(nome, PrecoAlto), 99_999, PrecoAlto));
+        }
+
+        var venda = await _cadastro.VendaAsync(Cadastro.Hoje, maria, [.. itens]);
+        var pagina = await aplicacao.NovaPaginaAsync(375, 812);
+        await pagina.GotoAsync($"/Vendas/Detalhe/{venda}");
+        await Expect(pagina.GetByTestId("total-da-venda")).ToHaveTextAsync("R$ 399.995.996.000,04");
+
+        (await Medidas.LinhasDeTextoAsync(pagina, ".cupom-total strong, .cupom-itens td.valor:not(.coluna-opcional)"))
+            .Should().OnlyContain(medida => medida.Linhas <= 2, "a 375 px o total e os subtotais cabem em até duas linhas");
+        await pagina.Context.CloseAsync();
+    }
+
     [Theory]
     [InlineData(360, 740)]
     [InlineData(1280, 860)]
@@ -90,7 +146,7 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
         await caixa.LancarAsync(0, "Notebook", "Notebook de ouro", "99999");
         await caixa.LancarAsync(1, "Relógio", "Relógio de ouro", "99999");
         await caixa.LancarAsync(2, "Anel", "Anel de ouro", "99999");
-        await Expect(caixa.Total).ToHaveTextAsync("R$ 29.999.699.999.997.000,03");
+        await Expect(caixa.Total).ToHaveTextAsync("R$ 299.996.997.000,03");
 
         (await Medidas.RolagemLateralAsync(pagina)).Should().BeEmpty($"o caixa em {largura} px não pode rolar para o lado");
         (await Medidas.TransbordamentosAsync(pagina, ".visor-valor, .visor-detalhe, .caixa-subtotal, [data-testid=subtotal]"))
@@ -119,7 +175,7 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
 
         var pagina = await aplicacao.NovaPaginaAsync(largura, altura);
         await pagina.GotoAsync(endereco.Replace("{venda}", venda.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal));
-        await Expect(pagina.Locator("main")).ToContainTextAsync("9.999.899.999.999.000,01");
+        await Expect(pagina.Locator("main")).ToContainTextAsync("99.998.999.000,01");
 
         (await Medidas.RolagemLateralAsync(pagina)).Should().BeEmpty($"{endereco} em {largura} px não pode rolar para o lado");
         (await Medidas.RoladoresLateraisAsync(pagina)).Should().BeEmpty($"{endereco} em {largura} px não pode esconder o total numa rolagem");

@@ -88,9 +88,10 @@ class Linhas {
         campoDe(item, 'ValorUnitario').addEventListener('input', () => this.#corrigido(item, ['ValorUnitario']));
         campoDe(item, 'ValorUnitario').addEventListener('blur', () => this.#conferirValor(item));
         campoDe(item, 'Quantidade').addEventListener('input', () => this.#corrigido(item, ['Quantidade']));
+        campoDe(item, 'Quantidade').addEventListener('blur', () => this.#conferirQuantidade(item));
         campoDe(item, 'Quantidade').addEventListener('keydown', evento => this.#abrirProximaComEnter(evento));
-        item.querySelector('[data-acao=menos]').addEventListener('click', evento => this.#mudarQuantidade(item, -1, evento.detail === 0));
-        item.querySelector('[data-acao=mais]').addEventListener('click', () => this.#mudarQuantidade(item, 1));
+        item.querySelectorAll('[data-acao=menos], [data-acao=mais]').forEach(botao => botao.addEventListener('click', evento =>
+            this.#mudarQuantidade(item, evento.currentTarget, evento.detail === 0)));
         item.querySelector('[data-acao=remover-item]').addEventListener('click', () => this.#remover(item));
     }
 
@@ -133,9 +134,16 @@ class Linhas {
 
     #conferirValor(item) {
         const campo = campoDe(item, 'ValorUnitario');
-        const aviso = avisoDoValor(campo.value, this.#configuracao);
+        const aviso = avisoDoValor(campo, this.#configuracao);
         if (aviso) {
             mostrarErro(campo, aviso);
+        }
+    }
+
+    #conferirQuantidade(item) {
+        const campo = campoDe(item, 'Quantidade');
+        if ((lerInteiro(campo.value) ?? 0) > (lerInteiro(campo.max) ?? Infinity)) {
+            mostrarErro(campo, this.#configuracao.textoQuantidadeAcimaDoMaximo);
         }
     }
 
@@ -160,11 +168,12 @@ class Linhas {
         this.#aoSomar(produto, this.todas().indexOf(existente) + 1, somada <= atual);
     }
 
-    #mudarQuantidade(item, passo, peloTeclado = false) {
+    #mudarQuantidade(item, botao, peloTeclado) {
         const campo = campoDe(item, 'Quantidade');
+        const passo = botao.dataset.acao === 'mais' ? 1 : -1;
         campo.value = limitarQuantidade(campo, (lerInteiro(campo.value) ?? 0) + passo);
         this.#corrigido(item, ['Quantidade']);
-        if (peloTeclado && item.querySelector('[data-acao=menos]').disabled) {
+        if (peloTeclado && botao.disabled) {
             campo.focus();
         }
     }
@@ -184,7 +193,8 @@ class Linhas {
     }
 }
 
-function avisoDoValor(texto, configuracao) {
+function avisoDoValor(campo, configuracao) {
+    const texto = campo.value;
     if (texto.trim() === '') {
         return null;
     }
@@ -193,7 +203,7 @@ function avisoDoValor(texto, configuracao) {
         return configuracao.textoValorInvalido;
     }
 
-    if (lerDecimal(texto) === null) {
+    if (lerDecimal(texto) > lerDecimal(campo.dataset.valorMaximo)) {
         return configuracao.textoValorAcimaDoPermitido;
     }
 

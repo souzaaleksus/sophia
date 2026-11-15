@@ -61,12 +61,15 @@ public sealed class ParametrosAlteradosNaTelaTests(AplicacaoComParametrosAlterad
         await _cadastro.ProdutoAsync("Caneta azul", 2.50m);
         var caixa = new Caixa(_pagina);
         await _pagina.GotoAsync("/Vendas/Nova");
-        await caixa.LancarAsync(0, "Caneta", "Caneta azul", "500");
+        await caixa.LancarAsync(0, "Caneta", "Caneta azul", "501");
 
-        await caixa.Linha(0).GetByRole(AriaRole.Button, new() { Name = "Aumentar a quantidade", Exact = true }).ClickAsync();
+        await caixa.QuantidadeDaLinha(0).BlurAsync();
+        await Expect(caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("A quantidade aceita no máximo 500 por item.");
+        await caixa.Linha(0).GetByRole(AriaRole.Button, new() { Name = "Diminuir a quantidade", Exact = true }).ClickAsync();
 
         await Expect(caixa.QuantidadeDaLinha(0)).ToHaveAttributeAsync("max", "500");
         await Expect(caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("500");
+        await Expect(caixa.Linha(0).GetByRole(AriaRole.Button, new() { Name = "Aumentar a quantidade", Exact = true })).ToBeDisabledAsync();
     }
 
     private static string DataDoCampo(DateOnly data) => data.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
