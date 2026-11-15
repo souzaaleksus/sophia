@@ -31,6 +31,15 @@ public sealed class MensagensTests
         chaves.Should().BeEquivalentTo(NomesDosMembros());
     }
 
+    [Fact]
+    public void O_dominio_nao_expoe_as_mensagens_nem_as_regras_comuns()
+    {
+        var publicos = typeof(Erro).Assembly.GetExportedTypes();
+
+        publicos.Should().NotContain([typeof(Mensagens), typeof(RegrasComuns)]);
+        publicos.Should().NotContain(tipo => tipo.Namespace == typeof(Mensagens).Namespace);
+    }
+
     private static IEnumerable<string> NomesDosMembros() =>
         typeof(Mensagens).GetProperties(Publicos).Select(propriedade => propriedade.Name)
             .Concat(typeof(Mensagens).GetMethods(Publicos).Where(metodo => !metodo.IsSpecialName).Select(metodo => metodo.Name));

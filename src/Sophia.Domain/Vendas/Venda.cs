@@ -122,21 +122,28 @@ public sealed class Venda
 
     private static string? ValidarProduto(int? produtoId, LinhaDaVenda linha, List<Erro> erros)
     {
-        string? nome = null;
-        string? problema = produtoId switch
+        if (produtoId is null or <= 0)
         {
-            null or <= 0 => Mensagens.ProdutoNaoSelecionado,
-            _ when !linha.ProdutosLancados.Add(produtoId.Value) => Mensagens.ProdutoRepetidoNaVenda,
-            _ when !linha.Regras.NomesDosProdutos.TryGetValue(produtoId.Value, out nome) => Mensagens.ProdutoNaoEncontrado,
-            _ => null,
-        };
+            return Recusar(Mensagens.ProdutoNaoSelecionado);
+        }
 
-        if (problema is not null)
+        if (!linha.ProdutosLancados.Add(produtoId.Value))
         {
-            erros.Add(new Erro(nameof(DadosItemVenda.ProdutoId), problema, linha.Numero));
+            return Recusar(Mensagens.ProdutoRepetidoNaVenda);
+        }
+
+        if (!linha.Regras.NomesDosProdutos.TryGetValue(produtoId.Value, out var nome))
+        {
+            return Recusar(Mensagens.ProdutoNaoEncontrado);
         }
 
         return nome;
+
+        string? Recusar(string problema)
+        {
+            erros.Add(new Erro(nameof(DadosItemVenda.ProdutoId), problema, linha.Numero));
+            return null;
+        }
     }
 
     private static void ValidarQuantidade(int? quantidade, LinhaDaVenda linha, List<Erro> erros)

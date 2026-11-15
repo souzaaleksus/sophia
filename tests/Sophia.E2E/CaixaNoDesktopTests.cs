@@ -468,7 +468,7 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
-    public async Task Quantidade_acima_do_limite_avisa_o_maximo_e_mantem_o_que_foi_digitado()
+    public async Task Quantidade_alem_do_que_o_campo_comporta_avisa_e_mantem_o_que_foi_digitado()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
         await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
@@ -477,7 +477,7 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _caixa.Finalizar.ClickAsync();
 
-        await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("A quantidade aceita no máximo 99.999 por item.");
+        await Expect(_caixa.Linha(0).Locator("[data-erro=Quantidade]")).ToHaveTextAsync("O número é maior do que o campo aceita.");
         await Expect(_caixa.QuantidadeDaLinha(0)).ToHaveValueAsync("3000000000");
         (await new Cadastro(aplicacao.Banco).QuantidadeDeVendasAsync()).Should().Be(0);
     }

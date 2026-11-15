@@ -16,53 +16,20 @@ public sealed class NumeroNoFormularioTests
         erros.Should().Equal($"O valor \"{digitado}\" não é válido para Quantidade.");
     }
 
-    [Fact]
-    public async Task Quantidade_acima_do_que_o_servidor_comporta_avisa_o_maximo_por_item_com_a_mensagem_do_dominio()
-    {
-        var (resultado, erros) = await LigarAsync(nameof(Formulario.Quantidade), "99999999999");
-
-        resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("A quantidade aceita no máximo 99.999 por item.");
-    }
-
-    [Fact]
-    public async Task Quantidade_negativa_enorme_avisa_com_a_mensagem_do_dominio()
-    {
-        var (resultado, erros) = await LigarAsync(nameof(Formulario.Quantidade), "-99999999999");
-
-        resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("A quantidade deve ser maior que zero.");
-    }
-
     [Theory]
-    [InlineData("99999999999")]
-    [InlineData("-99999999999")]
-    public async Task Numero_enorme_em_campo_que_nao_e_quantidade_e_valor_invalido(string digitado)
+    [InlineData(nameof(Formulario.Quantidade), "99999999999", "O número é maior do que o campo aceita.")]
+    [InlineData(nameof(Formulario.Quantidade), "-99999999999", "O número é menor do que o campo aceita.")]
+    [InlineData(nameof(Formulario.Codigo), "99999999999", "O número é maior do que o campo aceita.")]
+    [InlineData(nameof(Formulario.Codigo), "-99999999999", "O número é menor do que o campo aceita.")]
+    [InlineData(nameof(Formulario.ValorUnitario), "1000000000000000000000000000000", "O número é maior do que o campo aceita.")]
+    [InlineData(nameof(Formulario.ValorUnitario), "1.000.000.000.000.000.000.000.000.000.000,00", "O número é maior do que o campo aceita.")]
+    [InlineData(nameof(Formulario.ValorUnitario), "-1000000000000000000000000000000", "O número é menor do que o campo aceita.")]
+    public async Task Numero_que_nao_cabe_no_tipo_do_campo_avisa_pela_leitura_sem_depender_do_nome_do_campo(string propriedade, string digitado, string mensagem)
     {
-        var (resultado, erros) = await LigarAsync(nameof(Formulario.Codigo), digitado);
+        var (resultado, erros) = await LigarAsync(propriedade, digitado);
 
         resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal($"O valor \"{digitado}\" não é válido para Codigo.");
-    }
-
-    [Theory]
-    [InlineData("1000000000000000000000000000000")]
-    [InlineData("1.000.000.000.000.000.000.000.000.000.000,00")]
-    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_avisa_com_a_mensagem_do_dominio(string digitado)
-    {
-        var (resultado, erros) = await LigarAsync(nameof(Formulario.ValorUnitario), digitado);
-
-        resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("O valor unitário aceita no máximo R$ 999.999,99.");
-    }
-
-    [Fact]
-    public async Task Valor_negativo_enorme_avisa_com_a_mensagem_do_dominio()
-    {
-        var (resultado, erros) = await LigarAsync(nameof(Formulario.ValorUnitario), "-1000000000000000000000000000000");
-
-        resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("O valor unitário deve ser maior que zero.");
+        erros.Should().Equal(mensagem);
     }
 
     [Theory]

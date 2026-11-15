@@ -6,6 +6,10 @@ public static class MensagensDeValidacao
 {
     public const string ValorInvalido = "Valor inválido. Use 12,50 ou 1.250,00.";
 
+    public const string NumeroMaiorQueOCampo = "O número é maior do que o campo aceita.";
+
+    public const string NumeroMenorQueOCampo = "O número é menor do que o campo aceita.";
+
     public static void TraduzirParaPortugues(DefaultModelBindingMessageProvider mensagens)
     {
         TraduzirValoresInvalidos(mensagens);

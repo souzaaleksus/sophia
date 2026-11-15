@@ -183,7 +183,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
-    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_enviado_direto_avisa_que_esta_acima_do_permitido()
+    public async Task Valor_com_mais_digitos_do_que_o_servidor_comporta_enviado_direto_avisa_que_o_numero_passa_do_campo()
     {
         await _pagina.GotoAsync("/Produtos/Novo");
         await _pagina.GetByLabel("Nome").FillAsync("Caneta azul");
@@ -191,7 +191,7 @@ public sealed class TelaDeProdutosTests(AplicacaoEmExecucao aplicacao) : IAsyncL
 
         await _pagina.Locator("main form").EvaluateAsync("formulario => HTMLFormElement.prototype.submit.call(formulario)");
 
-        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O valor unitário aceita no máximo R$ 999.999,99.");
+        await Expect(_pagina.Locator("[data-valmsg-for=ValorUnitario]")).ToHaveTextAsync("O número é maior do que o campo aceita.");
         await Expect(_pagina.GetByLabel("Valor unitário")).ToHaveValueAsync("1000000000000000000000000000000");
     }
 
