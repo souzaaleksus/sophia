@@ -244,6 +244,19 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task Quantidade_acima_do_maximo_fica_fora_do_subtotal_do_total_e_das_unidades()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+
+        await _caixa.LancarAsync(1, "Caderno", "Caderno 96 folhas", "150000");
+
+        await Expect(_caixa.Linha(1).GetByTestId("subtotal")).ToHaveTextAsync("R$ 0,00");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 2,50");
+        await Expect(_pagina.GetByTestId("unidades-da-venda")).ToHaveTextAsync("1 unidade");
+    }
+
+    [Fact]
     public async Task Valor_com_ponto_decimal_enviado_direto_grava_a_venda_com_centavos()
     {
         await _pagina.GotoAsync("/Vendas/Nova");

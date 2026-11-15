@@ -67,8 +67,7 @@ window.addEventListener('beforeunload', evento => {
 
 function recalcularTotais() {
     const itens = [...formulario.querySelectorAll('[data-itens] [data-item]')];
-    const dados = itens.map(lerLinha);
-    const soma = somarLinhas(dados);
-    itens.forEach((item, posicao) => mostrarSubtotal(item, soma.subtotaisEmCentavos[posicao], dados[posicao].quantidade));
+    const soma = somarLinhas(itens.map(lerLinha));
+    itens.forEach((item, posicao) => mostrarSubtotal(item, soma.subtotaisEmCentavos[posicao]));
     visor.mostrar(soma);
 }

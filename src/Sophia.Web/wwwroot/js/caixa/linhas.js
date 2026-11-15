@@ -203,7 +203,7 @@ function avisoDoValor(campo, configuracao) {
         return configuracao.textoValorInvalido;
     }
 
-    if (lerDecimal(texto) > lerDecimal(campo.dataset.valorMaximo)) {
+    if (lerDecimal(texto) > (lerDecimal(campo.dataset.valorMaximo) ?? Infinity)) {
         return configuracao.textoValorAcimaDoPermitido;
     }
 
