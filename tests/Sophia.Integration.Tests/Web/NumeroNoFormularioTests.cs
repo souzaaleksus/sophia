@@ -53,7 +53,7 @@ public sealed class NumeroNoFormularioTests
         var (resultado, erros) = await LigarAsync(nameof(Formulario.ValorUnitario), digitado);
 
         resultado.IsModelSet.Should().BeFalse();
-        erros.Should().Equal("O valor unitário está acima do permitido.");
+        erros.Should().Equal("O valor unitário aceita no máximo R$ 999.999,99.");
     }
 
     [Fact]
