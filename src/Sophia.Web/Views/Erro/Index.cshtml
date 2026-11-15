@@ -12,12 +12,12 @@
     var area = AreaDoEndereco.De(caminho);
     var (destino, rotuloDoDestino) = area switch
     {
-        AreaDoEndereco.Clientes => (AreaDoEndereco.Clientes, T["erro.ir-para-os-clientes"]),
-        AreaDoEndereco.Produtos => (AreaDoEndereco.Produtos, T["erro.ir-para-os-produtos"]),
-        AreaDoEndereco.Vendas => (AreaDoEndereco.Vendas, T["erro.ir-para-as-vendas"]),
-        _ => (AreaDoEndereco.Painel, T["erro.ir-para-o-painel"]),
+        AreaDoEndereco.Clientes => (AreaDoEndereco.Clientes, "Ir para os clientes"),
+        AreaDoEndereco.Produtos => (AreaDoEndereco.Produtos, "Ir para os produtos"),
+        AreaDoEndereco.Vendas => (AreaDoEndereco.Vendas, "Ir para as vendas"),
+        _ => (AreaDoEndereco.Painel, "Ir para o painel"),
     };
-    ViewData["Title"] = naoEncontrado ? T["erro.nao-encontrada"].Value : T["erro.algo-deu-errado"].Value;
+    ViewData["Title"] = naoEncontrado ? "Página não encontrada" : "Algo deu errado";
 }
 
 <div class="vazio">
@@ -25,23 +25,23 @@
     <h1>@ViewData["Title"]</h1>
     @if (naoEncontrado)
     {
-        <p>@T["erro.nao-existe"]</p>
+        <p>O endereço não existe ou o registro foi excluído.</p>
     }
     else if (consultaInvalida && area == AreaDoEndereco.Painel)
     {
-        <p>@T["erro.endereco-invalido-no-painel"]</p>
+        <p>O endereço tem um valor que não foi entendido. Volte ao painel e tente de novo.</p>
     }
     else if (consultaInvalida)
     {
-        <p>@T["erro.endereco-invalido"]</p>
+        <p>O endereço tem um valor que não foi entendido. Volte à lista e tente de novo.</p>
     }
     else if (envioInvalido)
     {
-        <p>@T["erro.envio-nao-conferido"]</p>
+        <p>Não foi possível conferir o envio do formulário. Recarregue a página e tente de novo.</p>
     }
     else
     {
-        <p>@T["erro.tente-de-novo"]</p>
+        <p>Não foi possível concluir a operação. Tente de novo em instantes.</p>
     }
     <a class="btn btn-primary" asp-controller="@destino" asp-action="Index">@rotuloDoDestino</a>
 </div>

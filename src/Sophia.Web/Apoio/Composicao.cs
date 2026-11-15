@@ -1,7 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Localization;
 using Sophia.Application;
 using Sophia.Infrastructure;
 
@@ -25,15 +24,11 @@ public static class Composicao
 
     public static IServiceCollection AdicionarMvc(this IServiceCollection servicos)
     {
-        servicos.AddLocalization(opcoes => opcoes.ResourcesPath = Textos.Pasta);
-        servicos
-            .AddControllersWithViews(opcoes => opcoes.UsarDatasIso().RecusarConsultasInvalidas().Filters.Add(new AutoValidateAntiforgeryTokenAttribute()))
-            .AddDataAnnotationsLocalization(opcoes =>
-                opcoes.DataAnnotationLocalizerProvider = (_, fabrica) => fabrica.Create(typeof(Textos)));
-        servicos
-            .AddOptions<MvcOptions>()
-            .Configure<IStringLocalizerFactory>((opcoes, fabrica) =>
-                MensagensDeValidacao.TraduzirParaPortugues(opcoes.ModelBindingMessageProvider, fabrica.Create(typeof(Textos))));
+        servicos.AddControllersWithViews(opcoes =>
+        {
+            opcoes.UsarDatasIso().RecusarConsultasInvalidas().Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+            MensagensDeValidacao.TraduzirParaPortugues(opcoes.ModelBindingMessageProvider);
+        });
         return servicos;
     }
 

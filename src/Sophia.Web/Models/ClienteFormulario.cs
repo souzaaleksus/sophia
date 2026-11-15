@@ -10,25 +10,25 @@ public sealed class ClienteFormulario : IFormularioDeCadastro<DadosCliente>
 {
     public int? Id { get; set; }
 
-    [Display(Name = "campo.cpf")]
+    [Display(Name = "CPF")]
     [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.CpfObrigatorio))]
     public string? Cpf { get; set; }
 
-    [Display(Name = "campo.nome")]
+    [Display(Name = "Nome")]
     [Required(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.NomeObrigatorio))]
     [TamanhoDoNome(Cliente.TamanhoMaximoNome)]
     public string? Nome { get; set; }
 
-    [Display(Name = "campo.data-de-nascimento")]
+    [Display(Name = "Data de nascimento")]
     [DataBrasileira(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.DataDeNascimentoInvalida))]
     public string? DataNascimento { get; set; }
 
-    [Display(Name = "campo.email")]
+    [Display(Name = "E-mail")]
     [EmailAddress(ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.EmailInvalido))]
     [StringLength(Cliente.TamanhoMaximoEmail, ErrorMessageResourceType = typeof(Mensagens), ErrorMessageResourceName = nameof(Mensagens.EmailInvalido))]
     public string? Email { get; set; }
 
-    [Display(Name = "campo.telefone")]
+    [Display(Name = "Telefone")]
     public string? Telefone { get; set; }
 
     public bool EhNovo => Id is null;

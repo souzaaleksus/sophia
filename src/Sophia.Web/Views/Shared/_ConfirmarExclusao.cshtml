@@ -1,5 +1,5 @@
 <dialog class="dialogo" id="confirmar-exclusao" aria-labelledby="confirmar-exclusao-titulo" aria-describedby="confirmar-exclusao-aviso">
-    <form method="post" class="dialogo-conteudo" data-envio data-texto-enviando="@T["exclusao.excluindo"]">
+    <form method="post" class="dialogo-conteudo" data-envio data-texto-enviando="Excluindo…">
         <h2 id="confirmar-exclusao-titulo" data-dialogo="titulo"></h2>
         <p class="dialogo-registro">
             <strong data-dialogo="nome"></strong>
@@ -7,10 +7,10 @@
         </p>
         <p class="dialogo-aviso" id="confirmar-exclusao-aviso" data-dialogo="aviso"></p>
         <div class="dialogo-acoes">
-            <button type="button" class="btn btn-outline-secondary" data-dialogo="cancelar">@T["formulario.cancelar"]</button>
+            <button type="button" class="btn btn-outline-secondary" data-dialogo="cancelar">Cancelar</button>
             <button type="submit" class="btn btn-danger">
                 <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
-                @T["acao.excluir"]
+                Excluir
             </button>
         </div>
     </form>

@@ -62,19 +62,19 @@ internal static class FormularioNoServidor
 
     public sealed class Formulario
     {
-        [Display(Name = "campo.quantidade")]
+        [Display(Name = "Quantidade")]
         public int? Quantidade { get; set; }
 
-        [Display(Name = "campo.quantidade")]
+        [Display(Name = "Quantidade")]
         public int QuantidadeExigida { get; set; }
 
-        [Display(Name = "campo.valor-unitario")]
+        [Display(Name = "Valor unitário")]
         public decimal? ValorUnitario { get; set; }
 
-        [Display(Name = "campo.valor-unitario")]
+        [Display(Name = "Valor unitário")]
         public decimal ValorUnitarioExigido { get; set; }
 
-        [Display(Name = "campo.data-da-venda")]
+        [Display(Name = "Data da venda")]
         public DateOnly DataExigida { get; set; }
     }
 }

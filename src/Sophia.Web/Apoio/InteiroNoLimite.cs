@@ -44,8 +44,7 @@ public static partial class InteiroNoLimite
                 return MaiorQueZero(contexto);
             }
 
-            var textos = TextosDe(contexto);
-            return textos["binder.numero-acima-do-maximo-no-campo", contexto.ModelMetadata.GetDisplayName(), int.MaxValue.ToString("N0", Formato.Cultura)];
+            return $"{contexto.ModelMetadata.GetDisplayName()} aceita no máximo {int.MaxValue.ToString("N0", Formato.Cultura)}.";
         }
     }
 }

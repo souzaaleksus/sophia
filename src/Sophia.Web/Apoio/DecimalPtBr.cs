@@ -63,7 +63,7 @@ public static partial class DecimalPtBr
             var (numero, negativo) = Separar(texto);
             if (numero is null)
             {
-                recusa = EscritaInvalida(contexto);
+                recusa = MensagensDeValidacao.ValorInvalido;
                 return null;
             }
 
@@ -77,16 +77,7 @@ public static partial class DecimalPtBr
             return negativo ? -valor : valor;
         }
 
-        private static string EscritaInvalida(ModelBindingContext contexto)
-        {
-            var textos = TextosDe(contexto);
-            return textos["validacao.valor-invalido"];
-        }
-
-        private static string AcimaDoPermitido(ModelBindingContext contexto)
-        {
-            var textos = TextosDe(contexto);
-            return textos["binder.numero-acima-do-permitido-no-campo", contexto.ModelMetadata.GetDisplayName()];
-        }
+        private static string AcimaDoPermitido(ModelBindingContext contexto) =>
+            $"{contexto.ModelMetadata.GetDisplayName()} está acima do permitido.";
     }
 }

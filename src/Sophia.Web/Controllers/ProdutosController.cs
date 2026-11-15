@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Localization;
 using Sophia.Application;
 using Sophia.Application.Produtos;
 using Sophia.Domain.Produtos;
@@ -8,11 +7,10 @@ namespace Sophia.Web.Controllers;
 
 public sealed class ProdutosController(
     IServicoDeCadastro<ProdutoDto, DadosProduto> produtos,
-    ParametrosDoSophia parametros,
-    IStringLocalizer<Textos> textos)
+    ParametrosDoSophia parametros)
     : CadastroController<ProdutoDto, ProdutoFormulario, DadosProduto>(
         produtos,
-        new(textos["produtos.cadastrado"], textos["produtos.alterado"], textos["produtos.excluido"]),
+        new("Produto cadastrado.", "Produto alterado.", "Produto excluído."),
         parametros)
 {
     protected override ProdutoFormulario ParaFormulario(ProdutoDto registro) => ProdutoFormulario.De(registro);

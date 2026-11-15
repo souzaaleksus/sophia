@@ -7,19 +7,19 @@
     </div>
 </div>
 
-<form class="cartao formulario" method="post" asp-action="Excluir" asp-route-id="@Model.Id" data-envio data-texto-enviando="@T["exclusao.excluindo"]">
+<form class="cartao formulario" method="post" asp-action="Excluir" asp-route-id="@Model.Id" data-envio data-texto-enviando="Excluindo…">
     <dl class="resumo-de-registro">
-        <dt>@T["campo.nome"]</dt>
+        <dt>Nome</dt>
         <dd>@Model.Nome</dd>
         <dt>@Model.RotuloDoDetalhe</dt>
         <dd>@Model.Detalhe</dd>
     </dl>
 
     <div class="rodape-do-formulario">
-        <a class="btn btn-outline-secondary" asp-action="Index">@T["formulario.cancelar"]</a>
+        <a class="btn btn-outline-secondary" asp-action="Index">Cancelar</a>
         <button type="submit" class="btn btn-danger">
             <svg class="icone" aria-hidden="true"><use href="#icone-excluir" /></svg>
-            @T["acao.excluir"]
+            Excluir
         </button>
     </div>
 </form>
