@@ -20,7 +20,8 @@ public sealed partial class FrasesSemRepeticaoNasViewsTests
 
     [Theory]
     [InlineData("<p class=\"vazio-titulo\">Nenhuma venda registrada ainda.</p>", "Nenhuma venda registrada ainda.")]
-    [InlineData("data-confirmar-aviso=\"A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.\">", "A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.")]
+    [InlineData("data-texto=\"A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.\">", "A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.")]
+    [InlineData("A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.\n", "A exclusão não pode ser desfeita. Clientes com vendas não podem ser excluídos.")]
     [InlineData("        \"A exclusão não pode ser desfeita. Produtos já vendidos não podem ser excluídos.\",", "A exclusão não pode ser desfeita. Produtos já vendidos não podem ser excluídos.")]
     [InlineData("<a>\n    Escolha o cliente, lance os produtos e finalize.\n</a>", "Escolha o cliente, lance os produtos e finalize.")]
     public void A_frase_e_achada_no_texto_no_atributo_e_no_codigo(string trecho, string frase)
@@ -40,6 +41,7 @@ public sealed partial class FrasesSemRepeticaoNasViewsTests
     private static IEnumerable<string> FrasesDe(string conteudo) =>
         EntreMarcas().Matches(conteudo).SelectMany(achado => achado.Groups[1].Value.Split('\n'))
             .Concat(EntreAspas().Matches(conteudo).Select(achado => achado.Groups[1].Value))
+            .Concat(conteudo.Split('\n').Where(linha => !linha.Contains('"', StringComparison.Ordinal)))
             .Select(trecho => Espacos().Replace(trecho, " ").Trim())
             .Where(trecho => trecho.Length >= TamanhoMinimo && Frase().IsMatch(trecho) && !trecho.Contains('@', StringComparison.Ordinal));
 
