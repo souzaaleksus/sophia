@@ -1,5 +1,7 @@
 # Sophia — Controle de Venda
 
+[![Testes](https://github.com/souzaaleksus/sophia/actions/workflows/testes.yml/badge.svg?branch=main)](https://github.com/souzaaleksus/sophia/actions/workflows/testes.yml)
+
 Aplicação web para o controle de vendas a clientes, em **ASP.NET Core MVC (.NET 10)**, **C#** e
 **SQL Server**, com cadastro de clientes, produtos e vendas.
 
@@ -252,7 +254,10 @@ cd sophia
 ### Caminho A — Docker
 
 Pré-requisito: Docker com o plugin Compose (Docker Desktop no Windows/macOS ou Docker Engine
-no Linux/WSL).
+no Linux/WSL). Sem Docker na máquina, o caminho pode ser conferido no job `docker` do
+[CI](https://github.com/souzaaleksus/sophia/actions/workflows/testes.yml), que a cada PR sobe
+este mesmo `docker compose`, abre o painel com a carga de demonstração e confere que o login da
+aplicação não consegue criar tabela.
 
 1. Suba a aplicação e o banco:
 
