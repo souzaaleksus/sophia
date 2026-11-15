@@ -4,6 +4,8 @@ namespace Sophia.Domain.Vendas;
 
 public sealed class Venda
 {
+    public const int QuantidadeMaximaAceita = 999_999;
+
     private readonly List<ItemVenda> _itens = [];
 
     private Venda()
@@ -32,6 +34,7 @@ public sealed class Venda
 
     public static Resultado<Venda> Registrar(DadosVenda dados, DateOnly hoje, int quantidadeMaximaPorItem)
     {
+        ExigirTetoNaFaixa(quantidadeMaximaPorItem);
         var erros = new List<Erro>();
         ValidarData(dados.Data, hoje, erros);
         ValidarCliente(dados.ClienteId, erros);
@@ -50,6 +53,12 @@ public sealed class Venda
         };
         venda._itens.AddRange(itens);
         return Resultado.Ok(venda);
+    }
+
+    private static void ExigirTetoNaFaixa(int quantidadeMaximaPorItem)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(quantidadeMaximaPorItem, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(quantidadeMaximaPorItem, QuantidadeMaximaAceita);
     }
 
     private static void ValidarData(DateOnly? data, DateOnly hoje, List<Erro> erros)

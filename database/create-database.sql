@@ -16,9 +16,9 @@ INSERT INTO @esperado (Item)
 SELECT CONCAT(tabela.Nome, N'.', item.value)
 FROM (VALUES
     (N'Clientes', N'Id,Cpf Latin1_General_CI_AS,Nome Latin1_General_CI_AI,DataNascimento,Email Latin1_General_CI_AS,Telefone Latin1_General_CI_AS,PK_Clientes,UQ_Clientes_Cpf,CK_Clientes_Cpf_SomenteDigitos,CK_Clientes_Telefone_SomenteDigitos,IX_Clientes_Nome'),
-    (N'Produtos', N'Id,Nome Latin1_General_CI_AI,ValorUnitario,PK_Produtos,UQ_Produtos_Nome,CK_Produtos_ValorUnitario_Positivo'),
+    (N'Produtos', N'Id,Nome Latin1_General_CI_AI,ValorUnitario,PK_Produtos,UQ_Produtos_Nome,CK_Produtos_ValorUnitario_Positivo,CK_Produtos_ValorUnitarioMaximo'),
     (N'Vendas', N'Id,Data,ClienteId,ChaveDeRegistro,PK_Vendas,FK_Vendas_Clientes,IX_Vendas_ClienteId,IX_Vendas_Data,UQ_Vendas_ChaveDeRegistro'),
-    (N'VendaItens', N'Id,VendaId,ProdutoId,Quantidade,ValorUnitario,PK_VendaItens,FK_VendaItens_Vendas,FK_VendaItens_Produtos,UQ_VendaItens_Venda_Produto,CK_VendaItens_Quantidade_Positiva,CK_VendaItens_QuantidadeMaxima,CK_VendaItens_ValorUnitario_Positivo,IX_VendaItens_ProdutoId')
+    (N'VendaItens', N'Id,VendaId,ProdutoId,Quantidade,ValorUnitario,PK_VendaItens,FK_VendaItens_Vendas,FK_VendaItens_Produtos,UQ_VendaItens_Venda_Produto,CK_VendaItens_Quantidade_Positiva,CK_VendaItens_QuantidadeMaxima,CK_VendaItens_ValorUnitario_Positivo,CK_VendaItens_ValorUnitarioMaximo,IX_VendaItens_ProdutoId')
 ) AS tabela (Nome, Itens)
 CROSS APPLY STRING_SPLIT(tabela.Itens, N',') AS item;
 
@@ -92,7 +92,8 @@ BEGIN
         ValorUnitario DECIMAL(18, 2)                NOT NULL,
         CONSTRAINT PK_Produtos PRIMARY KEY CLUSTERED (Id),
         CONSTRAINT UQ_Produtos_Nome UNIQUE (Nome),
-        CONSTRAINT CK_Produtos_ValorUnitario_Positivo CHECK (ValorUnitario > 0)
+        CONSTRAINT CK_Produtos_ValorUnitario_Positivo CHECK (ValorUnitario > 0),
+        CONSTRAINT CK_Produtos_ValorUnitarioMaximo CHECK (ValorUnitario <= 999999.99)
     );
 
     CREATE TABLE dbo.Vendas
@@ -122,7 +123,8 @@ BEGIN
         CONSTRAINT UQ_VendaItens_Venda_Produto UNIQUE (VendaId, ProdutoId),
         CONSTRAINT CK_VendaItens_Quantidade_Positiva CHECK (Quantidade > 0),
         CONSTRAINT CK_VendaItens_QuantidadeMaxima CHECK (Quantidade <= 999999),
-        CONSTRAINT CK_VendaItens_ValorUnitario_Positivo CHECK (ValorUnitario > 0)
+        CONSTRAINT CK_VendaItens_ValorUnitario_Positivo CHECK (ValorUnitario > 0),
+        CONSTRAINT CK_VendaItens_ValorUnitarioMaximo CHECK (ValorUnitario <= 999999.99)
     );
     CREATE NONCLUSTERED INDEX IX_VendaItens_ProdutoId ON dbo.VendaItens (ProdutoId);
 

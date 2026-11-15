@@ -159,6 +159,56 @@ public sealed class VendaTests
     }
 
     [Fact]
+    public void Aceita_o_maior_valor_unitario_no_item()
+    {
+        var resultado = Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 999_999.99m)]), Hoje, Teto);
+
+        resultado.Valor.Total.Should().Be(999_999.99m);
+    }
+
+    [Fact]
+    public void Recusa_valor_do_item_acima_do_maior_valor_unitario_apontando_a_linha()
+    {
+        var itens = new[]
+        {
+            new DadosItemVenda(Caneta, 1, 2.50m),
+            new DadosItemVenda(Caderno, 1, 1_000_000.00m),
+        };
+
+        var resultado = Venda.Registrar(new DadosVenda(Hoje, Maria, itens), Hoje, Teto);
+
+        resultado.Erros.Should().ContainSingle()
+            .Which.Should().Be(new Erro("ValorUnitario", "O valor unitário aceita no máximo R$ 999.999,99.", 1));
+    }
+
+    [Fact]
+    public void O_maior_teto_de_quantidade_aceito_e_999_999()
+    {
+        Venda.QuantidadeMaximaAceita.Should().Be(999_999);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(1_000_000)]
+    public void Teto_de_quantidade_fora_da_faixa_e_erro_de_programacao(int teto)
+    {
+        var registrar = () => Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 2.50m)]), Hoje, teto);
+
+        registrar.Should().Throw<ArgumentOutOfRangeException>().Which.ParamName.Should().Be("quantidadeMaximaPorItem");
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(999_999)]
+    public void As_pontas_da_faixa_do_teto_sao_aceitas(int teto)
+    {
+        var resultado = Venda.Registrar(new DadosVenda(Hoje, Maria, [new DadosItemVenda(Caneta, 1, 2.50m)]), Hoje, teto);
+
+        resultado.Sucesso.Should().BeTrue();
+    }
+
+    [Fact]
     public void Recusa_o_mesmo_produto_em_duas_linhas()
     {
         var itens = new[]

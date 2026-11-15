@@ -76,12 +76,23 @@ public sealed class ProdutoTests
     }
 
     [Fact]
-    public void Recusa_valor_acima_do_que_o_banco_comporta()
+    public void Aceita_o_maior_valor_unitario()
     {
-        var resultado = Produto.Criar(new DadosProduto("Lápis", 10_000_000_000_000_000m));
+        var resultado = Produto.Criar(new DadosProduto("Lápis", 999_999.99m));
+
+        resultado.Sucesso.Should().BeTrue();
+        resultado.Valor.ValorUnitario.Should().Be(RegrasComuns.MaiorValorAceito).And.Be(999_999.99m);
+    }
+
+    [Theory]
+    [InlineData(1_000_000.00)]
+    [InlineData(9_999_999_999_999_999.99)]
+    public void Recusa_valor_acima_do_maior_valor_unitario(decimal valor)
+    {
+        var resultado = Produto.Criar(new DadosProduto("Lápis", valor));
 
         resultado.Erros.Should().ContainSingle()
-            .Which.Should().Be(new Erro("ValorUnitario", "O valor unitário está acima do permitido."));
+            .Which.Should().Be(new Erro("ValorUnitario", "O valor unitário aceita no máximo R$ 999.999,99."));
     }
 
     [Fact]

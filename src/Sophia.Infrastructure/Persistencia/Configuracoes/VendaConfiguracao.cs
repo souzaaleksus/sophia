@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Sophia.Application;
+using Sophia.Domain;
 using Sophia.Domain.Clientes;
 using Sophia.Domain.Produtos;
 using Sophia.Domain.Vendas;
@@ -67,8 +67,9 @@ internal sealed class ItemVendaConfiguracao : IEntityTypeConfiguration<ItemVenda
             tabela.HasCheckConstraint("CK_VendaItens_Quantidade_Positiva", "Quantidade > 0");
             tabela.HasCheckConstraint(
                 "CK_VendaItens_QuantidadeMaxima",
-                string.Create(CultureInfo.InvariantCulture, $"Quantidade <= {ParametrosDoSophia.QuantidadeMaximaAceita}"));
+                string.Create(CultureInfo.InvariantCulture, $"Quantidade <= {Venda.QuantidadeMaximaAceita}"));
             tabela.HasCheckConstraint("CK_VendaItens_ValorUnitario_Positivo", "ValorUnitario > 0");
+            tabela.HasCheckConstraint("CK_VendaItens_ValorUnitarioMaximo", TetoDoValor.Sql);
         });
 
     private static void ConfigurarProduto(EntityTypeBuilder<ItemVenda> item) =>

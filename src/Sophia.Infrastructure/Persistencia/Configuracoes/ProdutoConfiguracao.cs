@@ -9,7 +9,10 @@ internal sealed class ProdutoConfiguracao : IEntityTypeConfiguration<Produto>
     public void Configure(EntityTypeBuilder<Produto> produto)
     {
         produto.ToTable("Produtos", tabela =>
-            tabela.HasCheckConstraint("CK_Produtos_ValorUnitario_Positivo", "ValorUnitario > 0"));
+        {
+            tabela.HasCheckConstraint("CK_Produtos_ValorUnitario_Positivo", "ValorUnitario > 0");
+            tabela.HasCheckConstraint("CK_Produtos_ValorUnitarioMaximo", TetoDoValor.Sql);
+        });
         produto.HasKey(p => p.Id);
 
         produto.Property(p => p.Nome)

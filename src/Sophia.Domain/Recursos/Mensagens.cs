@@ -26,7 +26,8 @@ public static class Mensagens
 
     public static string ValorUnitarioNaoPositivo => Ler(nameof(ValorUnitarioNaoPositivo));
 
-    public static string ValorUnitarioAcimaDoPermitido => Ler(nameof(ValorUnitarioAcimaDoPermitido));
+    public static string ValorUnitarioAcimaDoMaximo =>
+        string.Format(PortuguesDoBrasil, Ler(nameof(ValorUnitarioAcimaDoMaximo)), RegrasComuns.MaiorValorAceito.ToString("N2", PortuguesDoBrasil));
 
     public static string ValorUnitarioComMaisDeDuasCasas => Ler(nameof(ValorUnitarioComMaisDeDuasCasas));
 

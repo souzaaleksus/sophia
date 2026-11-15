@@ -80,9 +80,17 @@ Funcionalidade: Registro de vendas
     Então a venda é recusada com a mensagem "<Mensagem>" no campo "<Campo>"
 
     Exemplos:
-      | Quantidade | Valor | Campo                  | Mensagem                                  |
-      | 0          | 2,50  | Itens[0].Quantidade    | A quantidade deve ser maior que zero.     |
-      | 1          | 0,00  | Itens[0].ValorUnitario | O valor unitário deve ser maior que zero. |
+      | Quantidade | Valor        | Campo                  | Mensagem                                         |
+      | 0          | 2,50         | Itens[0].Quantidade    | A quantidade deve ser maior que zero.            |
+      | 1          | 0,00         | Itens[0].ValorUnitario | O valor unitário deve ser maior que zero.        |
+      | 1          | 1.000.000,00 | Itens[0].ValorUnitario | O valor unitário aceita no máximo R$ 999.999,99. |
+
+  Cenário: O valor unitário do item vai até R$ 999.999,99
+    Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens
+      | Produto     | Quantidade | ValorUnitario |
+      | Caneta azul | 2          | 999.999,99    |
+    Então a venda é registrada
+    E o total da venda é "1.999.999,98"
 
   Cenário: Quantidade acima do máximo por item é recusada
     Quando eu registrar uma venda para o cliente "Maria Santos" em 13/11/2026 com os itens

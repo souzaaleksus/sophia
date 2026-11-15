@@ -246,6 +246,25 @@ public sealed class ScriptDoBancoTests(BancoDeTestes banco)
     }
 
     [Fact]
+    public async Task O_banco_barra_valor_unitario_acima_do_maior_valor_aceito()
+    {
+        await banco.LimparAsync();
+        await banco.ExecutarAsync($"""
+            {UmaVendaSemItens}
+            INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Notebook', 999999.99);
+            INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 1, 1, 999999.99);
+            """);
+
+        var produtoAcima = () => banco.ExecutarAsync("INSERT INTO dbo.Produtos (Nome, ValorUnitario) VALUES (N'Servidor', 1000000.00);");
+        var itemAcima = () => banco.ExecutarAsync(
+            "INSERT INTO dbo.VendaItens (VendaId, ProdutoId, Quantidade, ValorUnitario) VALUES (1, 2, 1, 1000000.00);");
+
+        (await produtoAcima.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("CK_Produtos_ValorUnitarioMaximo");
+        (await itemAcima.Should().ThrowAsync<SqlException>()).Which.Message.Should().Contain("CK_VendaItens_ValorUnitarioMaximo");
+        await banco.LimparAsync();
+    }
+
+    [Fact]
     public async Task O_indice_do_nome_do_produto_recusa_nome_que_so_difere_no_acento()
     {
         await banco.LimparAsync();

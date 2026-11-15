@@ -42,8 +42,8 @@
   <data name="ValorUnitarioNaoPositivo" xml:space="preserve">
     <value>O valor unitário deve ser maior que zero.</value>
   </data>
-  <data name="ValorUnitarioAcimaDoPermitido" xml:space="preserve">
-    <value>O valor unitário está acima do permitido.</value>
+  <data name="ValorUnitarioAcimaDoMaximo" xml:space="preserve">
+    <value>O valor unitário aceita no máximo R$ {0}.</value>
   </data>
   <data name="ValorUnitarioComMaisDeDuasCasas" xml:space="preserve">
     <value>O valor unitário aceita no máximo duas casas decimais.</value>
