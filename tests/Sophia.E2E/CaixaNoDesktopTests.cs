@@ -535,6 +535,21 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task O_avatar_do_cliente_escolhido_e_o_mesmo_que_o_servidor_desenha()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        var avatar = _pagina.Locator("[data-cliente=avatar]");
+        var naTela = (await avatar.TextContentAsync(), await avatar.GetAttributeAsync("class"));
+
+        await _caixa.Finalizar.ClickAsync();
+        await Expect(_pagina.GetByRole(AriaRole.Alert)).ToContainTextAsync("Lance ao menos um produto na venda.");
+
+        naTela.Item1.Should().Be("MS");
+        (await avatar.TextContentAsync(), await avatar.GetAttributeAsync("class")).Should().Be(naTela);
+    }
+
+    [Fact]
     public async Task Valor_invalido_na_linha_volta_com_o_que_foi_digitado_e_o_aviso()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
