@@ -423,13 +423,13 @@ dotnet test
 
 | Projeto | Tipo | Testes | O que cobre | Precisa de |
 |---|---|---|---|---|
-| `Sophia.Domain.Tests` | unidade | 98 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
-| `Sophia.Application.Tests` | aplicação | 173 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
+| `Sophia.Domain.Tests` | unidade | 99 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
+| `Sophia.Application.Tests` | aplicação | 176 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
 | `Sophia.Specs` | BDD (Gherkin) | 90 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 171 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
-| `Sophia.E2E` | tela | 291 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
+| `Sophia.Integration.Tests` | integração | 199 | script do banco e atualização da versão anterior, comando de outro nome lido do README, script do login, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
+| `Sophia.E2E` | tela | 306 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
 
-São 823 casos executados, vindos de 511 testes distintos (métodos e cenários): as teorias
+São 870 casos executados, vindos de 536 testes distintos (métodos e cenários): as teorias
 repetem o mesmo teste para cada borda de uma regra, como os formatos de número aceitos e
 recusados, e cada caso é contado uma vez.
 
