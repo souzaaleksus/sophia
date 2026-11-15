@@ -1,5 +1,5 @@
 import { buscarJson, criarAutocompletar } from '../autocompletar.js';
-import { apagarNotaDoMilhar } from '../comum/decimais.js';
+import { atualizarNotaDoMilhar } from '../comum/decimais.js';
 import { limparErro, mostrarErro } from '../comum/erros.js';
 import { escritaDecimalValida, formatarDecimal, formatarMoeda, lerDecimal, lerInteiro, temMaisDeDuasCasas } from '../formato.js';
 
@@ -15,7 +15,7 @@ const estaEmBranco = item => camposDaLinha.every(nome => campoDe(item, nome).val
 
 const limparAvisos = (item, nome) => {
     limparErro(item, campoDe(item, nome).name);
-    apagarNotaDoMilhar(campoDe(item, nome));
+    atualizarNotaDoMilhar(campoDe(item, nome));
 };
 
 class Linhas {

@@ -1,31 +1,30 @@
 import { deixarDeDescrever, descrever } from './erros.js';
 import { formatarMoeda, lerDecimal, lidoComoMilhar, reescreverDecimal } from '../formato.js';
 
-let notasMostradas = 0;
+let notas = 0;
 
 const campoDecimal = alvo => alvo instanceof HTMLInputElement && alvo.inputMode === 'decimal';
 
-const notaDoMilhar = campo => campo.closest('.campo')?.querySelector('[data-nota-do-milhar]');
-
-export function apagarNotaDoMilhar(campo) {
-    const nota = notaDoMilhar(campo);
-    if (nota?.id) {
-        nota.textContent = '';
-        deixarDeDescrever(campo, nota.id);
-    }
-}
-
-function anotarMilhar(campo) {
-    const nota = notaDoMilhar(campo);
-    if (!nota || !lidoComoMilhar(campo.value)) {
+export function atualizarNotaDoMilhar(campo) {
+    const nota = campo.closest('.campo')?.querySelector('[data-nota-do-milhar]');
+    const texto = lidoComoMilhar(campo.value)
+        ? nota?.dataset.textoLidoComoMilhar.replace('{valor}', () => formatarMoeda(lerDecimal(campo.value)))
+        : '';
+    if (!nota || nota.textContent === texto) {
         return;
     }
 
-    notasMostradas += 1;
-    nota.id ||= `nota-do-milhar-${notasMostradas}`;
-    nota.textContent = nota.dataset.textoLidoComoMilhar.replace('{valor}', () => formatarMoeda(lerDecimal(campo.value)));
-    descrever(campo, nota.id);
+    notas += 1;
+    nota.id ||= `nota-do-milhar-${notas}`;
+    nota.textContent = texto;
+    (texto ? descrever : deixarDeDescrever)(campo, nota.id);
 }
+
+document.addEventListener('input', evento => {
+    if (campoDecimal(evento.target)) {
+        atualizarNotaDoMilhar(evento.target);
+    }
+});
 
 document.addEventListener('focusout', evento => {
     const campo = evento.target;
@@ -33,15 +32,8 @@ document.addEventListener('focusout', evento => {
         return;
     }
 
-    anotarMilhar(campo);
     const reescrito = reescreverDecimal(campo.value);
     if (reescrito !== null && reescrito !== campo.value) {
         campo.value = reescrito;
-    }
-});
-
-document.addEventListener('input', evento => {
-    if (campoDecimal(evento.target)) {
-        apagarNotaDoMilhar(evento.target);
     }
 });
