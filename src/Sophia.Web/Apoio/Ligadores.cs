@@ -79,7 +79,7 @@ public static partial class Ligadores
             (nameof(ItemDaVendaFormulario.Quantidade), false) => Mensagens.QuantidadeAcimaDoMaximo(
                 contexto.HttpContext.RequestServices.GetRequiredService<ParametrosDoSophia>().QuantidadeMaximaPorItem),
             (nameof(ItemDaVendaFormulario.ValorUnitario), true) => Mensagens.ValorUnitarioNaoPositivo,
-            (nameof(ItemDaVendaFormulario.ValorUnitario), false) => Mensagens.ValorUnitarioAcimaDoPermitido,
+            (nameof(ItemDaVendaFormulario.ValorUnitario), false) => Mensagens.ValorUnitarioAcimaDoMaximo,
             _ => ValorInvalido(contexto, texto),
         };
 
