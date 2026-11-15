@@ -29,8 +29,8 @@
                 <span class="input-group-text">R$</span>
                 <input asp-for="ValorUnitario" type="text" class="form-control valor" inputmode="decimal"
                        autocomplete="off" aria-required="true" placeholder="0,00"
-                       data-val-number="Valor inválido. Use 12,50 ou 1.250,00."
-                       data-val-maximo="Valor unitário está acima do permitido."
+                       data-val-number="@MensagensDeValidacao.ValorInvalido"
+                       data-val-maximo="@Mensagens.ValorUnitarioAcimaDoPermitido"
                        value="@ValorTentado.Ou(ViewData.ModelState, nameof(Model.ValorUnitario), Formato.Numero(Model.ValorUnitario))" />
             </div>
             <span class="campo-dica">Preço sugerido no caixa; pode ser ajustado em cada venda.</span>

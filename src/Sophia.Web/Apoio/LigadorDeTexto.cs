@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Sophia.Application;
+using Sophia.Domain.Recursos;
+using Sophia.Web.Models;
 
 namespace Sophia.Web.Apoio;
 
@@ -24,8 +27,16 @@ internal abstract class LigadorDeTexto : IModelBinder
         return metadados.ModelBindingMessageProvider.AttemptedValueIsInvalidAccessor(texto, metadados.GetDisplayName());
     }
 
-    protected static string MaiorQueZero(ModelBindingContext contexto) =>
-        $"{contexto.ModelMetadata.GetDisplayName()} deve ser maior que zero.";
+    protected static string ForaDoLimite(ModelBindingContext contexto, string texto, bool abaixo) =>
+        (contexto.ModelMetadata.Name, abaixo) switch
+        {
+            (nameof(ItemDaVendaFormulario.Quantidade), true) => Mensagens.QuantidadeNaoPositiva,
+            (nameof(ItemDaVendaFormulario.Quantidade), false) => Mensagens.QuantidadeAcimaDoMaximo(
+                contexto.HttpContext.RequestServices.GetRequiredService<ParametrosDoSophia>().QuantidadeMaximaPorItem),
+            (nameof(ItemDaVendaFormulario.ValorUnitario), true) => Mensagens.ValorUnitarioNaoPositivo,
+            (nameof(ItemDaVendaFormulario.ValorUnitario), false) => Mensagens.ValorUnitarioAcimaDoPermitido,
+            _ => ValorInvalido(contexto, texto),
+        };
 
     private void Ligar(ModelBindingContext contexto, string? texto)
     {

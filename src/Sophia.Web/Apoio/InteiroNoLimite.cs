@@ -33,18 +33,8 @@ public static partial class InteiroNoLimite
                 return valor;
             }
 
-            recusa = SoDigitos().IsMatch(limpo) ? ForaDoLimite(contexto, limpo.StartsWith('-')) : ValorInvalido(contexto, texto);
+            recusa = SoDigitos().IsMatch(limpo) ? ForaDoLimite(contexto, texto, limpo.StartsWith('-')) : ValorInvalido(contexto, texto);
             return null;
-        }
-
-        private static string ForaDoLimite(ModelBindingContext contexto, bool abaixo)
-        {
-            if (abaixo)
-            {
-                return MaiorQueZero(contexto);
-            }
-
-            return $"{contexto.ModelMetadata.GetDisplayName()} aceita no máximo {int.MaxValue.ToString("N0", Formato.Cultura)}.";
         }
     }
 }

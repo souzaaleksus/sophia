@@ -69,15 +69,12 @@ public static partial class DecimalPtBr
 
             if (!decimal.TryParse(numero, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var valor))
             {
-                recusa = negativo ? MaiorQueZero(contexto) : AcimaDoPermitido(contexto);
+                recusa = ForaDoLimite(contexto, texto, negativo);
                 return null;
             }
 
             recusa = null;
             return negativo ? -valor : valor;
         }
-
-        private static string AcimaDoPermitido(ModelBindingContext contexto) =>
-            $"{contexto.ModelMetadata.GetDisplayName()} está acima do permitido.";
     }
 }
