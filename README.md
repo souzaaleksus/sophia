@@ -140,6 +140,8 @@ vendas e o atalho de dias da lista de vendas) são parâmetros da seção `Sophi
 | RN29 | As listas de clientes e de produtos mostram 25 por página, com a busca aplicada antes da divisão em páginas (clientes por CPF ou nome, produtos por nome) e ordenação por coluna: clientes por nome ou CPF, produtos por nome ou valor, em ordem crescente ou decrescente; o padrão é o nome em ordem alfabética, ordem desconhecida volta ao padrão e, no empate, vale a ordem de cadastro | — | Consulta de clientes › Ordenar a lista pela coluna escolhida; Consulta de produtos › Ordenar a lista pela coluna escolhida |
 | RN30 | A lista de vendas pode ser filtrada por período, com as duas datas inclusive (data inicial depois da final é lida ao contrário; uma data só deixa o outro lado aberto), e ordenada pela data ou pelo total, em ordem crescente ou decrescente; o padrão é da mais recente para a mais antiga e, no empate, vale o número da venda no mesmo sentido | — | Consulta de vendas › Filtrar as vendas por período, com as duas datas inclusive; Consulta de vendas › Ordenar pelo total da venda |
 | RN31 | A quantidade de cada item da venda vai até o máximo configurado em `Sophia:QuantidadeMaximaPorItem` (padrão 99.999); o banco recusa acima de 999.999, o maior valor que o parâmetro aceita | A quantidade aceita no máximo 99.999 por item. | Vendas › Quantidade acima do máximo por item é recusada |
+| RN32 | O valor unitário, no produto e no item da venda, vai até R$ 999.999,99; o banco recusa acima disso | O valor unitário aceita no máximo R$ 999.999,99. | Produtos › O valor unitário vai até R$ 999.999,99; Vendas › O valor unitário do item vai até R$ 999.999,99 |
+| RN33 | O item da venda guarda o nome do produto do momento da venda: renomear o produto depois não muda o comprovante | — | Vendas › Renomear o produto não muda o comprovante de vendas antigas |
 
 ### 6. Requisitos não funcionais
 
@@ -152,7 +154,7 @@ vendas e o atalho de dias da lista de vendas) são parâmetros da seção `Sophi
 | RNF05 | Validação em dois níveis: no navegador, para resposta imediata, e no servidor, que é a fonte da verdade. |
 | RNF06 | Erros inesperados mostram uma página amigável, sem detalhes técnicos. |
 | RNF07 | Executável com Docker (`docker compose up`), sem instalar .NET ou SQL Server na máquina. |
-| RNF08 | Sem valores fixos no código: textos da interface e mensagens em arquivos de recursos (`.resx`), parâmetros de negócio (tamanho da página, dias do gráfico etc.) na seção `Sophia` do `appsettings.json`, endereços do JavaScript gerados pelas rotas e cores só em variáveis de tema. |
+| RNF08 | Sem valores fixos no código: cada mensagem de regra existe num lugar só, o `Mensagens.resx` do domínio ou da aplicação, e a tela a referencia; parâmetros de negócio (tamanho da página, dias do gráfico etc.) na seção `Sophia` do `appsettings.json`, endereços do JavaScript gerados pelas rotas e cores só em variáveis de tema. |
 | RNF09 | Qualidade verificada no build: análise estática (analisadores do .NET e SonarAnalyzer), complexidade ciclomática até 10 por método, índice de manutenibilidade de no mínimo 60 e formatação conferida; ESLint no JavaScript. Qualquer violação quebra o build. |
 
 ### 7. Stack
@@ -175,7 +177,7 @@ para compilar, testar ou rodar.
 | Testes de integração | xUnit · SQL Server real | Conferem o que um dublê não conferiria: o script do banco, os índices, o SQL que o EF gera e a corrida entre duas gravações. |
 | Testes de tela (E2E) | Playwright para .NET | Opera um Chromium de verdade, na mesma linguagem dos outros testes. Espera os elementos sozinho, o que evita testes instáveis, e emula celular, toque, rede lenta e tema escuro. |
 | Contêineres | Docker · Docker Compose | Quem avalia sobe o banco, cria as tabelas, carrega os dados de demonstração e abre a aplicação com um comando, sem instalar .NET nem SQL Server. |
-| Textos | `IStringLocalizer` · arquivos `.resx` | Mecanismo nativo do ASP.NET Core. Todas as frases da tela ficam num lugar só, e um teste confere que nenhuma chave falta e nenhuma sobra. |
+| Mensagens de regra | arquivos `.resx` do domínio e da aplicação | A mensagem nasce junto da regra e a tela só a referencia; um teste varre a Web e quebra se alguma view repetir o texto de uma regra. Os demais textos da tela ficam escritos na própria view, onde são lidos. |
 | Análise estática | analisadores do .NET · SonarAnalyzer.CSharp · métricas de código · ESLint · `dotnet format` | Defeito comum, complexidade alta e formatação fora do padrão quebram o build, na máquina e no CI. As regras do SonarQube rodam como analisador, sem depender de servidor. |
 | Integração contínua | GitHub Actions | O repositório está no GitHub. A cada PR roda formatação, ESLint, build e a suíte completa, com SQL Server em contêiner, e um segundo job sobe a aplicação pelo `docker compose` do Caminho A e confere o painel e a carga de demonstração: o caminho Docker fica provado a cada mudança. O merge só acontece com tudo verde. |
 
@@ -195,7 +197,7 @@ Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
 | | Telefone | varchar(11) | opcional, só dígitos |
 | Produtos | Id | int identity | PK |
 | | Nome | nvarchar(150), `Latin1_General_CI_AI` | obrigatório, único sem diferenciar acento nem maiúscula (`UQ_Produtos_Nome`) |
-| | ValorUnitario | decimal(18,2) | obrigatório, `> 0` |
+| | ValorUnitario | decimal(18,2) | obrigatório, `> 0` e `<= 999.999,99` (`CK_Produtos_ValorUnitarioMaximo`, RN32) |
 | Vendas | Id | int identity | PK — é o número da venda |
 | | Data | date | obrigatório, indexado |
 | | ClienteId | int | FK → Clientes, sem exclusão em cascata, indexado |
@@ -203,8 +205,9 @@ Clientes (1) ───< Vendas (1) ───< VendaItens >─── (1) Produtos
 | VendaItens | Id | int identity | PK |
 | | VendaId | int | FK → Vendas, exclusão em cascata |
 | | ProdutoId | int | FK → Produtos, sem exclusão em cascata |
+| | NomeDoProduto | nvarchar(150), `Latin1_General_CI_AI` | obrigatório; o nome do produto no momento da venda (RN33) |
 | | Quantidade | int | obrigatório, `> 0` e `<= 999.999` (`CK_VendaItens_QuantidadeMaxima`, o maior teto que a RN31 aceita) |
-| | ValorUnitario | decimal(18,2) | obrigatório, `> 0` |
+| | ValorUnitario | decimal(18,2) | obrigatório, `> 0` e `<= 999.999,99` (`CK_VendaItens_ValorUnitarioMaximo`, RN32) |
 | | | | único por (`VendaId`, `ProdutoId`) |
 
 Subtotal e total não são gravados: são derivados dos itens. Guardar o valor calculado
@@ -212,8 +215,7 @@ criaria duas fontes para o mesmo dado.
 
 A `ChaveDeRegistro` é gerada quando a tela de nova venda abre e volta com o formulário. Se o
 mesmo formulário chega duas vezes, o índice único impede a segunda gravação e o sistema
-devolve a venda já registrada. Em banco criado por versão anterior do script, rodar o script
-de novo acrescenta a coluna e o índice sem apagar nada.
+devolve a venda já registrada.
 
 ### 9. Rastreabilidade
 
@@ -230,6 +232,8 @@ de novo acrescenta a coluna e o índice sem apagar nada.
 | RN29 | `ConsultaDeClientes.feature`, `ConsultaDeProdutos.feature` | `Sophia.Application.Tests` (Ordenacao, ClienteServico, ProdutoServico: busca, ordem, desempate e limites de página) | `Sophia.Integration.Tests` (contagem, `ORDER BY` e recorte com `OFFSET`/`FETCH` no SQL Server) |
 | RN30 | `ConsultaDeVendas.feature` | `Sophia.Application.Tests` (ConsultaDeVendas, VendaServico: período, ordem pela data ou pelo total) | `Sophia.Integration.Tests` (período e total somado no SQL Server, ligação das datas `yyyy-MM-dd` da consulta) |
 | RN31 | `RegistroDeVendas.feature` › Quantidade acima do máximo por item é recusada | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` (VendaServico, ParametrosDoSophia) | `Sophia.Integration.Tests` (CHECK no banco, subida com parâmetro fora da faixa), `Sophia.E2E` (campo com máximo, soma de quantidades sem estouro) |
+| RN32 | `CadastroDeProdutos.feature`, `RegistroDeVendas.feature` › O valor unitário vai até R$ 999.999,99 | `Sophia.Domain.Tests` (Produto, Venda) | `Sophia.Integration.Tests` (CHECKs no banco, leitura do valor no formulário), `Sophia.E2E` (aviso ao sair do campo no produto e no caixa) |
+| RN33 | `RegistroDeVendas.feature` › Renomear o produto não muda o comprovante de vendas antigas | `Sophia.Domain.Tests` (Venda), `Sophia.Application.Tests` (VendaServico) | `Sophia.Integration.Tests` (comprovante lê o nome gravado no item) |
 
 ---
 
@@ -279,8 +283,10 @@ no Linux/WSL).
 4. Para parar: `docker compose down`. Os dados ficam no volume `dados-do-banco` e voltam na
    próxima subida. Para começar do zero, use `docker compose down -v`.
 
-A senha padrão do usuário `sa` serve só para avaliação local: em qualquer outro uso, defina a
-variável `SOPHIA_SENHA_DO_BANCO`. O SQL Server fica acessível apenas nesta máquina, na porta
+A aplicação não conecta como `sa`: o `criar-banco` cria o login `sophia_app`
+(`database/usuario-da-aplicacao.sql`), que só lê e grava no banco `Sophia`, e o `sa` fica só para
+criar o banco. As senhas padrão servem para avaliação local; em qualquer outro uso, defina
+`SOPHIA_SENHA_DO_BANCO` e `SOPHIA_SENHA_DA_APLICACAO`. O SQL Server fica acessível apenas nesta máquina, na porta
 `14333`, para quem quiser consultar o banco.
 
 Para subir com o banco vazio, sem os dados de demonstração, defina
@@ -298,22 +304,16 @@ Pré-requisitos:
 1. Crie o banco com o script entregue:
 
    ```powershell
-   sqlcmd -S .\SQLEXPRESS -E -C -d master -i database/create-database.sql
+   sqlcmd -S .\SQLEXPRESS -E -C -i database/create-database.sql
    ```
 
-   No SSMS, abra `database/create-database.sql` e execute (F5) com o `master` selecionado. O
-   script pode ser rodado de novo sem apagar nada: ele só cria o que ainda não existe.
+   No SSMS, abra `database/create-database.sql` e execute (F5). O script cria o banco `Sophia`,
+   entra nele e cria as tabelas numa transação só: ou cria tudo, ou nada. Rodar de novo não muda
+   nada. Se o banco `Sophia` já existir com outras tabelas, com outro agrupamento ou criado por uma
+   versão anterior do script, ele para com uma mensagem que diz o que fazer, sem alterar nada.
 
-   Já existe um banco `Sophia` na instância? Use outro nome: crie o banco vazio e rode o script
-   conectado a ele. Conectado a um banco que não é de sistema, o script prepara esse banco e não
-   toca no `Sophia`.
-
-   ```powershell
-   sqlcmd -S .\SQLEXPRESS -E -C -Q "CREATE DATABASE [SophiaAvaliacao] COLLATE Latin1_General_CI_AS"
-   sqlcmd -S .\SQLEXPRESS -E -C -d SophiaAvaliacao -i database/create-database.sql
-   ```
-
-   No SSMS, escolha o banco na lista antes do F5. Depois aponte a aplicação para ele com
+   Já existe um banco `Sophia` na instância? Use outro nome: troque `Sophia` no topo do script (as
+   duas linhas que citam o nome, a do `CREATE DATABASE` e a do `USE`) e aponte a aplicação para ele com
    `ConnectionStrings__Sophia="Server=.\SQLEXPRESS;Database=SophiaAvaliacao;Integrated Security=true;TrustServerCertificate=true"`.
 
 2. Confira se a conexão aponta para a sua instância. Ela fica em
@@ -389,7 +389,7 @@ dotnet test
 | `Sophia.Domain.Tests` | unidade | 86 | CPF, cliente, produto, venda, totais, mensagens do domínio | nada |
 | `Sophia.Application.Tests` | aplicação | 172 | serviços sobre o banco real: duplicidade, exclusão bloqueada, corrida entre duas gravações, páginas, ordem e período, parâmetros | SQL Server |
 | `Sophia.Specs` | BDD (Gherkin) | 85 | os cenários da especificação, em português, sobre o banco real | SQL Server |
-| `Sophia.Integration.Tests` | integração | 159 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, chaves dos textos da interface | SQL Server |
+| `Sophia.Integration.Tests` | integração | 159 | script do banco, carga de demonstração, mapeamento do EF conferido contra o script, consultas e busca sem acento, leitura de números e datas do formulário, subida com parâmetros inválidos, nenhuma mensagem de regra copiada na Web | SQL Server e `sqlcmd` |
 | `Sophia.E2E` | tela | 277 | cadastros, listas, caixa, celular, prevenção de erros, retorno ao operador, tema e gráficos, máscaras, cabeçalhos de segurança e política de conteúdo, no navegador | SQL Server e Chromium |
 
 São 779 casos executados, vindos de 480 testes distintos (métodos e cenários): as teorias
@@ -491,14 +491,14 @@ Caminho de uma venda:
   decimal e ponto é milhar (`1.250,00`). Sem vírgula, um ponto seguido de uma ou duas casas é
   decimal (`12.50` vale 12,50) e grupos de três depois do ponto são milhar (`1.250`); qualquer
   outra forma é recusada com aviso, em vez de virar outro valor. A regra mora em `formato.js` e
-  em `Apoio/DecimalPtBr.cs`, e um teste de integração confere os mesmos casos no servidor.
+  em `Apoio/Ligadores.cs`, e um teste de integração confere os mesmos casos no servidor.
 - **O domínio fala de campo e de linha, não de tela.** Um erro diz o campo (`ProdutoId`) e,
   num item da venda, a linha; só a Web monta a chave do formulário (`Itens[2].ProdutoId`), em
   `Apoio/ModelStateExtensions.cs`. Mudar o nome de um campo na tela não mexe no domínio.
-- **O comprovante mostra o nome atual do produto.** O item da venda guarda o produto e o valor
-  unitário da época; o nome vem do cadastro. O enunciado pede o preço congelado, não o nome, e
-  renomear um produto costuma ser correção de digitação. Se o nome histórico passar a importar,
-  basta uma coluna no item.
+- **O comprovante é o da época (RN33).** O item da venda guarda o nome do produto e o valor
+  unitário do momento da venda; renomear o produto ou mudar o preço depois não altera vendas
+  já feitas. Só o "Mais vendidos" do painel usa o nome atual, porque fala do produto, não da
+  venda.
 - **Venda registrada uma vez só, mesmo com duplo envio.** A tela trava o botão, mas a defesa
   real está no servidor: cada formulário de venda leva uma chave única, gravada com índice único
   filtrado. O segundo envio devolve a venda já gravada, e a corrida entre dois envios simultâneos
@@ -507,10 +507,11 @@ Caminho de uma venda:
   temporário criado pelo script entregue. Assim o teste cobre também o SQL que o EF gera, e a
   corrida entre duas gravações é provocada de verdade, com dois contextos. O custo é precisar de
   SQL Server para quase toda a suíte; só o domínio roda sem banco.
-- **Nada fixo no código.** Textos em `Recursos/Textos.resx` (Web) e `Mensagens.resx` (domínio e
-  aplicação); um teste confere que toda chave usada existe e que nenhuma sobra. A aplicação
-  tem um idioma só: o `.resx` não está ali para traduzir, e sim para deixar todo o texto que o
-  operador lê num lugar só, revisável sem abrir código. Parâmetros de
+- **Nada fixo no código, sem maquinaria a mais.** Cada mensagem de regra mora num lugar só, o
+  `Mensagens.resx` do domínio ou da aplicação, e a tela a referencia; um teste varre as views e
+  o código da Web e quebra se algum texto repetir uma dessas mensagens. Os demais textos da tela
+  (títulos, rótulos, botões) ficam escritos na view: a aplicação tem um idioma só, e um arquivo
+  de recursos para eles só acrescentaria uma indireção. Parâmetros de
   negócio na seção `Sophia` do `appsettings.json`, validados na subida: valor fora da faixa impede
   a aplicação de subir. O JavaScript recebe endereços e textos por atributos `data-*` gerados pela
   view. Exceção consciente: a mensagem de configuração ausente no `Program`, que é para quem
@@ -529,21 +530,21 @@ Caminho de uma venda:
   toda consulta GET com valor inválido, e o envio de formulário é conferido no
   `CadastroController`.
   Repetir a mesma linha em cada action era o que a regra pedia.
-- **Docker para avaliação.** O `docker-compose.yml` conecta como `sa`, com senha padrão se
-  `SOPHIA_SENHA_DO_BANCO` não for definida. Fora da avaliação, defina a senha e use um login
-  próprio da aplicação.
-- **Um script só, para qualquer nome de banco.** Sem nada escolhido, o script cria e prepara o
-  `Sophia`; conectado a outro banco, prepara esse. Para isso, cada bloco do esquema roda dentro
-  do banco escolhido por `sp_executesql`, e por isso as aspas aparecem dobradas no texto: o
-  `USE [Sophia]` escrito direto falha ao compilar quando o banco ainda não existe, mesmo dentro
-  de um `IF` falso. O script continua idempotente, roda no SSMS com F5 sem modo SQLCMD e não usa
-  variáveis do `sqlcmd`. Ele recusa um banco que já tenha tabelas de outro sistema, e uma
-  atualização que não pode ser aplicada (nomes de produto que ficariam repetidos sem acento,
-  item acima do teto de quantidade) para o script com erro e diz o que corrigir, em vez de seguir
-  calado com o banco diferente do que o EF espera.
-- **A quantidade por item tem teto (RN31).** 99.999 por padrão, configurável, com um CHECK no
-  banco no maior valor aceito; as somas de unidades usam inteiro de 64 bits, então nem vários
-  itens no máximo estouram a tela.
+- **Docker com o mínimo de privilégio.** A aplicação conecta com o login `sophia_app`, que só
+  lê e grava (`db_datareader` e `db_datawriter`); o `sa` só cria o banco. O job `docker` do CI
+  confere que a aplicação funciona com esse login e que ele não consegue criar tabela.
+- **Script em T-SQL direto, criação atômica.** O script cria o banco `Sophia`, entra nele, confere
+  o que já existe e cria tudo numa transação só; roda no SSMS com F5, sem modo SQLCMD. Ele não
+  migra versões anteriores, porque não há banco de produção a preservar: banco de versão anterior,
+  com outro agrupamento ou com tabelas de outro sistema é recusado com a instrução de recriar, sem
+  nada alterado. O nome do banco aparece só nas duas linhas do topo; quem precisar de outro
+  nome troca ali. O arquivo vai em UTF-8 com BOM, para as mensagens acentuadas saírem certas no
+  `sqlcmd` do Windows.
+- **Quantidade e valor têm teto de negócio (RN31 e RN32).** A quantidade vai até 99.999 por
+  item (configurável até 999.999) e o valor unitário até R$ 999.999,99; os dois limites moram no
+  domínio, têm CHECK no banco e chegam à tela pelos atributos do campo, que avisa ao sair dele.
+  Com os dois tetos, o maior subtotal cabe com exatidão num número do JavaScript, e a tela mostra
+  sempre o mesmo que o servidor grava.
 - **Identidade visual da Sophia.** Paleta, fonte e logo seguem o site da marca; o azul-petróleo
   foi escurecido de `#007B9E` para `#007596` porque o original não atingia contraste AA sobre o
   fundo claro.
@@ -595,7 +596,6 @@ tests/Sophia.Specs                BDD (Gherkin)
 tests/Sophia.Integration.Tests    integração com SQL Server
 tests/Sophia.E2E                  tela com Playwright
 tests/Sophia.Testes.Banco         banco temporário e composição dos serviços para os testes
-src/Sophia.Web/Recursos           textos da interface (Textos.resx)
 src/Sophia.Web/wwwroot/css        estilo por área: base, layout, componentes, responsivo, painel, pessoas, cupom, listas e caixa
 src/Sophia.Web/wwwroot/js         módulos ES: comum/ (todas as telas), caixa/ (nova venda), lista, confirmar e autocompletar
 Dockerfile, docker-compose.yml    execução em contêineres

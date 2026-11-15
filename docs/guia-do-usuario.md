@@ -92,7 +92,7 @@ ordenação por **Nome** ou **Valor unitário** e exclusão com confirmação.
 | Campo | Obrigatório | Observação |
 |---|---|---|
 | Nome | sim | não pode se repetir; maiúsculas, acentos e espaços a mais não contam ("Cafe Torrado" repete "Café Torrado") |
-| Valor unitário | sim | maior que zero, com até duas casas decimais: `1,75`, `1.250,00` ou `12.50` (ponto com uma ou duas casas também é decimal); formas ambíguas, como `1.2.3`, são recusadas assim que você sai do campo. `12.505` é lido como doze mil quinhentos e cinco e o campo mostra `12.505,00` |
+| Valor unitário | sim | maior que zero e até R$ 999.999,99, com até duas casas decimais: `1,75`, `1.250,00` ou `12.50` (ponto com uma ou duas casas também é decimal); formas ambíguas, como `1.2.3`, são recusadas assim que você sai do campo. `12.505` é lido como doze mil quinhentos e cinco e o campo mostra `12.505,00` |
 
 ![Novo produto](imagens/06-novo-produto.png)
 
@@ -226,14 +226,13 @@ Valem na tela de venda:
 | Lance ao menos um produto na venda. | nenhum item preenchido | use `F4` e lance um produto |
 | Selecione o produto. | a linha tem valor ou quantidade, mas não tem produto | escolha o produto na lista de sugestões |
 | A quantidade deve ser maior que zero. | quantidade zero ou vazia | informe a quantidade |
-| Quantidade aceita no máximo 2.147.483.647. | número grande demais, em geral zeros a mais | confira a quantidade |
-| A quantidade aceita no máximo 99.999 por item. | quantidade acima do máximo por item | confira a quantidade |
+| A quantidade aceita no máximo 99.999 por item. | quantidade acima do máximo por item; o aviso aparece ao sair do campo, e o botão **+** fica desligado no máximo | confira a quantidade |
 | Valor inválido. Use 12,50 ou 1.250,00. | o valor não está num formato de número | escreva com vírgula nos centavos |
 | O valor unitário aceita no máximo duas casas decimais. | o valor tem três casas ou mais depois da vírgula | arredonde para os centavos |
 | … já está na linha … com a quantidade máxima por item; nada foi somado. | o produto foi lançado de novo, mas a linha dele já está no máximo | confira a quantidade da linha |
 | Não foi possível conferir o envio do formulário. Recarregue a página e tente de novo. | o formulário ficou aberto muito tempo ou o sistema foi reiniciado | recarregue a página e preencha de novo |
 | Quantidade deve ser maior que zero. | número negativo grande demais | confira a quantidade |
-| Valor unitário está acima do permitido. | valor com dígitos demais, em geral zeros a mais | confira o valor |
+| O valor unitário aceita no máximo R$ 999.999,99. | valor acima do máximo por unidade, em geral zeros a mais; o aviso aparece ao sair do campo | confira o valor |
 | A data da venda não pode estar no futuro. | data depois de hoje | corrija a data |
 | Não foi possível atualizar a lista. Tente de novo. | a busca da lista falhou | aguarde um instante e digite de novo |
 | Não foi possível concluir a operação. Tente de novo em instantes. | falha inesperada | tente de novo; se persistir, avise o responsável pelo sistema |
