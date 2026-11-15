@@ -62,6 +62,14 @@ jobs:
           dotnet test tests/Sophia.Application.Tests --no-build -c Release
           dotnet test tests/Sophia.Specs --no-build -c Release
 
+      - name: Instalar o sqlcmd
+        run: |
+          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor --yes -o /usr/share/keyrings/microsoft-prod.gpg
+          curl -fsSL https://packages.microsoft.com/config/ubuntu/24.04/prod.list | sudo tee /etc/apt/sources.list.d/mssql-release.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18
+          echo /opt/mssql-tools18/bin >> "$GITHUB_PATH"
+
       - name: Testes de integração
         run: dotnet test tests/Sophia.Integration.Tests --no-build -c Release
 

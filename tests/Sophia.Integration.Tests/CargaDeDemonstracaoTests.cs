@@ -45,7 +45,7 @@ public sealed class CargaDeDemonstracaoTests(BancoDeTestes banco) : IAsyncLifeti
     {
         await using var vazio = await BancoAvulso.CriarVazioAsync(BancoDeTestes.Servidor, "Loja_SemTabelas");
 
-        var carregar = () => BancoAvulso.ExecutarScriptAsync(vazio.TextoDeConexao, Carga);
+        var carregar = () => BancoAvulso.ExecutarArquivoAsync(vazio.TextoDeConexao, Carga);
 
         (await carregar.Should().ThrowAsync<SqlException>()).Which.Number.Should().Be(50001);
         (await vazio.ConsultarAsync("SELECT name FROM sys.tables")).Should().BeEmpty();
