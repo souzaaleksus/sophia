@@ -1,4 +1,4 @@
-using Sophia.Web.Apoio;
+using Sophia.Web.Controllers;
 
 namespace Sophia.Integration.Tests.Web;
 
@@ -16,6 +16,6 @@ public sealed class AreaDoEnderecoTests
     [InlineData(null, "Painel")]
     public void A_area_vem_do_primeiro_trecho_do_endereco(string? caminho, string area)
     {
-        AreaDoEndereco.De(caminho).Should().Be(area);
+        ErroController.AreaDe(caminho).Should().Be(area);
     }
 }

@@ -1,21 +1,22 @@
 @model int
 @using Microsoft.AspNetCore.Diagnostics
+@using Sophia.Web.Controllers
 @{
     var naoEncontrado = Model == StatusCodes.Status404NotFound;
-    var metodo = PaginaDeErro.MetodoOriginal(Context);
+    var metodo = Context.Request.Method;
     var pedidoInvalido = Model == StatusCodes.Status400BadRequest;
     var consultaInvalida = pedidoInvalido && (HttpMethods.IsGet(metodo) || HttpMethods.IsHead(metodo));
     var envioInvalido = pedidoInvalido && !consultaInvalida;
     var caminho = Context.Features.Get<IStatusCodeReExecuteFeature>()?.OriginalPath
         ?? Context.Features.Get<IExceptionHandlerPathFeature>()?.Path
         ?? Context.Request.Path.Value;
-    var area = AreaDoEndereco.De(caminho);
-    var (destino, rotuloDoDestino) = area switch
+    var area = ErroController.AreaDe(caminho);
+    var rotuloDoDestino = area switch
     {
-        AreaDoEndereco.Clientes => (AreaDoEndereco.Clientes, "Ir para os clientes"),
-        AreaDoEndereco.Produtos => (AreaDoEndereco.Produtos, "Ir para os produtos"),
-        AreaDoEndereco.Vendas => (AreaDoEndereco.Vendas, "Ir para as vendas"),
-        _ => (AreaDoEndereco.Painel, "Ir para o painel"),
+        ErroController.Clientes => "Ir para os clientes",
+        ErroController.Produtos => "Ir para os produtos",
+        ErroController.Vendas => "Ir para as vendas",
+        _ => "Ir para o painel",
     };
     ViewData["Title"] = naoEncontrado ? "Página não encontrada" : "Algo deu errado";
 }
@@ -27,7 +28,7 @@
     {
         <p>O endereço não existe ou o registro foi excluído.</p>
     }
-    else if (consultaInvalida && area == AreaDoEndereco.Painel)
+    else if (consultaInvalida && area == ErroController.Painel)
     {
         <p>O endereço tem um valor que não foi entendido. Volte ao painel e tente de novo.</p>
     }
@@ -43,5 +44,5 @@
     {
         <p>Não foi possível concluir a operação. Tente de novo em instantes.</p>
     }
-    <a class="btn btn-primary" asp-controller="@destino" asp-action="Index">@rotuloDoDestino</a>
+    <a class="btn btn-primary" asp-controller="@area" asp-action="Index">@rotuloDoDestino</a>
 </div>

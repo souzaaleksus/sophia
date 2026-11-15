@@ -42,7 +42,6 @@ public static class Composicao
         }
 
         app.UseStatusCodePagesWithReExecute("/Erro/{0}");
-        app.ExibirErroComoLeitura();
         app.UseStaticFiles(ArquivosEstaticos.Opcoes);
         app.UseRouting();
         app.MapControllerRoute(name: "default", pattern: "{controller=Painel}/{action=Index}/{id?}");
