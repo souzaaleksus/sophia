@@ -31,11 +31,20 @@ function normalizarDecimal(numero) {
     return comPontoDecimal.test(numero) || soDigitos.test(numero) ? numero : null;
 }
 
-function separarDecimal(texto) {
+function semSinal(texto) {
     const limpo = String(texto ?? '').replace(/\s/g, '');
     const negativo = limpo.startsWith('-');
-    const numero = normalizarDecimal(negativo ? limpo.slice(1) : limpo);
+    return { negativo, digitado: negativo ? limpo.slice(1) : limpo };
+}
+
+function separarDecimal(texto) {
+    const { negativo, digitado } = semSinal(texto);
+    const numero = normalizarDecimal(digitado);
     return numero === null ? null : { numero, negativo, casas: numero.split('.')[1]?.length ?? 0 };
+}
+
+export function lidoComoMilhar(texto) {
+    return comMilhar.test(semSinal(texto).digitado);
 }
 
 export function escritaDecimalValida(texto) {

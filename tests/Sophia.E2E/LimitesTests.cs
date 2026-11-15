@@ -28,9 +28,12 @@ public sealed class LimitesTests(AplicacaoEmExecucao aplicacao) : IAsyncLifetime
     {
         var maria = await _cadastro.ClienteAsync("529.982.247-25", "Maria Santos");
         await aplicacao.Banco.ExecutarAsync($"""
+            WITH Digitos AS (SELECT Digito FROM (VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9)) AS d (Digito)),
+            Numeros AS (
+                SELECT milhar.Digito * 1000 + centena.Digito * 100 + dezena.Digito * 10 + unidade.Digito + 1 AS Numero
+                FROM Digitos milhar CROSS JOIN Digitos centena CROSS JOIN Digitos dezena CROSS JOIN Digitos unidade)
             INSERT INTO dbo.Produtos (Nome, ValorUnitario)
-            SELECT TOP (2200) CONCAT(N'Produto ', FORMAT(ROW_NUMBER() OVER (ORDER BY (SELECT NULL)), '0000')), 0.01
-            FROM sys.all_objects a CROSS JOIN sys.all_objects b;
+            SELECT CONCAT(N'Produto ', RIGHT(CONCAT('000', Numero), 4)), 0.01 FROM Numeros WHERE Numero <= 2200;
             INSERT INTO dbo.Vendas (Data, ClienteId) SELECT '{Cadastro.Hoje:yyyy-MM-dd}', {maria} FROM dbo.Produtos;
             DECLARE @primeiraVenda INT = (SELECT MIN(Id) FROM dbo.Vendas);
             DECLARE @primeiroProduto INT = (SELECT MIN(Id) FROM dbo.Produtos);

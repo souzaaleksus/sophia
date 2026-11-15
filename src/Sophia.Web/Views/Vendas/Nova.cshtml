@@ -7,7 +7,7 @@
     var erroDosItens = ViewData.ModelState.PrimeiroErro("Itens");
     var totalDaVenda = Model.Total();
 
-    void LinhaDoItem(int indice, ItemDaVendaFormulario item, bool comErros)
+    async Task LinhaDoItem(int indice, ItemDaVendaFormulario item, bool comErros)
     {
         string? ErroDe(string campo) => comErros ? ViewData.ModelState.PrimeiroErro($"Itens[{indice}].{campo}") : null;
         string Valor(string campo, string formatado) => comErros ? ValorTentado.Ou(ViewData.ModelState, $"Itens[{indice}].{campo}", formatado) : formatado;
@@ -35,6 +35,7 @@
                            placeholder="0,00" data-campo="ValorUnitario" />
                 </div>
                 <span class="erro" data-erro="ValorUnitario" data-valmsg-for="Itens[@indice].ValorUnitario">@ErroDe("ValorUnitario")</span>
+                <partial name="_NotaDoMilhar" />
             </div>
             <div class="campo caixa-quantidade">
                 <label class="form-label caixa-rotulo" for="item-@indice-Quantidade">Quantidade</label>
@@ -163,7 +164,7 @@
         <div class="caixa-lista-de-itens" data-itens>
             @for (var indice = 0; indice < Model.Itens.Count; indice++)
             {
-                LinhaDoItem(indice, Model.Itens[indice], comErros: true);
+                await LinhaDoItem(indice, Model.Itens[indice], comErros: true);
             }
         </div>
 
@@ -197,7 +198,7 @@
 </form>
 
 <template id="modelo-de-item">
-    @{ LinhaDoItem(0, new ItemDaVendaFormulario(), comErros: false); }
+    @{ await LinhaDoItem(0, new ItemDaVendaFormulario(), comErros: false); }
 </template>
 
 @section Scripts {

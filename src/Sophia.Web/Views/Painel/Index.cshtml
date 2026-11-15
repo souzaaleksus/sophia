@@ -114,14 +114,7 @@
 
     @if (Model.UltimasVendas.Count == 0)
     {
-        <div class="vazio vazio-embutido">
-            <svg class="ilustracao" aria-hidden="true"><use href="#ilustracao-vendas" /></svg>
-            <p class="vazio-titulo">Nenhuma venda registrada ainda.</p>
-            <a class="btn btn-primary" asp-controller="Vendas" asp-action="Nova">
-                <svg class="icone" aria-hidden="true"><use href="#icone-mais" /></svg>
-                Registrar a primeira venda
-            </a>
-        </div>
+        <partial name="_SemVendas" model="true" />
     }
     else
     {

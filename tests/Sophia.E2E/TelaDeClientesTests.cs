@@ -141,8 +141,7 @@ public sealed class TelaDeClientesTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _pagina.GetByRole(AriaRole.Button, new() { Name = "Salvar" }).ClickAsync();
         await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Cliente alterado.");
 
-        await _pagina.GetByRole(AriaRole.Link, new() { Name = "Excluir Maria Santos Silva" }).ClickAsync();
-        var dialogo = _pagina.GetByRole(AriaRole.Dialog);
+        var dialogo = await Exclusao.AbrirDialogoAsync(_pagina, "Maria Santos Silva");
         await Expect(dialogo).ToContainTextAsync("Maria Santos Silva");
         await dialogo.GetByRole(AriaRole.Button, new() { Name = "Excluir", Exact = true }).ClickAsync();
 

@@ -244,6 +244,85 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
     }
 
     [Fact]
+    public async Task Quantidade_acima_do_maximo_fica_fora_do_subtotal_do_total_e_das_unidades()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+
+        await _caixa.LancarAsync(1, "Caderno", "Caderno 96 folhas", "150000");
+
+        await Expect(_caixa.Linha(1).GetByTestId("subtotal")).ToHaveTextAsync("R$ 0,00");
+        await Expect(_caixa.Total).ToHaveTextAsync("R$ 2,50");
+        await Expect(_pagina.GetByTestId("unidades-da-venda")).ToHaveTextAsync("1 unidade");
+    }
+
+    [Fact]
+    public async Task Valor_lido_como_milhar_mostra_a_nota_ligada_ao_campo_sem_impedir_a_venda()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.EscolherClienteAsync("Maria", "Maria Santos");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+
+        await valor.FillAsync("12.505");
+        await valor.BlurAsync();
+
+        await Expect(valor).ToHaveAccessibleDescriptionAsync(NotaDoMilhar);
+        var nota = _caixa.Linha(0).GetByText(NotaDoMilhar);
+        await Expect(nota).ToBeVisibleAsync();
+        await Expect(nota).ToHaveAttributeAsync("aria-live", "polite");
+        await Expect(valor).Not.ToHaveAttributeAsync("aria-invalid", "true");
+
+        await _caixa.Finalizar.ClickAsync();
+
+        await Expect(_pagina.GetByRole(AriaRole.Status)).ToContainTextAsync("Venda registrada.");
+        await Expect(_pagina.GetByRole(AriaRole.Row).Filter(new() { HasText = "Caneta azul" })).ToContainTextAsync("R$ 12.505,00");
+    }
+
+    [Fact]
+    public async Task A_nota_do_milhar_some_quando_o_valor_muda_ou_o_produto_e_trocado()
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+        await valor.FillAsync("1.250");
+        await valor.BlurAsync();
+        await Expect(valor).ToHaveAccessibleDescriptionAsync("Lido como R$ 1.250,00: o ponto separa o milhar. Para centavos, use a vírgula.");
+
+        await valor.FillAsync("1,25");
+
+        await Expect(valor).ToHaveAccessibleDescriptionAsync(string.Empty);
+        await Expect(_caixa.Linha(0).GetByText("Lido como")).ToHaveCountAsync(0);
+
+        await valor.FillAsync("12.505");
+        await valor.BlurAsync();
+        await Expect(valor).ToHaveAccessibleDescriptionAsync(NotaDoMilhar);
+        await _caixa.ProdutoDaLinha(0).FillAsync("Caderno");
+        await _pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = "Caderno 96 folhas" }).ClickAsync();
+
+        await Expect(valor).ToHaveValueAsync("18,90");
+        await Expect(valor).ToHaveAccessibleDescriptionAsync(string.Empty);
+        await Expect(_caixa.Linha(0).GetByText("Lido como")).ToHaveCountAsync(0);
+    }
+
+    [Theory]
+    [InlineData("12,50")]
+    [InlineData("12.50")]
+    public async Task Valor_com_virgula_ou_com_ponto_de_centavos_nao_mostra_a_nota(string digitado)
+    {
+        await _pagina.GotoAsync("/Vendas/Nova");
+        await _caixa.LancarAsync(0, "Caneta", "Caneta azul", "1");
+        var valor = _caixa.Linha(0).GetByLabel("Valor unitário");
+
+        await valor.FillAsync(digitado);
+        await valor.BlurAsync();
+
+        await Expect(valor).ToHaveValueAsync("12,50");
+        await Expect(valor).ToHaveAccessibleDescriptionAsync(string.Empty);
+        await Expect(_caixa.Linha(0).GetByText("Lido como")).ToHaveCountAsync(0);
+    }
+
+    [Fact]
     public async Task Valor_com_ponto_decimal_enviado_direto_grava_a_venda_com_centavos()
     {
         await _pagina.GotoAsync("/Vendas/Nova");
@@ -573,6 +652,8 @@ public sealed class CaixaNoDesktopTests(AplicacaoEmExecucao aplicacao) : IAsyncL
         await _caixa.ProdutoDaLinha(linha).FillAsync(termo);
         await Expect(_pagina.GetByRole(AriaRole.Option).Filter(new() { HasText = produto })).ToBeVisibleAsync();
     }
+
+    private const string NotaDoMilhar = "Lido como R$ 12.505,00: o ponto separa o milhar. Para centavos, use a vírgula.";
 
     private ILocator BotaoDaLinha(int linha, string nome) =>
         _caixa.Linha(linha).GetByRole(AriaRole.Button, new() { Name = nome, Exact = true });

@@ -11,11 +11,15 @@ if (dialogo) {
         parte('titulo').textContent = link.dataset.confirmarTitulo;
         parte('nome').textContent = link.dataset.confirmarNome;
         parte('detalhe').textContent = link.dataset.confirmarDetalhe ?? '';
-        parte('aviso').textContent = link.dataset.confirmarAviso;
         formulario.action = link.href;
         dialogo.showModal();
         cancelar.focus();
     };
+
+    const marcarLinks = () => document.querySelectorAll('a[data-confirmar]:not([aria-haspopup])')
+        .forEach(link => link.setAttribute('aria-haspopup', 'dialog'));
+    marcarLinks();
+    new MutationObserver(marcarLinks).observe(document.body, { childList: true, subtree: true });
 
     document.addEventListener('click', evento => {
         const link = evento.target.closest('a[data-confirmar]');

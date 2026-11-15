@@ -89,6 +89,17 @@
     min-height: 1lh;
 }
 
+.nota-do-campo {
+    color: var(--cor-texto-suave);
+    display: block;
+    font-size: 0.82rem;
+    margin-top: 0.25rem;
+}
+
+.nota-do-campo:empty {
+    margin-top: 0;
+}
+
 .input-validation-error,
 .input-validation-error:focus {
     border-color: var(--cor-perigo);
